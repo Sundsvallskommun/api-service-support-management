@@ -17,7 +17,12 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
@@ -27,6 +32,8 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 /**
  * Base class for the handling artefacts of an errand: statement, investigation, decision and measure.
@@ -77,37 +84,46 @@ public abstract class AbstractErrandItemEntity<T extends AbstractErrandItemEntit
 
 	/** The word of the line of business, not an enum. */
 	@Column(name = "type", length = 128)
+	@KeywordField(normalizer = LOWERCASE)
 	private String type;
 
 	@Enumerated(STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "status", length = 32, nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private ItemStatus status;
 
 	@Column(name = "title")
+	@FullTextField(analyzer = TEXT)
 	private String title;
 
 	@Column(name = "description", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String description;
 
 	/** The deadline. A passed deadline is a question the business asks about all four. */
 	@Column(name = "due_at")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime dueAt;
 
 	@Column(name = "completed_at")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime completedAt;
 
 	/** AD account on a manual write, consumer name when a process writes. */
 	@Column(name = "created_by")
+	@KeywordField(normalizer = LOWERCASE)
 	private String createdBy;
 
 	@Column(name = "modified_by")
+	@KeywordField(normalizer = LOWERCASE)
 	private String modifiedBy;
 
 	@Column(name = "created")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime created;
 
 	@Column(name = "modified")

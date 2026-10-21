@@ -22,7 +22,16 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
 import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.EnumType.STRING;
@@ -30,6 +39,8 @@ import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static org.hibernate.type.SqlTypes.VARCHAR;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 /**
  * A decision on an errand.
@@ -54,44 +65,55 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 
 	/** One of the decision outcomes the namespace has registered, see {@link DecisionOutcomeEntity}. */
 	@Column(name = "outcome", nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private String outcome;
 
 	/** MANUAL or AUTOMATIC. The difference has to be answerable afterwards. */
 	@Enumerated(STRING)
 	@JdbcTypeCode(VARCHAR)
 	@Column(name = "method", length = 16, nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private DecisionMethod method;
 
 	/** AD account when MANUAL, consumer name when AUTOMATIC. */
 	@Column(name = "decided_by", nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private String decidedBy;
 
 	/** The level of authority: delegate, board, committee, chair. Metadata of the namespace. */
 	@Column(name = "decided_by_role", length = 128)
+	@KeywordField(normalizer = LOWERCASE)
 	private String decidedByRole;
 
 	@Column(name = "decided_at", nullable = false)
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime decidedAt;
 
 	@Column(name = "legal_basis")
+	@FullTextField(analyzer = TEXT)
 	private String legalBasis;
 
 	@Column(name = "delegation_reference", length = 64)
+	@KeywordField(normalizer = LOWERCASE)
 	private String delegationReference;
 
 	/** The justification. Contains personal data - goes through role based field filtering. */
 	@Column(name = "justification", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String justification;
 
 	@Column(name = "appealable")
+	@GenericField
 	private Boolean appealable;
 
 	/** Period of validity. LocalDate: validity is counted in days, not in points in time. */
 	@Column(name = "valid_from")
+	@GenericField
 	private LocalDate validFrom;
 
 	@Column(name = "valid_to")
+	@GenericField
 	private LocalDate validTo;
 
 	/** The investigation the decision rests on. Nullable, and set to null rather than cascading when it is removed. */
@@ -135,6 +157,7 @@ public class DecisionEntity extends AbstractErrandItemEntity<DecisionEntity> {
 	/** The JSON parameters of the decision. See {@link StatementEntity#getJsonParameters()} for how they are held. */
 	@OneToMany(mappedBy = "decisionEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
+	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<DecisionJsonParameterEntity> jsonParameters;
 
 	public static DecisionEntity create() {

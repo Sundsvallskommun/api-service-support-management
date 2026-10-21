@@ -16,8 +16,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "stakeholder",
@@ -36,36 +41,47 @@ public class StakeholderEntity {
 	private ErrandEntity errandEntity;
 
 	@Column(name = "external_id")
+	@KeywordField(normalizer = LOWERCASE)
 	private String externalId;
 
 	@Column(name = "external_id_type")
+	@KeywordField(normalizer = LOWERCASE)
 	private String externalIdType;
 
 	@Column(name = "city")
+	@FullTextField(analyzer = TEXT)
 	private String city;
 
 	@Column(name = "organization_name")
+	@FullTextField(analyzer = TEXT)
 	private String organizationName;
 
 	@Column(name = "role")
+	@KeywordField(normalizer = LOWERCASE)
 	private String role;
 
 	@Column(name = "first_name")
+	@FullTextField(analyzer = TEXT)
 	private String firstName;
 
 	@Column(name = "last_name")
+	@FullTextField(analyzer = TEXT)
 	private String lastName;
 
 	@Column(name = "address")
+	@FullTextField(analyzer = TEXT)
 	private String address;
 
 	@Column(name = "care_of")
+	@FullTextField(analyzer = TEXT)
 	private String careOf;
 
 	@Column(name = "zip_code")
+	@KeywordField(normalizer = LOWERCASE)
 	private String zipCode;
 
 	@Column(name = "country")
+	@KeywordField(normalizer = LOWERCASE)
 	private String country;
 
 	@ElementCollection(fetch = FetchType.EAGER)
@@ -82,9 +98,11 @@ public class StakeholderEntity {
 				name = "idx_contact_channel_value",
 				columnList = "value")
 		})
+	@IndexedEmbedded
 	private List<ContactChannelEntity> contactChannels;
 
 	@OneToMany(mappedBy = "stakeholderEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	@IndexedEmbedded
 	private List<StakeholderParameterEntity> parameters;
 
 	public static StakeholderEntity create() {

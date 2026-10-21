@@ -1,0 +1,29 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Basic dGhlLXVzZXJuYW1lOnRoZS1wYXNzd29yZA=="
+			}
+		},
+		"method": "PUT",
+		"urlPathPattern": "/api-telia-ace/workitem/emailUid/42\\.CallGuideWorkItem(%40|@)computer",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"customKeys": {
+						"workItem": "Nytt meddelande mottaget från bertil.bengtsson@example.com. Öppna ärendet i Draken",
+						"predefTargetAgentName": "jep11jep"
+					}
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test01_deliversAllQueuedWorkItems/response/api-telia-ace-updateContactData-response.json",
+		"status": 200
+	},
+	"name": "api-telia-ace-updateContactData"
+}

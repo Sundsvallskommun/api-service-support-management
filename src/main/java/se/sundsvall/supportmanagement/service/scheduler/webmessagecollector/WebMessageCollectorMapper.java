@@ -27,7 +27,7 @@ public class WebMessageCollectorMapper {
 			.withSender(messageDTO.getFirstName() + " " + messageDTO.getLastName())
 			.withSenderUserId(messageDTO.getUserId())
 			.withDirection(Direction.INBOUND)
-			.withErrandNumber(errand.getErrandNumber())
+			.withErrand(errand)
 			.withMunicipalityId(errand.getMunicipalityId())
 			.withNamespace(errand.getNamespace())
 			.withExternalId(messageDTO.getMessageId())

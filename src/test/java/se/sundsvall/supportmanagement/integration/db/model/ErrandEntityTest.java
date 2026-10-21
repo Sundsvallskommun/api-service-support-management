@@ -12,7 +12,7 @@ import org.mariadb.jdbc.MariaDbBlob;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,9 +31,11 @@ class ErrandEntityTest {
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("version"),
-			hasValidBeanEqualsExcluding("version"),
-			hasValidBeanToString()));
+			// The collections the errand holds for the search index alone are kept out of equals, hashCode and toString,
+			// so that comparing or logging an errand never loads them
+			hasValidBeanHashCodeExcluding("version", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanEqualsExcluding("version", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanToStringExcluding("decisions", "statements", "investigations", "communications")));
 	}
 
 	@Test
@@ -117,7 +119,7 @@ class ErrandEntityTest {
 			.withAccessLabels(accessLabels)
 			.withVersion(version);
 
-		assertThat(errandEntity).hasNoNullFieldsOrProperties();
+		assertThat(errandEntity).hasNoNullFieldsOrPropertiesExcept("decisions", "statements", "investigations", "communications");
 		assertThat(errandEntity.getAssignedGroupId()).isEqualTo(assignedGroupId);
 		assertThat(errandEntity.getAssignedUserId()).isEqualTo(assignedUserId);
 		assertThat(errandEntity.getAttachments()).isEqualTo(attachments);

@@ -8,8 +8,10 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
 
 @Entity
 @Table(name = "contact_reason")
@@ -21,6 +23,7 @@ public class ContactReasonEntity {
 	private String id;
 
 	@Column(name = "reason")
+	@KeywordField(normalizer = LOWERCASE)
 	private String reason;
 
 	@Column(name = "display_name")

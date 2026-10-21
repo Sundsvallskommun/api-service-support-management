@@ -1,0 +1,252 @@
+package se.sundsvall.supportmanagement.service.search.index;
+
+import jakarta.persistence.EntityManagerFactory;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Locale;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.core.SimpleLock;
+import org.elasticsearch.client.Request;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.supportmanagement.config.SearchProperties;
+import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.AccessControlService;
+
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static org.springframework.http.HttpStatus.CONFLICT;
+
+/**
+ * Rebuilds the search index from the database.
+ * <p>
+ * The index is disposable: the database is the source of truth, and a document that was not written because OpenSearch
+ * was unreachable at the time, or that predates a change to the mapping, is put right by a rebuild. One rebuild runs at
+ * a time across every pod of the service, guarded by the same lock table the schedulers use, since two mass indexers
+ * on the same index only slow each other down.
+ */
+@Service
+public class ErrandReindexService {
+
+	static final String LOCK_NAME = "errand-reindex";
+	static final String REINDEX_RUNNING = "A reindex is already running";
+
+	private static final Logger LOG = LoggerFactory.getLogger(ErrandReindexService.class);
+	private static final String NAMESPACE_CONDITION = "e.namespace = :namespace and e.municipalityId = :municipalityId";
+	private static final String PURGE_QUERY = """
+		{"query": {"bool": {"filter": [{"term": {"municipalityId": "%s"}}, {"term": {"namespace": "%s"}}]}}}""";
+
+	private final EntityManagerFactory entityManagerFactory;
+	private final OpenSearchClient openSearch;
+	private final LockProvider lockProvider;
+	private final SearchAvailability availability;
+	private final SearchProperties properties;
+	private final AccessControlService accessControlService;
+	private final NamespaceConfigRepository namespaceConfigRepository;
+
+	public ErrandReindexService(final EntityManagerFactory entityManagerFactory, final OpenSearchClient openSearch, final LockProvider lockProvider, final SearchAvailability availability,
+		final SearchProperties properties, final AccessControlService accessControlService, final NamespaceConfigRepository namespaceConfigRepository) {
+		this.entityManagerFactory = entityManagerFactory;
+		this.openSearch = openSearch;
+		this.lockProvider = lockProvider;
+		this.availability = availability;
+		this.properties = properties;
+		this.accessControlService = accessControlService;
+		this.namespaceConfigRepository = namespaceConfigRepository;
+	}
+
+	/**
+	 * Rebuilds every namespace there is, one after the other, and waits for it.
+	 * <p>
+	 * What the index misses it misses quietly: indexing follows a commit without holding the request up, so a write that
+	 * did not reach OpenSearch is a document left as it was, or an errand deleted that is still found. Nothing says which
+	 * errands those are, so the way back to an index that agrees with the database is to write it again, which is what
+	 * this does nightly. A namespace at a time, as the endpoint does it, so that only the namespace being rebuilt is
+	 * searched with a hole in it rather than the whole index at once.
+	 * <p>
+	 * Skipped where the environment has no search index, and where a rebuild is already running: the one under way is
+	 * doing this very work, and two mass indexers on one index only slow each other down.
+	 */
+	public void reindexEveryNamespace() {
+		if (!availability.isEnabled()) {
+			LOG.info("Search is not enabled, skipping the nightly reindex");
+			return;
+		}
+
+		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO));
+		if (lock.isEmpty()) {
+			LOG.info("{}, skipping the nightly reindex", REINDEX_RUNNING);
+			return;
+		}
+
+		try {
+			final var namespaces = namespaceConfigRepository.findAll();
+			final var failed = new ArrayList<String>();
+
+			for (final var config : namespaces) {
+				try {
+					reindexAndWait(config.getNamespace(), config.getMunicipalityId());
+				} catch (final RuntimeException e) {
+					// One namespace the index will not take - a document it rejects, a cluster that went away mid rebuild -
+					// must not leave every namespace after it unrepaired, night after night. It is written down and the walk
+					// goes on, and what failed is raised at the end so the scheduled job reports it
+					failed.add("%s/%s".formatted(config.getMunicipalityId(), config.getNamespace()));
+					LOG.error("Reindex of errands of namespace '{}' for municipality '{}' failed, going on with the rest",
+						config.getNamespace(), config.getMunicipalityId(), e);
+				}
+			}
+
+			if (!failed.isEmpty()) {
+				throw new IllegalStateException("Nightly reindex rebuilt %d of %d namespaces, these failed: %s"
+					.formatted(namespaces.size() - failed.size(), namespaces.size(), String.join(", ", failed)));
+			}
+
+			LOG.info("Nightly reindex finished, {} namespaces rebuilt", namespaces.size());
+		} finally {
+			lock.get().unlock();
+		}
+	}
+
+	private void reindexAndWait(final String namespace, final String municipalityId) {
+		LOG.info("Reindex of errands of namespace '{}' for municipality '{}' starting", namespace, municipalityId);
+		purgeNamespace(namespace, municipalityId);
+
+		try {
+			massIndexer(namespace, municipalityId, false).startAndWait();
+		} catch (final InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Reindex of namespace '%s' for municipality '%s' was interrupted".formatted(namespace, municipalityId), e);
+		}
+	}
+
+	/**
+	 * Starts a rebuild and returns at once, the rebuild goes on in the background and reports in the log.
+	 * <p>
+	 * A rebuild of a namespace first removes what the index holds for the namespace, so that an errand deleted while the
+	 * index was out of reach does not linger, and then writes its errands anew, leaving the rest of the index as it is. A
+	 * full rebuild drops the index and creates it anew from the mapping, which is what a changed mapping calls for, and
+	 * empties the search of every namespace until it is done. Either way the namespace is searched with a hole in it
+	 * until the rebuild is over, and an errand changed while the rebuild is passing over it may be written back as it was
+	 * before the change, which its next change puts right.
+	 * <p>
+	 * Held to the same grant as the configuration of the namespace, since a rebuild is an operation on the namespace
+	 * rather than on any errand, and a full rebuild reaches every namespace there is.
+	 *
+	 * @param  namespace                                      namespace to rebuild
+	 * @param  municipalityId                                 municipality id
+	 * @param  full                                           true to rebuild the whole index across every namespace,
+	 *                                                        recreating the schema
+	 * @throws org.springframework.web.ErrorResponseException 403 when the user may not administer the namespace, 409
+	 *                                                        when a rebuild is already running, 503 when the environment
+	 *                                                        has no search index
+	 */
+	public void reindex(final String namespace, final String municipalityId) {
+		availability.verifyEnabled();
+		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.NAMESPACE_CONFIG, RW);
+
+		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO))
+			.orElseThrow(() -> Problem.valueOf(CONFLICT, REINDEX_RUNNING));
+
+		final var description = "errands of namespace '%s' for municipality '%s'".formatted(namespace, municipalityId);
+		LOG.info("Reindex of {} starting", description);
+
+		try {
+			purgeNamespace(namespace, municipalityId);
+			massIndexer(namespace, municipalityId, false)
+				.start()
+				.whenComplete((_, throwable) -> finish(lock, description, throwable));
+		} catch (final RuntimeException e) {
+			lock.unlock();
+			throw e;
+		}
+	}
+
+	/**
+	 * Drops the whole index and builds it again from the database, which is what a changed mapping calls for.
+	 * <p>
+	 * An operation on no namespace in particular: the index holds every namespace of every municipality, and every one of
+	 * them searches nothing until the rebuild is over. So it is not guarded as the namespace in a path would be - there is
+	 * no such namespace - but by every namespace that enforces access control at all: the caller administers all of them,
+	 * or they administer none of this. A cluster where no namespace enforces anything leaves it open, as everything else
+	 * is open there.
+	 *
+	 * @throws org.springframework.web.ErrorResponseException 403 where a namespace that enforces access control is not
+	 *                                                        the caller's to administer, 409 when a rebuild is already
+	 *                                                        running, 503 where the environment has no search index
+	 */
+	public void reindexEverything() {
+		availability.verifyEnabled();
+		namespaceConfigRepository.findAll()
+			.forEach(config -> accessControlService.verifyNamespaceAuthorization(config.getNamespace(), config.getMunicipalityId(), ProtectedResource.NAMESPACE_CONFIG, RW));
+
+		final var lock = lockProvider.lock(new LockConfiguration(Instant.now(), LOCK_NAME, properties.reindex().lockAtMostFor(), Duration.ZERO))
+			.orElseThrow(() -> Problem.valueOf(CONFLICT, REINDEX_RUNNING));
+
+		LOG.info("Reindex of the whole errand index starting");
+
+		try {
+			massIndexer(null, null, true)
+				.start()
+				.whenComplete((_, throwable) -> finish(lock, "the whole errand index", throwable));
+		} catch (final RuntimeException e) {
+			lock.unlock();
+			throw e;
+		}
+	}
+
+	private MassIndexer massIndexer(final String namespace, final String municipalityId, final boolean full) {
+		final var massIndexer = Search.mapping(entityManagerFactory).scope(ErrandEntity.class).massIndexer();
+
+		if (full) {
+			return massIndexer.dropAndCreateSchemaOnStart(true);
+		}
+
+		massIndexer.type(ErrandEntity.class).reindexOnly(NAMESPACE_CONDITION)
+			.param("namespace", namespace)
+			.param("municipalityId", municipalityId);
+
+		// The purge that is on by default would empty the index of every namespace, not only the one being rebuilt
+		return massIndexer.purgeAllOnStart(false);
+	}
+
+	/**
+	 * Removes the documents of the namespace. Hibernate Search purges an index whole or by tenant and knows no tenants
+	 * here, so this goes to OpenSearch directly with the same two fields the search filters on.
+	 */
+	private void purgeNamespace(final String namespace, final String municipalityId) {
+		final var request = new Request("POST", "/" + openSearch.errandWriteIndex() + "/_delete_by_query");
+		request.addParameter("conflicts", "proceed");
+		request.addParameter("refresh", "true");
+		// The namespace is indexed lowercased, and this term goes to OpenSearch without passing the query DSL, so it is
+		// lowercased here: purging 'My_Namespace' otherwise left the documents of 'MY_NAMESPACE' behind for the rebuild to
+		// duplicate
+		request.setJsonEntity(PURGE_QUERY.formatted(municipalityId, namespace.toLowerCase(Locale.ROOT)));
+
+		try {
+			openSearch.restClient().performRequest(request);
+		} catch (final IOException e) {
+			throw new UncheckedIOException("Documents of namespace '%s' for municipality '%s' could not be removed from the search index".formatted(namespace, municipalityId), e);
+		}
+	}
+
+	private static void finish(final SimpleLock lock, final String description, final Throwable throwable) {
+		try {
+			if (throwable == null) {
+				LOG.info("Reindex of {} finished", description);
+			} else {
+				LOG.error("Reindex of {} failed", description, throwable);
+			}
+		} finally {
+			lock.unlock();
+		}
+	}
+}

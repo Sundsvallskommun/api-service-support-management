@@ -7,12 +7,14 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
@@ -21,11 +23,20 @@ import java.util.Objects;
 import org.hibernate.Length;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
+import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "communication",
@@ -49,6 +60,7 @@ public class CommunicationEntity {
 	private String municipalityId;
 
 	@Column(name = "sender")
+	@KeywordField(normalizer = LOWERCASE)
 	private String sender;
 
 	@Column(name = "sender_user_id")
@@ -57,17 +69,30 @@ public class CommunicationEntity {
 	@Column(name = "errand_number")
 	private String errandNumber;
 
+	/**
+	 * The errand, reached through its number, which is unique. Read-only and kept out of equals, hashCode and toString:
+	 * the number column above stays the mapping that is written, this exists so that the search index of the errand
+	 * follows its communications. Hibernate Search only learns of a new communication through this reference, so it is
+	 * set together with the number, see {@link #withErrand(ErrandEntity)}.
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "errand_number", referencedColumnName = "errand_number", insertable = false, updatable = false, foreignKey = @ForeignKey(NO_CONSTRAINT))
+	private ErrandEntity errand;
+
 	@Column(name = "direction")
 	@Enumerated(EnumType.STRING)
+	@KeywordField(normalizer = LOWERCASE)
 	private Direction direction;
 
 	@Column(name = "external_id")
 	private String externalId;
 
 	@Column(name = "subject")
+	@FullTextField(analyzer = TEXT)
 	private String subject;
 
 	@Column(name = "message_body", length = Length.LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String messageBody;
 
 	@Column(name = "html_message_body", length = Length.LONG32)
@@ -75,9 +100,11 @@ public class CommunicationEntity {
 
 	@Column(name = "sent")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime sent;
 
 	@Column(name = "type", nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private CommunicationType type;
 
 	@Column(name = "target")
@@ -215,6 +242,21 @@ public class CommunicationEntity {
 
 	public CommunicationEntity withErrandNumber(final String errandNumber) {
 		this.errandNumber = errandNumber;
+		return this;
+	}
+
+	public ErrandEntity getErrand() {
+		return errand;
+	}
+
+	public void setErrand(final ErrandEntity errand) {
+		this.errand = errand;
+	}
+
+	/** Ties the communication to sent in errand, both by number and by reference. */
+	public CommunicationEntity withErrand(final ErrandEntity errand) {
+		this.errand = errand;
+		this.errandNumber = errand.getErrandNumber();
 		return this;
 	}
 

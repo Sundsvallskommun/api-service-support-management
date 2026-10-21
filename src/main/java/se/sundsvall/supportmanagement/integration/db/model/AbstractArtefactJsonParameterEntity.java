@@ -7,6 +7,7 @@ import jakarta.persistence.Version;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParameterValue;
 
 import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
 
@@ -29,7 +30,7 @@ import static org.hibernate.type.SqlTypes.LONG32VARCHAR;
  * @param <T> the concrete subclass, so that the fluent setters return it.
  */
 @MappedSuperclass
-public abstract class AbstractArtefactJsonParameterEntity<T extends AbstractArtefactJsonParameterEntity<T>> {
+public abstract class AbstractArtefactJsonParameterEntity<T extends AbstractArtefactJsonParameterEntity<T>> implements JsonParameterValue {
 
 	@Id
 	@UuidGenerator

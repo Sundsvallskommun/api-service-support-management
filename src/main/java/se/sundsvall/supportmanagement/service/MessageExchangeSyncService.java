@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationConfigRepository;
@@ -58,9 +59,10 @@ public class MessageExchangeSyncService {
 	public void syncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		if (ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L) < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
-			final var shouldCreateNotification = syncMessages(conversationEntity, errandEntity);
+			final var synced = syncMessages(conversationEntity, errandEntity);
 			try {
-				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, shouldCreateNotification, MESSAGE);
+				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, synced.fromOthers(), MESSAGE,
+					synced.author());
 			} catch (final Exception e) {
 				LOG.warn("Failed to log conversation event for errand {}: {}", errandEntity.getId(), e.getMessage());
 			}
@@ -70,7 +72,17 @@ public class MessageExchangeSyncService {
 		conversationRepository.save(updatedConversationEntity);
 	}
 
-	boolean syncMessages(final ConversationEntity conversationEntity, final ErrandEntity errandEntity) {
+	/**
+	 * What a sync brought.
+	 *
+	 * @param fromOthers whether a message came from someone other than the assigned user, which is what the assigned user
+	 *                   is notified of
+	 * @param author     the one who wrote every message the sync brought, who is the one who acted and so is not notified
+	 *                   of it as a subscriber. Null where the messages have more than one author, or one that is not known
+	 */
+	record SyncedMessages(boolean fromOthers, Identifier author) {}
+
+	SyncedMessages syncMessages(final ConversationEntity conversationEntity, final ErrandEntity errandEntity) {
 
 		final var filter = "sequenceNumber.id >" + ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L);
 
@@ -88,7 +100,24 @@ public class MessageExchangeSyncService {
 			applyStatusChange(errandEntity);
 		}
 
-		return hasIncomingFromOther;
+		return new SyncedMessages(hasIncomingFromOther, soleAuthor(response.getBody()));
+	}
+
+	private static Identifier soleAuthor(final Iterable<Message> messages) {
+		Identifier author = null;
+		for (final var message : messages) {
+			final var createdBy = toIdentifier(message.getCreatedBy());
+			if (createdBy == null || (author != null && !Objects.equals(author.getValue(), createdBy.getValue()))) {
+				return null;
+			}
+			author = createdBy;
+		}
+		return author;
+	}
+
+	private static Identifier toIdentifier(final generated.se.sundsvall.messageexchange.Identifier createdBy) {
+		final var type = createdBy == null || createdBy.getValue() == null || createdBy.getType() == null ? null : Identifier.Type.fromString(createdBy.getType());
+		return type == null ? null : Identifier.create().withType(type).withValue(createdBy.getValue());
 	}
 
 	private static boolean containsMessageFromOtherThan(final Iterable<Message> messages, final String assignedUserId) {

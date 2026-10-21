@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.EAGER;
@@ -27,6 +29,8 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Entity
 @Table(name = "phase",
@@ -52,9 +56,11 @@ public class PhaseEntity {
 	private String namespace;
 
 	@Column(name = "name", nullable = false)
+	@KeywordField(normalizer = LOWERCASE)
 	private String name;
 
 	@Column(name = "display_name")
+	@FullTextField(analyzer = TEXT)
 	private String displayName;
 
 	@Column(name = "description")

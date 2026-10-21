@@ -5,8 +5,13 @@ public final class Constants {
 	public static final String SUBJECT_TEMPLATE = "Nytt meddelande kopplat till ärendet %s";
 	public static final String NAMESPACE_REGEXP = "[\\w|\\-]+";
 	public static final String NAMESPACE_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
-	public static final String JSON_PARAMETER_KEY_REGEXP = "[A-Za-z0-9._-]+";
-	public static final String JSON_PARAMETER_KEY_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, ., - and _";
+	/**
+	 * A JSON parameter key names one segment of the search index, under which the paths of its value are written with
+	 * dots between them. A dot in the key would run the two together - a key of document with the path secret.author and
+	 * a key of document.secret with the path author would name one and the same field - so the key holds none.
+	 */
+	public static final String JSON_PARAMETER_KEY_REGEXP = "[A-Za-z0-9_-]+";
+	public static final String JSON_PARAMETER_KEY_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
 	public static final String SENT_BY_HEADER = "X-Sent-By";
 	public static final String UNKNOWN = "UNKNOWN";
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";

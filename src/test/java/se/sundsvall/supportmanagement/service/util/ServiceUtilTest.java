@@ -31,6 +31,7 @@ class ServiceUtilTest {
 	@AfterEach
 	void clearRequestGroupId() {
 		ServiceUtil.clearRequestGroupId();
+		ServiceUtil.clearNotify();
 		Identifier.remove();
 	}
 
@@ -68,6 +69,41 @@ class ServiceUtilTest {
 		ServiceUtil.setRequestGroupId("  ");
 
 		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void shouldNotifyWhenNotSet() {
+		assertThat(ServiceUtil.shouldNotify()).isTrue();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"false", "FALSE", "False", " false "
+	})
+	void shouldNotNotifyWhenSetToFalse(final String value) {
+		ServiceUtil.setNotify(value);
+
+		assertThat(ServiceUtil.shouldNotify()).isFalse();
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = {
+		"true", "TRUE", "maybe", "0", "no"
+	})
+	void shouldNotifyWhenSetToAnythingButFalse(final String value) {
+		ServiceUtil.setNotify("false");
+		ServiceUtil.setNotify(value);
+
+		assertThat(ServiceUtil.shouldNotify()).isTrue();
+	}
+
+	@Test
+	void clearNotifyRemovesValue() {
+		ServiceUtil.setNotify("false");
+		ServiceUtil.clearNotify();
+
+		assertThat(ServiceUtil.shouldNotify()).isTrue();
 	}
 
 	@ParameterizedTest

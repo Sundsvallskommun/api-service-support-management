@@ -16,10 +16,20 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.PropertyBinderRef;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
+import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
+import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 /**
  * An investigation of an errand.
@@ -40,18 +50,22 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationEntity> {
 
 	@Column(name = "investigator_user_id")
+	@KeywordField(normalizer = LOWERCASE)
 	private String investigatorUserId;
 
 	@Column(name = "started_at")
 	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime startedAt;
 
 	/** A summary of what has been examined. */
 	@Column(name = "summary", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String summary;
 
 	/** The overall assessment - the answer of the investigation to the question of the errand. */
 	@Column(name = "conclusion", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String conclusion;
 
 	/**
@@ -60,9 +74,11 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	 * decision follows what the investigation proposed.
 	 */
 	@Column(name = "recommendation")
+	@KeywordField(normalizer = LOWERCASE)
 	private String recommendation;
 
 	@Column(name = "recommendation_motivation", length = LONG32)
+	@FullTextField(analyzer = TEXT)
 	private String recommendationMotivation;
 
 	@OneToMany(mappedBy = "investigationEntity", cascade = ALL, orphanRemoval = true)
@@ -92,6 +108,7 @@ public class InvestigationEntity extends AbstractErrandItemEntity<InvestigationE
 	/** The JSON parameters of the investigation. See {@link StatementEntity#getJsonParameters()} for how they are held. */
 	@OneToMany(mappedBy = "investigationEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
+	@PropertyBinding(binder = @PropertyBinderRef(type = JsonParametersBinder.class))
 	private List<InvestigationJsonParameterEntity> jsonParameters;
 
 	public static InvestigationEntity create() {

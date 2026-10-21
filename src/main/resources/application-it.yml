@@ -23,6 +23,10 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-relation
   json-schema:
     url: http://localhost:${wiremock.server.port:}/api-json-schema
+  telia-ace:
+    url: http://localhost:${wiremock.server.port:}/api-telia-ace
+    username: the-username
+    password: the-password
 scheduler:
   emailreader:
     cron: "-"
@@ -39,10 +43,22 @@ scheduler:
     cron: "-"
   notification-dispatch:
     cron: "-"
+    transaction-buffer: PT0S
+    email:
+      sender-address: no-reply@test.local
+      sender-name: Sundsvalls kommun
   attachment-hash:
     cron: "-"
+  search-reindex:
+    cron: "-"
+    enabled: false
   job:
     cron: "-"
+  telia-ace-work-item:
+    cron: "-"
+    # The default is off; apptests that exercise the feature (EmailReaderTeliaAceNotificationIT,
+    # TeliaAceWorkItemSchedulerIT) rely on it being on here, same as the per-namespace toggle they seed.
+    enabled: true
 errand:
   purge:
     # Small enough that a run over the purge test data walks several batches, which is what moves the cursor
@@ -64,6 +80,19 @@ spring:
           schema-generation:
             database:
               action: validate
+      hibernate:
+        search:
+          enabled: true
+          backend:
+            # Supplied by OpenSearchContainerEnvironmentPostProcessor on the integration test classpath
+            hosts: ${opensearch.hosts}
+          schema_management:
+            strategy: drop-and-create
+          indexing:
+            plan:
+              synchronization:
+                # Tests search right after writing
+                strategy: sync
   security:
     oauth2:
       client:

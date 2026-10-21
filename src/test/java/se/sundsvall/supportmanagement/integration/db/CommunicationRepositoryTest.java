@@ -65,7 +65,7 @@ class CommunicationRepositoryTest {
 		final var persistedEntity = communicationRepository.save(communicationEntity);
 
 		// Assertions
-		assertThat(persistedEntity).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(persistedEntity).isNotNull().hasNoNullFieldsOrPropertiesExcept("errand");
 		assertThat(persistedEntity.getSender()).isEqualTo("sender");
 		assertThat(persistedEntity.getSenderUserId()).isEqualTo("senderUserId");
 		assertThat(persistedEntity.getErrandNumber()).isEqualTo("errandNumber");

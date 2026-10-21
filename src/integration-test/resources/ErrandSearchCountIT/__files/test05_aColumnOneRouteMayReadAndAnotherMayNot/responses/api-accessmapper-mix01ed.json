@@ -1,0 +1,19 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "label",
+				"access": [
+					{
+						"pattern": "TEAM-A",
+						"accessLevel": "R"
+					},
+					{
+						"pattern": "TEAM-B",
+						"accessLevel": "LR"
+					}
+				]
+			}
+		]
+	}
+]

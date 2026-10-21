@@ -90,6 +90,33 @@ class NamespaceConfigServiceTest {
 	}
 
 	@Test
+	void createWithTeliaAceWorkItemEnabledButNoBaseUrl() {
+		final var request = NamespaceConfig.create().withTeliaAceWorkItemEnabled(true);
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var e = assertThrows(ThrowableProblem.class, () -> configService.create(request, namespace, municipalityId));
+
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).isEqualTo("Bad Request: 'teliaAceWorkItemBaseUrl' is mandatory when 'teliaAceWorkItemEnabled' is true");
+		verify(configRepositoryMock).existsByNamespaceAndMunicipalityId(namespace, municipalityId);
+		verifyNoMoreInteractions(configRepositoryMock, mapperMock);
+	}
+
+	@Test
+	void replaceWithTeliaAceWorkItemEnabledButNoBaseUrl() {
+		final var request = NamespaceConfig.create().withTeliaAceWorkItemEnabled(true);
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+
+		final var e = assertThrows(ThrowableProblem.class, () -> configService.replace(request, namespace, municipalityId));
+
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getMessage()).isEqualTo("Bad Request: 'teliaAceWorkItemBaseUrl' is mandatory when 'teliaAceWorkItemEnabled' is true");
+		verifyNoMoreInteractions(configRepositoryMock, mapperMock);
+	}
+
+	@Test
 	void replace() {
 		final var request = NamespaceConfig.create();
 		final var namespace = "namespace";

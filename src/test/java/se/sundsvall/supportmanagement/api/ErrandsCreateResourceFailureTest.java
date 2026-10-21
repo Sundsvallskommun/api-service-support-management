@@ -604,7 +604,7 @@ class ErrandsCreateResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("jsonParameters[0].key", "must not be blank"),
-				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
+				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verify(metadataServiceMock, times(1)).isValidated(any(), any(), any());

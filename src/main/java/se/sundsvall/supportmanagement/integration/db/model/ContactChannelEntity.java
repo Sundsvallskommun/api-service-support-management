@@ -3,14 +3,23 @@ package se.sundsvall.supportmanagement.integration.db.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
+import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 
 @Embeddable
 public class ContactChannelEntity {
 
 	@Column(name = "type")
+	@KeywordField(normalizer = LOWERCASE)
 	private String type;
 
+	// Both ways: an address or number is looked up exactly, but a search for a name also finds it inside an address
 	@Column(name = "value")
+	@KeywordField(name = "value_raw", normalizer = LOWERCASE)
+	@FullTextField(analyzer = TEXT)
 	private String value;
 
 	public static ContactChannelEntity create() {

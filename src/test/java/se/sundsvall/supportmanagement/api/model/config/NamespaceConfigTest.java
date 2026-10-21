@@ -51,6 +51,9 @@ class NamespaceConfigTest {
 		final var roleFieldRestrictions = List.of(RoleFieldRestriction.create().withRole("FIRST_LINE_CASE_OFFICER"));
 		final var limitedReadAccess = LimitedReadAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
 		final var reporterAccess = ReporterAccess.create().withFields(List.of(FieldAccess.create().withField(TITLE)));
+		final var teliaAceWorkItemEnabled = true;
+		final var teliaAceWorkItemBaseUrl = "https://draken.sundsvall.se/kontaktsundsvall";
+		final var baseUrl = "https://draken.example.com";
 
 		final var bean = NamespaceConfig.create()
 			.withNamespace(namespace)
@@ -65,8 +68,11 @@ class NamespaceConfigTest {
 			.withRoleFieldRestrictions(roleFieldRestrictions)
 			.withLimitedReadAccess(limitedReadAccess)
 			.withReporterAccess(reporterAccess)
+			.withBaseUrl(baseUrl)
 			.withCreated(created)
-			.withModified(modified);
+			.withModified(modified)
+			.withTeliaAceWorkItemEnabled(teliaAceWorkItemEnabled)
+			.withTeliaAceWorkItemBaseUrl(teliaAceWorkItemBaseUrl);
 
 		assertThat(bean).hasNoNullFieldsOrProperties();
 		assertThat(bean.getNamespace()).isEqualTo(namespace);
@@ -81,24 +87,28 @@ class NamespaceConfigTest {
 		assertThat(bean.getRoleFieldRestrictions()).isEqualTo(roleFieldRestrictions);
 		assertThat(bean.getLimitedReadAccess()).isEqualTo(limitedReadAccess);
 		assertThat(bean.getReporterAccess()).isEqualTo(reporterAccess);
+		assertThat(bean.getBaseUrl()).isEqualTo(baseUrl);
 		assertThat(bean.getCreated()).isEqualTo(created);
 		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.isTeliaAceWorkItemEnabled()).isEqualTo(teliaAceWorkItemEnabled);
+		assertThat(bean.getTeliaAceWorkItemBaseUrl()).isEqualTo(teliaAceWorkItemBaseUrl);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand").satisfies(namespaceConfig -> {
-			assertThat(namespaceConfig.isAccessControl()).isFalse();
-			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
-			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
-			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
-		});
-		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand").satisfies(namespaceConfig -> {
-			assertThat(namespaceConfig.isAccessControl()).isFalse();
-			assertThat(namespaceConfig.isNotifyReporter()).isFalse();
-			assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
-			assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
-
-		});
+		assertThat(NamespaceConfig.create()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled")
+			.satisfies(namespaceConfig -> {
+				assertThat(namespaceConfig.isAccessControl()).isFalse();
+				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+			});
+		assertThat(new NamespaceConfig()).hasAllNullFieldsOrPropertiesExcept("accessControl", "notifyReporter", "roleBasedMapping", "resourceAccessControl", "singleDecisionPerErrand", "excludeEventDescriptionsInEmail", "teliaAceWorkItemEnabled")
+			.satisfies(namespaceConfig -> {
+				assertThat(namespaceConfig.isAccessControl()).isFalse();
+				assertThat(namespaceConfig.isNotifyReporter()).isFalse();
+				assertThat(namespaceConfig.isRoleBasedMapping()).isFalse();
+				assertThat(namespaceConfig.isResourceAccessControl()).isFalse();
+			});
 	}
 }

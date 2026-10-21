@@ -48,6 +48,7 @@ class AccessControlChokePointTest {
 		se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.supensions.SuspensionWorker.class,
+		se.sundsvall.supportmanagement.service.scheduler.teliaace.TeliaAceWorkItemWorker.class,
 		se.sundsvall.supportmanagement.service.scheduler.webmessagecollector.WebMessageCollectorWorker.class,
 		se.sundsvall.supportmanagement.service.MessageExchangeSyncService.class,
 

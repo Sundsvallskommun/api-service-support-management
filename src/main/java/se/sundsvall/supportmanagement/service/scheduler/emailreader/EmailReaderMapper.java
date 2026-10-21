@@ -51,7 +51,7 @@ public class EmailReaderMapper {
 		return CommunicationEntity.create()
 			.withNamespace(errand.getNamespace())
 			.withMunicipalityId(errand.getMunicipalityId())
-			.withErrandNumber(errand.getErrandNumber())
+			.withErrand(errand)
 			.withDirection(Direction.INBOUND)
 			.withExternalId("")
 			.withSubject(email.getSubject())

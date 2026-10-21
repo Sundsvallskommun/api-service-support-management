@@ -1,10 +1,5 @@
 package se.sundsvall.supportmanagement.apptest;
 
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.PUT;
-import static org.springframework.http.HttpStatus.OK;
-import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-
 import java.util.List;
 import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
@@ -12,6 +7,11 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.OK;
+import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
  * ErrandJsonParameter IT tests.

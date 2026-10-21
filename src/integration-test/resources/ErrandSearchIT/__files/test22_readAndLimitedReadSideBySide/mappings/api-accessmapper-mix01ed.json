@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2508/access/ad/mix01ed"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test22_readAndLimitedReadSideBySide/responses/api-accessmapper-mix01ed.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-mix01ed"
+}

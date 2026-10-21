@@ -413,7 +413,7 @@ class ErrandsUpdateResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("jsonParameters[0].key", "must not be blank"),
-				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
+				tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);
@@ -445,7 +445,7 @@ class ErrandsUpdateResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, ., - and _"));
+			.containsExactly(tuple("jsonParameters[0].key", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
 		verifyNoInteractions(metadataServiceMock, errandServiceMock);

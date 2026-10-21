@@ -1,5 +1,5 @@
 {
-	"status": 500,
-	"title": "Internal Server Error",
-	"detail": "HV000028: Unexpected exception during isValid call."
+	"status": 502,
+	"title": "Bad Gateway",
+	"detail": "json-schema error: {detail=Internal Server Error - The JSON Schema service is currently unavailable, status=500 Internal Server Error, title=Internal Server Error}"
 }

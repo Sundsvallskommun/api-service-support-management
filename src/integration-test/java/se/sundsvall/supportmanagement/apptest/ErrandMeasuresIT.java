@@ -1,5 +1,16 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
+import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -15,19 +26,6 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
-import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 
 /**
  * Errand Measures IT tests.
@@ -48,7 +46,8 @@ class ErrandMeasuresIT extends AbstractAppTest {
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 
-	// The measure on the errand the handling artefacts share, which is where the attachments and parameters of all four live.
+	// The measure on the errand the handling artefacts share, which is where the attachments and parameters of all four
+	// live.
 	private static final String ARTEFACT_ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
 	private static final String ARTEFACT_ERRAND_PATH = "/" + MUNICIPALITY_2281 + "/NAMESPACE-ARTEFACT/errands/" + ARTEFACT_ERRAND_ID;
 	private static final String ARTEFACT_MEASURE_ID = "ee000000-0000-0000-0000-000000000200";

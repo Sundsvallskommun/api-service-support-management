@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-accessmapper/2506/NAMESPACE-2507/access/ad/com01red"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "test19_openResourceIsSearchable/responses/api-accessmapper-com01red.json",
+		"status": 200
+	},
+	"name": "api-accessmapper-com01red"
+}

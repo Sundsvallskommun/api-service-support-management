@@ -1,6 +1,18 @@
 package se.sundsvall.supportmanagement.apptest;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.context.jdbc.Sql;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.supportmanagement.Application;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+
 import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.GET;
@@ -14,17 +26,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.util.MimeTypeUtils.IMAGE_JPEG_VALUE;
 import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.test.context.jdbc.Sql;
-
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.supportmanagement.Application;
 
 /**
  * ErrandCommunication IT tests.
@@ -294,7 +295,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
+	 * Test to verify email is sent to reporter when administrator creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test20_createInternalConversationMessageToReporter() throws FileNotFoundException {
@@ -309,7 +311,8 @@ class ErrandCommunicationIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an errand where stakeholder with reporter role is present.
+	 * Test to verify email is NOT sent to reporter when reporter creates a message in an internal conversation for an
+	 * errand where stakeholder with reporter role is present.
 	 */
 	@Test
 	void test21_createInternalConversationMessageToAdministrator() throws FileNotFoundException {
@@ -389,5 +392,30 @@ class ErrandCommunicationIT extends AbstractAppTest {
 			.withRequestFile("message", REQUEST_FILE)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A communication reaches the search index through the errand it belongs to, which is reindexed as the communication
+	 * is saved. The errand was never indexed before, since the test data is loaded by SQL, so this is the document being
+	 * written for the first time as well.
+	 */
+	@Test
+	void test27_sentSmsMakesTheErrandSearchable() {
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6/communication/sms")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequestAndVerifyResponse();
+
+		final var hits = setupCall()
+			.withServicePath(PATH + "/search?query=communications.messageBody:bender")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequest()
+			.getResponseBody(new TypeReference<JsonNode>() {});
+
+		assertThat(hits.path("content").valueStream().map(errand -> errand.path("errandNumber").asString())).containsExactly("KC-23020003");
 	}
 }

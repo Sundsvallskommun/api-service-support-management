@@ -31,12 +31,15 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueTyp
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 class NamespaceConfigMapperTest {
+
+	private static final String BASE_URL = "https://draken.example.com";
 
 	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
@@ -50,7 +53,8 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_DISPLAY_NAME).withType(STRING).withValue(displayName),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(40)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue(String.valueOf(notifyReporter)),
-				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(shortCode)))
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(shortCode),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL)))
 			.withCreated(created)
 			.withModified(modified);
 	}
@@ -71,7 +75,8 @@ class NamespaceConfigMapperTest {
 			.withNotificationTTLInDays(notificationTTLInDays)
 			.withShortCode(shortCode)
 			.withAccessControl(toggleValue)
-			.withNotifyReporter(!toggleValue);
+			.withNotifyReporter(!toggleValue)
+			.withBaseUrl(BASE_URL);
 
 		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
@@ -86,6 +91,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(notificationTTLInDays);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_BASE_URL)).isEqualTo(BASE_URL);
 	}
 
 	@Test
@@ -115,6 +121,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL);
 	}
 
 	@Test
@@ -132,7 +139,7 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 		assertThat(config.getNamespace()).isEqualTo(namespace);
 		assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -141,6 +148,50 @@ class NamespaceConfigMapperTest {
 		assertThat(config.getModified()).isEqualTo(modified);
 		assertThat(config.isAccessControl()).isEqualTo(accessControl);
 		assertThat(config.isNotifyReporter()).isEqualTo(notifyReporter);
+		assertThat(config.getBaseUrl()).isEqualTo(BASE_URL);
+	}
+
+	@Test
+	void toEntityAndBackRoundTripsTeliaAceWorkItemConfig() {
+		final var teliaAceWorkItemBaseUrl = "https://draken.sundsvall.se/kontaktsundsvall";
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode")
+			.withTeliaAceWorkItemEnabled(true)
+			.withTeliaAceWorkItemBaseUrl(teliaAceWorkItemBaseUrl);
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED)).isTrue();
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL)).isEqualTo(teliaAceWorkItemBaseUrl);
+
+		final var roundTripped = mapper.toNamespaceConfig(entity);
+
+		assertThat(roundTripped.isTeliaAceWorkItemEnabled()).isTrue();
+		assertThat(roundTripped.getTeliaAceWorkItemBaseUrl()).isEqualTo(teliaAceWorkItemBaseUrl);
+	}
+
+	@Test
+	void toEntityLeavesOutTeliaAceWorkItemBaseUrlWhenNull() {
+		final var config = NamespaceConfig.create().withDisplayName("displayName").withShortCode("shortCode");
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL);
+		assertThat(mapper.toNamespaceConfig(entity).getTeliaAceWorkItemBaseUrl()).isNull();
+	}
+
+	@Test
+	void toNamespaceConfigWithoutBaseUrl() {
+		final var entity = NamespaceConfigEntity.create()
+			.withValues(List.of(
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_ACCESS_CONTROL).withType(BOOLEAN).withValue("false"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_DISPLAY_NAME).withType(STRING).withValue("displayName"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue("40"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue("false"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue("shortCode")));
+
+		assertThat(mapper.toNamespaceConfig(entity).getBaseUrl()).isNull();
 	}
 
 	@Test
@@ -159,7 +210,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions");
+			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);
