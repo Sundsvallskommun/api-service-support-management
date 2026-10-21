@@ -303,4 +303,32 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 
 		assertThat(metadataLabelRepository.existsById(APPLICATION_LABEL)).isTrue();
 	}
+
+	/**
+	 * The label the action would add names no process itself, but its parent names another than the errand runs. The
+	 * parent is put on with the label, so the labels would name two processes, and both are left off.
+	 */
+	@Test
+	@DisplayName("Verification that a scheduled label whose parent names another process is left off the errand, parent included, and that the refusal is written on the errand")
+	@Sql("/db/scripts/testdata-process-key-guard-child-action.sql")
+	void test10_aScheduledLabelUnderAParentNamingAnotherProcessIsLeftOff() {
+		setupCall();
+
+		actionScheduler.processActions();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS) + "/process-activities")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-activities.json")
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(null)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand.json")
+			.sendRequestAndVerifyResponse();
+	}
 }

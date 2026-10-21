@@ -471,4 +471,36 @@ class ProcessStartModeIT extends AbstractAppTest {
 				assertThat(row.isStartAllowed()).isFalse();
 			});
 	}
+
+	/**
+	 * The label added names no process itself, but its parent does. The action puts the parent on with it, so the change
+	 * reaches the process of the parent, with the permission to start it.
+	 */
+	@Test
+	@DisplayName("Verification that a scheduled label whose parent names the process reaches that process, with the parent put on the errand")
+	@Sql({
+		INTAKE_PROCESS_SQL, "/db/scripts/testdata-process-event-child-action.sql"
+	})
+	void test15_aScheduledLabelUnderTheProcessLabelReachesItsProcess() {
+		setupCall();
+
+		actionScheduler.processActions();
+
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(ERRAND_WITHOUT_LABELS_ID);
+				assertThat(row.getProcessKey()).isEqualTo(APPLICATION);
+				assertThat(row.getEventType()).isEqualTo("UPDATE");
+				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+				assertThat(row.isStartAllowed()).isTrue();
+			});
+
+		setupCall()
+			.withServicePath(INTAKE_ERRANDS_PATH + "/" + ERRAND_WITHOUT_LABELS_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-errand.json")
+			.sendRequestAndVerifyResponse();
+	}
 }

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.service.ErrandLabelService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.ProcessKeyGuard;
 
@@ -48,6 +51,7 @@ class AddLabelActionTest {
 	private static final String ERRAND_ID = "errand-id";
 	private static final String LABEL_ID_1 = "label-id-1";
 	private static final String LABEL_ID_2 = "label-id-2";
+	private static final String PARENT_LABEL_ID = "parent-label-id";
 	private static final String STATUS_OPEN = "OPEN";
 	private static final String STATUS_CLOSED = "CLOSED";
 	private static final Instant FIXED_INSTANT = Instant.parse("2026-06-05T10:00:00Z");
@@ -58,6 +62,9 @@ class AddLabelActionTest {
 
 	@Mock
 	private ErrandsRepository errandsRepository;
+
+	@Mock
+	private ErrandLabelService errandLabelService;
 
 	@Mock
 	private ProcessKeyGuard processKeyGuard;
@@ -356,6 +363,7 @@ class AddLabelActionTest {
 
 	@Test
 	void executeAction() {
+		givenNoAncestorsMissing();
 		var errand = ErrandEntity.create()
 			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
 
@@ -373,6 +381,7 @@ class AddLabelActionTest {
 
 	@Test
 	void executeActionWithNoExistingLabels() {
+		givenNoAncestorsMissing();
 		var errand = ErrandEntity.create()
 			.withLabels(new ArrayList<>());
 
@@ -391,6 +400,7 @@ class AddLabelActionTest {
 	@Test
 	@DisplayName("Verification that labels the errand already wears are no change to it")
 	void executeActionWithLabelsAlreadyWorn() {
+		givenNoAncestorsMissing();
 		var errand = ErrandEntity.create()
 			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
 
@@ -405,6 +415,7 @@ class AddLabelActionTest {
 
 	@Test
 	void executeActionWithNoLabelParameter() {
+		givenNoAncestorsMissing();
 		var errand = ErrandEntity.create()
 			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
 
@@ -421,6 +432,7 @@ class AddLabelActionTest {
 	@Test
 	@DisplayName("Verification that the guard is asked about the labels the errand would end up wearing, not only about the ones being added")
 	void executeActionAsksTheGuardAboutTheWholeSet() {
+		givenNoAncestorsMissing();
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
 			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
@@ -440,7 +452,50 @@ class AddLabelActionTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a refused label is left off the errand entirely, rather than written and reported")
+	@DisplayName("Verification that the ancestors a label lacks are put on with it, and that the guard is asked about them")
+	void executeActionPutsTheMissingAncestorsOn() {
+		var errand = ErrandEntity.create()
+			.withId(ERRAND_ID)
+			.withNamespace(NAMESPACE)
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
+
+		var labelsSent = ArgumentCaptor.<List<ErrandLabelEmbeddable>>captor();
+		when(errandLabelService.withAncestors(eq(NAMESPACE), eq(MUNICIPALITY_ID), labelsSent.capture())).thenReturn(labels(LABEL_ID_1, LABEL_ID_2, PARENT_LABEL_ID));
+
+		assertThat(addLabelAction.executeAction(errand, config)).isTrue();
+
+		var after = ArgumentCaptor.<Collection<ErrandLabelEmbeddable>>captor();
+
+		verify(processKeyGuard).refusesLabelChange(eq(ERRAND_ID), any(), after.capture(), anyString());
+		assertThat(labelsSent.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1, LABEL_ID_2);
+		assertThat(after.getValue()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1, LABEL_ID_2, PARENT_LABEL_ID);
+		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1, LABEL_ID_2, PARENT_LABEL_ID);
+		verify(errandsRepository).save(errand);
+	}
+
+	@Test
+	@DisplayName("Verification that a label the action names twice is put on once")
+	void executeActionWithARepeatedLabel() {
+		givenNoAncestorsMissing();
+		var errand = ErrandEntity.create()
+			.withLabels(new ArrayList<>());
+
+		var config = ActionConfigEntity.create();
+		config.setParameters(new ArrayList<>(List.of(
+			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_1, LABEL_ID_1)))));
+
+		assertThat(addLabelAction.executeAction(errand, config)).isTrue();
+
+		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
+	}
+
+	@Test
+	@DisplayName("Verification that a refused label is left off the errand entirely, ancestors included, rather than written and reported")
 	void executeActionLeavesARefusedLabelOff() {
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
@@ -450,11 +505,22 @@ class AddLabelActionTest {
 		config.setParameters(new ArrayList<>(List.of(
 			ActionConfigParameterEntity.create().withKey("label").withValues(List.of(LABEL_ID_2)))));
 
+		when(errandLabelService.withAncestors(any(), any(), any())).thenReturn(labels(LABEL_ID_1, LABEL_ID_2, PARENT_LABEL_ID));
 		when(processKeyGuard.refusesLabelChange(eq(ERRAND_ID), any(), any(), anyString())).thenReturn(true);
 
 		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
 
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId).containsExactly(LABEL_ID_1);
 		verifyNoInteractions(errandsRepository);
+	}
+
+	private void givenNoAncestorsMissing() {
+		when(errandLabelService.withAncestors(any(), any(), any())).thenAnswer(invocation -> new ArrayList<>(invocation.<List<ErrandLabelEmbeddable>>getArgument(2)));
+	}
+
+	private static List<ErrandLabelEmbeddable> labels(final String... ids) {
+		return Stream.of(ids)
+			.map(id -> ErrandLabelEmbeddable.create().withMetadataLabelId(id))
+			.collect(Collectors.toCollection(ArrayList::new));
 	}
 }

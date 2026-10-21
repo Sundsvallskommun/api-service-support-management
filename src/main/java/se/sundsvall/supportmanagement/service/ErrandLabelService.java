@@ -110,13 +110,23 @@ public class ErrandLabelService {
 			});
 	}
 
-	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
-		var currentIds = ofNullable(errandEntity.getLabels()).orElse(emptyList()).stream()
+	/**
+	 * The labels followed by the ancestors of each of them that are not among them already, read from the label tree of
+	 * the namespace. The labels sent in are left as they are.
+	 *
+	 * @param  namespace      the namespace of the errand the labels are for.
+	 * @param  municipalityId the municipality of the errand the labels are for.
+	 * @param  labels         the labels to expand.
+	 * @return                a new list holding the labels, in their order, and then the ancestors missing from them.
+	 */
+	public List<ErrandLabelEmbeddable> withAncestors(final String namespace, final String municipalityId, final List<ErrandLabelEmbeddable> labels) {
+		var expanded = new ArrayList<>(ofNullable(labels).orElse(emptyList()));
+		var currentIds = expanded.stream()
 			.map(ErrandLabelEmbeddable::getMetadataLabelId)
 			.collect(Collectors.toSet());
 
 		if (currentIds.isEmpty()) {
-			return;
+			return expanded;
 		}
 
 		var ancestorPaths = metadataLabelRepository.findAllById(currentIds).stream()
@@ -125,22 +135,25 @@ public class ErrandLabelService {
 			.collect(Collectors.toSet());
 
 		if (ancestorPaths.isEmpty()) {
-			return;
+			return expanded;
 		}
 
-		var missingAncestors = metadataLabelRepository
-			.findByNamespaceAndMunicipalityIdAndResourcePathIn(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), ancestorPaths)
-			.stream()
+		metadataLabelRepository.findByNamespaceAndMunicipalityIdAndResourcePathIn(namespace, municipalityId, ancestorPaths).stream()
 			.filter(a -> !currentIds.contains(a.getId()))
 			.map(a -> ErrandLabelEmbeddable.create().withMetadataLabelId(a.getId()))
-			.toList();
+			.forEach(expanded::add);
 
-		if (missingAncestors.isEmpty()) {
+		return expanded;
+	}
+
+	void expandLabelsToAncestorChain(final ErrandEntity errandEntity) {
+		var labels = ofNullable(errandEntity.getLabels()).orElse(emptyList());
+		var expanded = withAncestors(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), labels);
+
+		if (expanded.size() == labels.size()) {
 			return;
 		}
 
-		var expanded = new ArrayList<>(errandEntity.getLabels());
-		expanded.addAll(missingAncestors);
 		errandEntity.setLabels(expanded);
 	}
 

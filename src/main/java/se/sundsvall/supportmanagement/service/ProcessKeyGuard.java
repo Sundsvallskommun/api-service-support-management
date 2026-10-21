@@ -117,7 +117,7 @@ public class ProcessKeyGuard {
 	 *
 	 * @param  errandId     the errand being changed.
 	 * @param  labelsBefore the labels it wears.
-	 * @param  labelsAfter  the labels it would wear after the change.
+	 * @param  labelsAfter  the labels it would wear after the change, ancestors included.
 	 * @param  consequence  what the writer does about a refusal, which the error entry tells after the reason.
 	 * @return              true when the change is refused, in which case an error entry has been written on the errand.
 	 */

@@ -28,6 +28,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
@@ -149,6 +150,56 @@ class ErrandLabelServiceTest {
 
 		verify(metadataLabelRepositoryMock).findAllById(Set.of(parentId, childId, leafId));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child"));
+	}
+
+	@Test
+	@DisplayName("Verification that the ancestors a label lacks follow the labels, and that the labels sent in are left as they are")
+	void withAncestors_addsTheMissingAncestorsAfterTheLabels() {
+		final var leafId = "leaf-id";
+		final var parentId = "parent-id";
+		final var childId = "child-id";
+		final var labels = List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(leafId));
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(leafId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(leafId).withResourcePath("parent/child/leaf")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePathIn(NAMESPACE, MUNICIPALITY_ID, Set.of("parent", "parent/child")))
+			.thenReturn(List.of(
+				MetadataLabelEntity.create().withId(parentId).withResourcePath("parent"),
+				MetadataLabelEntity.create().withId(childId).withResourcePath("parent/child")));
+
+		final var result = service.withAncestors(NAMESPACE, MUNICIPALITY_ID, labels);
+
+		assertThat(result)
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly(leafId, parentId, childId);
+		assertThat(labels)
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly(leafId);
+	}
+
+	@Test
+	@DisplayName("Verification that a label without a parent is answered with itself, and that no ancestors are looked for")
+	void withAncestors_rootLabel_noAncestorLookup() {
+		final var rootId = "root-id";
+
+		when(metadataLabelRepositoryMock.findAllById(Set.of(rootId)))
+			.thenReturn(List.of(MetadataLabelEntity.create().withId(rootId).withResourcePath("root")));
+
+		final var result = service.withAncestors(NAMESPACE, MUNICIPALITY_ID, List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(rootId)));
+
+		assertThat(result)
+			.extracting(ErrandLabelEmbeddable::getMetadataLabelId)
+			.containsExactly(rootId);
+		verify(metadataLabelRepositoryMock).findAllById(Set.of(rootId));
+		verifyNoMoreInteractions(metadataLabelRepositoryMock);
+	}
+
+	@Test
+	void withAncestors_noLabels_noRepoInteraction() {
+		assertThat(service.withAncestors(NAMESPACE, MUNICIPALITY_ID, null)).isEmpty();
+		assertThat(service.withAncestors(NAMESPACE, MUNICIPALITY_ID, List.of())).isEmpty();
+
+		verifyNoInteractions(metadataLabelRepositoryMock);
 	}
 
 	@Test
