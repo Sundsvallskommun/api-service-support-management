@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.job;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -20,9 +22,9 @@ import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
-import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,8 +80,6 @@ class LabelMergeWorkerTest {
 
 	private LabelMergeWorker worker() {
 		if (worker == null) {
-			worker = new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-				new LabelMoveProperties(BATCH_SIZE, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000));
 			worker = newWorker(BATCH_SIZE);
 		}
 		return worker;
@@ -165,8 +165,7 @@ class LabelMergeWorkerTest {
 		var errand1 = errandWithAccessLabels("source-1").withId("errand-1");
 		var errand2 = errandWithAccessLabels("source-1").withId("errand-2");
 		var pageable = PageRequest.ofSize(1);
-		var pagedWorker = new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-			new LabelMoveProperties(1, 2));
+		var pagedWorker = newWorker(1);
 
 		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
 		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);
@@ -293,7 +292,7 @@ class LabelMergeWorkerTest {
 		// before that are not flagged for an unused stub.
 		lenient().when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
 		return new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-			new LabelMoveProperties(batchSize, 2), transactionManagerMock);
+			new LabelMoveProperties(batchSize, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000), transactionManagerMock);
 	}
 
 	private static ErrandEntity errandWithAccessLabels(final String... leafIds) {

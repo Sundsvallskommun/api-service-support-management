@@ -20323,6 +20323,8 @@ components:
           type: boolean
         bigInteger:
           type: boolean
+        binary:
+          type: boolean
         textual:
           type: boolean
           deprecated: true
@@ -20333,6 +20335,8 @@ components:
         array:
           type: boolean
         "null":
+          type: boolean
+        number:
           type: boolean
         object:
           type: boolean
