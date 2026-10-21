@@ -45,7 +45,7 @@
 					"created": "${json-unit.any-string}",
 					"requestGroupId": "${json-unit.any-string}",
 					"type": "UPDATE",
-					"message": "${json-unit.regex}Ärendet uppdaterat med etikett DEEPSUBTYPE-DISPLAY-NAME-[12]",
+					"message": "${json-unit.regex}Ärendet uppdaterat med etikett \"DEEPSUBTYPE-DISPLAY-NAME-[12]\"",
 					"subType": "LABEL"
 				},
 				"ignoreArrayOrder": true

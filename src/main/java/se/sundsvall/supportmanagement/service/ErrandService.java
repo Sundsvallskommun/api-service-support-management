@@ -78,7 +78,7 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
-	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till %s";
+	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till \"%s\"";
 
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;

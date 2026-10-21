@@ -158,6 +158,35 @@ class SubscriberEmailServiceTest {
 	}
 
 	@Test
+	void sendPendingTellsTheSameDescriptionOncePerErrand() {
+		final var subscriber = createSubscriber(emailChannel("chef@example.com"));
+		final var entries = List.of(
+			createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats."),
+			createEntry(subscriber, ERRAND_ID_1, "En anteckning har skapats."),
+			createEntry(subscriber, ERRAND_ID_2, "Ärendet har uppdaterats."),
+			createEntry(subscriber, ERRAND_ID_1, "Ärendet har uppdaterats.")
+				.withEvents(List.of(
+					NotificationDispatchOutboxEventEmbeddable.create().withDescription("Ärendet har uppdaterats."),
+					NotificationDispatchOutboxEventEmbeddable.create().withDescription("En anteckning har skapats."))),
+			createEntry(subscriber, ERRAND_ID_2, "Ärendet har uppdaterats."));
+		mockSendPending(entries, namespaceConfig(false, null));
+
+		service.sendPending(SUBSCRIBER_ID);
+
+		verify(messagingClientMock).sendEmail(eq(MUNICIPALITY_ID), eq(true), emailRequestCaptor.capture());
+		assertThat(emailRequestCaptor.getValue().getMessage()).isEqualTo("""
+			Uppdatering i Avvikelser
+
+			Ärende ABC123:
+			    - Ärendet har uppdaterats.
+			    - En anteckning har skapats.
+
+			Ärende ABC456:
+			    - Ärendet har uppdaterats.""");
+		verifySendPending(entries);
+	}
+
+	@Test
 	void sendPendingWithBaseUrlLinksToEveryErrand() {
 		final var subscriber = createSubscriber(emailChannel("chef@example.com"));
 		final var entries = List.of(

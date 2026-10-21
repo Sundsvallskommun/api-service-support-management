@@ -34,7 +34,7 @@
 							"value": "STATUS-1"
 						}
 					],
-					"message": "${json-unit.regex}Ärendet uppdaterat med etikett SOME_CATEGORY_[12]",
+					"message": "${json-unit.regex}Ärendet uppdaterat med etikett \"SOME_CATEGORY_[12]\"",
 					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 					"sourceType": "Errand",
 					"requestGroupId": "${json-unit.any-string}",
