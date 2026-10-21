@@ -80,7 +80,7 @@ class LabelMergeIT extends AbstractAppTest {
 	private static final String ADD_MERGE_TARGET_LEAF = "INSERT INTO metadata_label(created, municipality_id, namespace, classification, display_name, id, parent_id, resource_name, resource_path, deprecated) "
 		+ "VALUES (NOW(), '2281', 'NAMESPACE-1', 'DEEPSUBTYPE', 'DEEPSUBTYPE-DISPLAY-NAME-3', '5f6a7b8c-9d0e-41f2-a3b4-c5d6e7f80912', 'f4d6e210-633b-48a6-ad0a-7be839b28762', 'DEEPSUBTYPE-3', 'CATEGORY-1/TYPE-2/SUBTYPE-4/DEEPSUBTYPE-3', false)";
 
-	private static final String RUNNING_MERGE_LABELS_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+	private static final String RUNNING_MERGE_LABELS_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 		+ "VALUES ('cccccccc-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MERGE_LABELS', 'RUNNING', 10, 100, 10, '6dd1f18b-3f45-4d5f-b38b-176bfb3329c8', NOW(), NOW())";
 
 	@Autowired
@@ -165,7 +165,7 @@ class LabelMergeIT extends AbstractAppTest {
 	@DisplayName("Verification that the DB itself, not just the API's precheck, refuses a second active MERGE_LABELS row for the same namespace")
 	@Sql(statements = RUNNING_MERGE_LABELS_JOB)
 	void test05_dbRejectsSecondActiveMergeLabelsJobForSameNamespace() {
-		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 			+ "VALUES ('cccccccc-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'MERGE_LABELS', 'PENDING', 0, 0, 0, '8d0ac81c-9c56-43b7-95cd-fa3c3592666d', NOW(), NOW())";
 
 		assertThatThrownBy(() -> jdbcTemplate.execute(secondActiveJob))

@@ -308,22 +308,60 @@ public class ErrandService {
 	}
 
 	/**
-	 * Restows a batch of errands - each one's label set rebuilt from its access labels (leaves) outward - in a
-	 * transaction of its own, separate from whatever transaction (if any) the caller is running in. Used by the
-	 * label-move worker, which calls this once per page rather than once per errand, and must not join or be joined by
-	 * the caller's transaction: the worker is not itself transactional, and the interactive PATCH path that also calls
-	 * {@link #persistLabelUpdate} must keep its label write inside its own single transaction rather than being pulled
-	 * into a separate one.
+	 * Restows a page of errands at a time, each in its own transaction - used by the internal {@code LabelMoveWorker}
+	 * helper's keyset-paged, optimistic-lock-retrying walk, shared with {@link #persistLabelMergeBatch}.
 	 * <p>
-	 * The rebuild is driven entirely by {@code resourcePath} lookups ({@link ErrandLabelService#settleAccessLabels}),
-	 * never by walking an entity's own lazy associations - the errands handed in were read by the worker in a
-	 * transaction that has already closed by the time this one opens, so nothing on them beyond an eagerly-fetched
-	 * collection is safe to touch.
+	 * Public rather than package-private: {@code LabelMoveWorker}, its caller, lives in
+	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
+	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
-	void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
+	public void persistLabelMigrationBatch(final List<ErrandEntity> batch) {
 		final var idsWithLabels = idsWithNonEmptyLabels(batch);
 		batch.forEach(errand -> restowFromAccessLabels(errand, idsWithLabels));
+	}
+
+	/**
+	 * Restows one errand on its own, joining whatever transaction the caller is already running in rather than opening
+	 * one of its own - used by the label-move runner, which locks every affected errand with {@code SELECT ... FOR
+	 * UPDATE} and restows the whole move inside a single transaction (see {@code LabelMoveRunner}'s own doc): a
+	 * concurrent {@code @Version} conflict is structurally impossible under that lock, so there is nothing left to
+	 * retry, and a transaction of its own here would commit (and release the lock on) each errand independently,
+	 * defeating the point of restowing the move atomically.
+	 * <p>
+	 * Public rather than package-private: {@code LabelMoveRunner}, its only caller, lives in
+	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
+	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
+	 */
+	@Transactional
+	public void persistLabelMigration(final ErrandEntity errand) {
+		restowFromAccessLabels(errand);
+	}
+
+	private void restowFromAccessLabels(final ErrandEntity errand) {
+		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
+			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
+			.toList();
+
+		// An errand whose access labels have gone empty while its labels have not must not be restowed: settling access
+		// labels from an empty leaf set would wipe every errand_labels row along with it, silently taking away who can
+		// reach the errand. Left as it was instead - logged, not failed, since one such errand must not strand the rest
+		// of the move.
+		if (leafLabels.isEmpty() && !ofNullable(errand.getLabels()).orElse(emptyList()).isEmpty()) {
+			LOG.warn("Label migration skipped for errand {}: access labels are empty but labels are not", sanitizeForLogging(errand.getId()));
+			return;
+		}
+
+		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
+		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
+		// now() regardless of what actually changed.
+		final var modified = errand.getModified();
+		final var touched = errand.getTouched();
+
+		errand.setLabels(leafLabels);
+		persistLabelUpdate(errand);
+
+		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
 	}
 
 	private void restowFromAccessLabels(final ErrandEntity errand, final Set<String> idsWithLabels) {
@@ -335,8 +373,25 @@ public class ErrandService {
 			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
 			.toList();
 
+		// An errand whose access labels have gone empty while its labels have not must not be restowed: settling access
+		// labels from an empty leaf set would wipe every errand_labels row along with it, silently taking away who can
+		// reach the errand. Left as it was instead - logged, not failed, since one such errand must not strand the rest
+		// of the move.
+		if (leafLabels.isEmpty() && !ofNullable(errand.getLabels()).orElse(emptyList()).isEmpty()) {
+			LOG.warn("Label migration skipped for errand {}: access labels are empty but labels are not", sanitizeForLogging(errand.getId()));
+			return;
+		}
+
+		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
+		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
+		// now() regardless of what actually changed.
+		final var modified = errand.getModified();
+		final var touched = errand.getTouched();
+
 		errand.setLabels(leafLabels);
 		persistLabelUpdate(errand);
+
+		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
 	}
 
 	/**
@@ -346,7 +401,7 @@ public class ErrandService {
 	 * against (the sources are deleted once every errand has moved off them).
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
-	void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
+	public void persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId) {
 		final var idsWithLabels = idsWithNonEmptyLabels(batch);
 		batch.forEach(errand -> restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId, idsWithLabels));
 	}

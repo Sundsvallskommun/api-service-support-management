@@ -1,41 +1,43 @@
 package se.sundsvall.supportmanagement.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.TaskRejectedException;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.LabelRestructureRun;
+import se.sundsvall.supportmanagement.service.job.LabelTreeRestructureWorker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.ADD;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.DELETE;
@@ -62,6 +64,9 @@ class MetadataServiceRestructureLabelTreeTest {
 	private JobService jobServiceMock;
 
 	@Mock
+	private JobProperties jobPropertiesMock;
+
+	@Mock
 	private LabelTreeRestructureWorker labelTreeRestructureWorkerMock;
 
 	@Mock
@@ -84,7 +89,7 @@ class MetadataServiceRestructureLabelTreeTest {
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(social, elderly, support, oldSubtype));
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("old-id"))).thenReturn(7L);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("old-id"))).thenReturn(errandIds(7));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
 		final var request = LabelRestructureRequest.create()
@@ -100,7 +105,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		assertThat(result.getSteps().get(0).getAffectedErrandCount()).isZero();
 		assertThat(result.getSteps().get(1).getAffectedErrandCount()).isEqualTo(7L);
 
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("old-id"));
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("old-id"));
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
@@ -191,7 +196,7 @@ class MetadataServiceRestructureLabelTreeTest {
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(category, parent, child));
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("child-id"))).thenReturn(0L);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("child-id"))).thenReturn(List.of());
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		// Not referenced directly - any errand that used to reach this path only did so via an ancestor-chain entry
 		// through the child this request already moved elsewhere.
@@ -208,7 +213,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		assertThat(result.getSteps()).hasSize(2);
 		assertThat(result.getSteps().get(1).getAffectedErrandCount()).isZero();
 
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("child-id"));
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("child-id"));
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).existsByAccessLabelsMetadataLabelIdIn(Set.of("parent-id"));
 	}
@@ -223,8 +228,8 @@ class MetadataServiceRestructureLabelTreeTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(category, source, target));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("source-id"))).thenReturn(2L);
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"))).thenReturn(5L);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("source-id"))).thenReturn(errandIds(2));
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"))).thenReturn(errandIds(5));
 
 		final var request = LabelRestructureRequest.create()
 			.withDryRun(true)
@@ -238,8 +243,8 @@ class MetadataServiceRestructureLabelTreeTest {
 		assertThat(result.getSteps().get(0).getAffectedErrandCount()).isEqualTo(2L);
 		assertThat(result.getSteps().get(1).getAffectedErrandCount()).isEqualTo(5L);
 
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("source-id"));
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"));
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("source-id"));
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("target-id", "source-id"));
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
@@ -340,61 +345,41 @@ class MetadataServiceRestructureLabelTreeTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()));
 
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(jobServiceMock, never()).create(any(), any(), any(), anyInt());
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
+	@DisplayName("Verification that the run built for the launch carries the expected fields, and that the runner argument reaches the actual label-tree-restructure worker")
 	void startLabelTreeRestructure_handsTheRunToTheWorkerWithExpectedParameters() {
-		final var handled = new ArrayList<LabelRestructureRun>();
 		final var jobResponse = JobResponse.create().withJobId("job-id").withType(RESTRUCTURE_LABEL_TREE).withStatus(JobStatus.PENDING);
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE, 0)).thenReturn("job-id");
-		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
-		doAnswer(invocation -> {
-			((Runnable) invocation.getArgument(0)).run();
-			return null;
-		}).when(labelMoveTaskExecutorMock).execute(any());
-		doAnswer(invocation -> {
-			handled.add(invocation.getArgument(0));
-			return null;
-		}).when(labelTreeRestructureWorkerMock).run(any());
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(jobResponse);
+		var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		final var steps = List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY"));
 		final var result = service.startLabelTreeRestructure(NAMESPACE, MUNICIPALITY_ID, LabelRestructureRequest.create().withDryRun(false).withSteps(steps));
 
 		assertThat(result).isEqualTo(jobResponse);
-		assertThat(handled).hasSize(1);
-		assertThat(handled.getFirst().jobId()).isEqualTo("job-id");
-		assertThat(handled.getFirst().namespace()).isEqualTo(NAMESPACE);
-		assertThat(handled.getFirst().municipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(handled.getFirst().steps()).isEqualTo(steps);
-		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+
+		var toRunCaptor = ArgumentCaptor.forClass(Function.class);
+		var runnerCaptor = ArgumentCaptor.forClass(Consumer.class);
+		verify(jobServiceMock).launch(any(), eq(labelMoveTaskExecutorMock), toRunCaptor.capture(), runnerCaptor.capture(), any());
+
+		var run = (LabelRestructureRun) toRunCaptor.getValue().apply("job-id");
+		assertThat(run.jobId()).isEqualTo("job-id");
+		assertThat(run.namespace()).isEqualTo(NAMESPACE);
+		assertThat(run.municipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(run.steps()).isEqualTo(steps);
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
+
+		((Consumer<LabelRestructureRun>) runnerCaptor.getValue()).accept(run);
+		verify(labelTreeRestructureWorkerMock).run(run);
 
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE, 0);
-		verify(labelMoveTaskExecutorMock).execute(any());
-		verify(labelTreeRestructureWorkerMock).run(any());
-		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
-	}
-
-	@Test
-	void startLabelTreeRestructure_dispatchRejected_failsJobAndThrows() {
-		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE, 0)).thenReturn("job-id");
-		doThrow(new TaskRejectedException("No thread available")).when(labelMoveTaskExecutorMock).execute(any());
-
-		final var request = LabelRestructureRequest.create().withDryRun(false).withSteps(List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY")));
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.startLabelTreeRestructure(NAMESPACE, MUNICIPALITY_ID, request))
-			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(INTERNAL_SERVER_ERROR.value()))
-			.withMessageContaining("Label tree restructure could not be started: No thread available");
-
-		verify(jobServiceMock).fail("job-id", "Label tree restructure could not be started: No thread available");
 	}
 
 	@AfterEach
@@ -422,5 +407,9 @@ class MetadataServiceRestructureLabelTreeTest {
 
 	private static LabelRestructureStep mergeStep(final List<String> path, final List<List<String>> sourcePaths) {
 		return LabelRestructureStep.create().withType(MERGE).withPath(path).withSourcePaths(sourcePaths);
+	}
+
+	private static List<String> errandIds(final int count) {
+		return java.util.stream.IntStream.range(0, count).mapToObj(i -> "errand-" + i).toList();
 	}
 }

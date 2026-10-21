@@ -1,25 +1,27 @@
 package se.sundsvall.supportmanagement.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.TaskRejectedException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelMergeRequest;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.CategoryRepository;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
@@ -35,12 +37,14 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigCondition
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.LabelMergeRun;
+import se.sundsvall.supportmanagement.service.job.LabelMergeWorker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -49,7 +53,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MERGE_LABELS;
 
@@ -98,7 +101,7 @@ class MetadataServiceMergeLabelsTest {
 	private JobService jobServiceMock;
 
 	@Mock
-	private LabelMoveWorker labelMoveWorkerMock;
+	private JobProperties jobPropertiesMock;
 
 	@Mock
 	private LabelMergeWorker labelMergeWorkerMock;
@@ -255,7 +258,7 @@ class MetadataServiceMergeLabelsTest {
 			.thenReturn(Optional.of(source));
 		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(false);
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(4L);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(List.of("errand-1", "errand-2", "errand-3", "errand-4"));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(List.of(actionWithLabel, actionWithoutLabel));
 
@@ -292,7 +295,7 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock, never()).countDistinctByLabelsMetadataLabelIdIn(any());
+		verify(errandsRepositoryMock, never()).findDistinctIdsByLabelsMetadataLabelIdIn(any());
 	}
 
 	@Test
@@ -321,9 +324,8 @@ class MetadataServiceMergeLabelsTest {
 			.thenReturn(Optional.of(source));
 		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(false);
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(4L);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 4, TARGET_ID)).thenReturn("job-id");
-		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(jobResponse);
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(List.of("errand-1", "errand-2", "errand-3", "errand-4"));
+		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(jobResponse);
 
 		var result = service.startLabelMerge(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(false));
 
@@ -333,17 +335,16 @@ class MetadataServiceMergeLabelsTest {
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 4, TARGET_ID);
-		verify(labelMoveTaskExecutorMock).execute(any());
-		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
+		verify(jobServiceMock).launch(any(), any(), any(), any(), any());
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
+	@DisplayName("Verification that the run built for the launch carries the expected fields, and that the runner argument reaches the actual label-merge worker")
 	void startLabelMerge_handsTheRunToTheWorkerWithExpectedParameters() {
 		var target = leafLabel(TARGET_ID, "TARGET");
 		var source = leafLabel(SOURCE_ID, "SOURCE");
-		var handled = new ArrayList<LabelMergeRun>();
 
 		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
 			.thenReturn(Optional.of(target));
@@ -354,72 +355,34 @@ class MetadataServiceMergeLabelsTest {
 		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
 			.thenReturn(false);
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
-		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, "job-id")).thenReturn(JobResponse.create().withJobId("job-id"));
-		doAnswer(invocation -> {
-			((Runnable) invocation.getArgument(0)).run();
-			return null;
-		}).when(labelMoveTaskExecutorMock).execute(any());
-		doAnswer(invocation -> {
-			handled.add(invocation.getArgument(0));
-			return null;
-		}).when(labelMergeWorkerMock).run(any());
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(List.of());
+		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(JobResponse.create().withJobId("job-id"));
+		var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		service.startLabelMerge(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(false));
 
-		assertThat(handled).hasSize(1);
-		assertThat(handled.getFirst().jobId()).isEqualTo("job-id");
-		assertThat(handled.getFirst().namespace()).isEqualTo(NAMESPACE);
-		assertThat(handled.getFirst().municipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(handled.getFirst().targetLabelId()).isEqualTo(TARGET_ID);
-		assertThat(handled.getFirst().sourceLabelIds()).containsExactly(SOURCE_ID);
-		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+		var toRunCaptor = ArgumentCaptor.forClass(Function.class);
+		var runnerCaptor = ArgumentCaptor.forClass(Consumer.class);
+		verify(jobServiceMock).launch(any(), eq(labelMoveTaskExecutorMock), toRunCaptor.capture(), runnerCaptor.capture(), any());
+
+		var run = (LabelMergeRun) toRunCaptor.getValue().apply("job-id");
+		assertThat(run.jobId()).isEqualTo("job-id");
+		assertThat(run.namespace()).isEqualTo(NAMESPACE);
+		assertThat(run.municipalityId()).isEqualTo(MUNICIPALITY_ID);
+		assertThat(run.targetLabelId()).isEqualTo(TARGET_ID);
+		assertThat(run.sourceLabelIds()).containsExactly(SOURCE_ID);
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
+
+		((Consumer<LabelMergeRun>) runnerCaptor.getValue()).accept(run);
+		verify(labelMergeWorkerMock).run(run);
 
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
 		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
 		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);
-		verify(labelMoveTaskExecutorMock).execute(any());
-		verify(labelMergeWorkerMock).run(any());
-		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, "job-id");
-	}
-
-	@Test
-	void startLabelMerge_dispatchRejected_failsJobAndThrows() {
-		var target = leafLabel(TARGET_ID, "TARGET");
-		var source = leafLabel(SOURCE_ID, "SOURCE");
-
-		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(target));
-		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/"))
-			.thenReturn(false);
-		when(metadataLabelRepositoryMock.findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID))
-			.thenReturn(Optional.of(source));
-		when(metadataLabelRepositoryMock.existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/"))
-			.thenReturn(false);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
-		when(errandsRepositoryMock.countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID))).thenReturn(0L);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID)).thenReturn("job-id");
-		doThrow(new TaskRejectedException("No thread available")).when(labelMoveTaskExecutorMock).execute(any());
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.startLabelMerge(NAMESPACE, MUNICIPALITY_ID, TARGET_ID, LabelMergeRequest.create().withSourceLabelIds(List.of(SOURCE_ID)).withDryRun(false)))
-			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(INTERNAL_SERVER_ERROR.value()))
-			.withMessageContaining("Label merge could not be started: No thread available");
-
-		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(TARGET_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "TARGET/");
-		verify(metadataLabelRepositoryMock).findByIdAndNamespaceAndMunicipalityId(SOURCE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(metadataLabelRepositoryMock).existsByNamespaceAndMunicipalityIdAndResourcePathStartingWith(NAMESPACE, MUNICIPALITY_ID, "SOURCE/");
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
-		verify(errandsRepositoryMock).countDistinctByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, MERGE_LABELS, 0, TARGET_ID);
-		verify(jobServiceMock).fail("job-id", "Label merge could not be started: No thread available");
+		verify(errandsRepositoryMock).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of(SOURCE_ID));
 	}
 
 	@AfterEach

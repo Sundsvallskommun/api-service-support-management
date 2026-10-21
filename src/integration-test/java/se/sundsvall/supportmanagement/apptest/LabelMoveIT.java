@@ -31,7 +31,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 
 /**
  * Label move IT tests.
@@ -71,7 +73,7 @@ class LabelMoveIT extends AbstractAppTest {
 	// References SUBTYPE-3 and SUBTYPE-4 directly - moving SUBTYPE-4 is what restows it
 	private static final String AFFECTED_ERRAND = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
 
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 		+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'f4d6e210-633b-48a6-ad0a-7be839b28762', NOW(), NOW())";
 
 	@Autowired
@@ -136,8 +138,28 @@ class LabelMoveIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a move is refused while another job is already running for the namespace, whichever kind it is")
-	@Sql(statements = RUNNING_MOVE_LABEL_JOB)
 	void test04_moveLabelIsRefusedWhileAnotherJobIsRunning() {
+		// Seeded through the repository, not @Sql's raw NOW() - stealStaleLease() judges this row by its actual
+		// (Hibernate-normalized) modified/created instant, and a raw-SQL NOW() round-trips through
+		// @TimeZoneStorage(NORMALIZE) off by whatever the JVM's local UTC offset happens to be (confirmed directly:
+		// a row inserted with NOW() while the JVM read back "2 hours old" under this run's CEST offset), which is
+		// wrong by more than enough to make this run look stale and get its lease stolen. A row this test creates
+		// through the same repository the app itself writes through carries no such offset.
+		//
+		// No id set: JobEntity's id is @UuidGenerator-assigned, and giving it one of our own here would route the save
+		// through merge() instead of persist() - Hibernate then looks for an existing row with that id before writing,
+		// finds none (the table was just truncated), and raises exactly the StaleObjectStateException that generator
+		// is there to prevent. Nothing downstream in this test needs the id back.
+		jobRepository.saveAndFlush(JobEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withType(MOVE_LABEL)
+			.withStatus(RUNNING)
+			.withProgress(10)
+			.withTotal(100)
+			.withProcessed(10)
+			.withSubjectId(SUBTYPE_4));
+
 		setupCall()
 			.withServicePath(PATH + "/" + SUBTYPE_4 + "/move")
 			.withHttpMethod(POST)
@@ -156,7 +178,7 @@ class LabelMoveIT extends AbstractAppTest {
 	void test05_dbRejectsSecondActiveMoveLabelJobForSameNamespaceRegardlessOfLabel() {
 		// A different id and a different label than the seeded row - the constraint must still refuse, since by the
 		// time either insert reaches the DB neither request's own precheck has any way left to catch the other.
-		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+		final var secondActiveJob = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 			+ "VALUES ('bbbbbbbb-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'PENDING', 0, 0, 0, 'ffe5f120-6a3b-4404-ace8-8ea87b559907', NOW(), NOW())";
 
 		assertThatThrownBy(() -> jdbcTemplate.execute(secondActiveJob))

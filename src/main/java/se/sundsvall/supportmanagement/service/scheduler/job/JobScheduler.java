@@ -8,14 +8,14 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 @Service
 public class JobScheduler {
 
-	private final JobWorker jobWorker;
+	private final StaleJobWorker staleJobWorker;
 	private final Dept44HealthUtility healthUtility;
 
 	@Value("${scheduler.job.name}")
 	private String jobName;
 
-	public JobScheduler(final JobWorker jobWorker, final Dept44HealthUtility healthUtility) {
-		this.jobWorker = jobWorker;
+	public JobScheduler(final StaleJobWorker staleJobWorker, final Dept44HealthUtility healthUtility) {
+		this.staleJobWorker = staleJobWorker;
 		this.healthUtility = healthUtility;
 	}
 
@@ -33,7 +33,7 @@ public class JobScheduler {
 		//
 		// The indicator is left to the scheduling aspect from here. It clears the errors of a run before the next one
 		// starts, so this holds until a sweep finds nothing abandoned, and no longer.
-		jobWorker.endAbandonedJobs()
+		staleJobWorker.endAbandonedJobs()
 			.ifPresent(account -> healthUtility.setHealthIndicatorUnhealthy(jobName, account));
 	}
 }

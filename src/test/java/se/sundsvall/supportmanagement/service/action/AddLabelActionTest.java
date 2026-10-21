@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.service.ErrandLabelService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +49,9 @@ class AddLabelActionTest {
 
 	@Mock
 	private ErrandsRepository errandsRepository;
+
+	@Mock
+	private ErrandLabelService errandLabelService;
 
 	@Mock
 	private Clock clock;
@@ -355,6 +359,7 @@ class AddLabelActionTest {
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 
@@ -372,6 +377,7 @@ class AddLabelActionTest {
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 
@@ -387,6 +393,7 @@ class AddLabelActionTest {
 		addLabelAction.executeAction(errand, config);
 
 		assertThat(errand.getLabels()).hasSize(1);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 }

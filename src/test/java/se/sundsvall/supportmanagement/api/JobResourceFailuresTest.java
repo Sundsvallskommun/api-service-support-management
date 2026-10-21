@@ -11,7 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.job.JobService;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;

@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service.purge;
+package se.sundsvall.supportmanagement.service.job;
 
 /**
  * A purge run on its way to the thread that carries it out.

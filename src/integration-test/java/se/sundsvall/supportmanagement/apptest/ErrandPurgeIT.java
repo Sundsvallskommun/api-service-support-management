@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.scheduler.job.JobScheduler;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
@@ -221,8 +222,22 @@ class ErrandPurgeIT extends AbstractAppTest {
 
 	@Test
 	@DisplayName("Verification that a namespace already being purged is refused, since two runs walking it at once would do each other's work twice over")
-	@Sql(statements = RUNNING_PURGE_JOB)
 	void test04_purgeIsRefusedWhileAnotherIsRunning() {
+		// Seeded through the repository, not @Sql's raw NOW(): startPurge now asks JobService.stealStaleLease rather
+		// than hasActiveJob, which judges this row by its actual (Hibernate-normalized) modified/created instant - a
+		// raw-SQL NOW() round-trips through @TimeZoneStorage(NORMALIZE) off by whatever the JVM's local UTC offset
+		// happens to be, which is wrong by more than enough to make this run look stale and get its lease stolen
+		// instead of blocking the request. A row inserted through the same repository the app itself writes through
+		// carries no such offset.
+		jobRepository.saveAndFlush(JobEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withType(JobType.ERRAND_PURGE)
+			.withStatus(JobStatus.RUNNING)
+			.withProgress(10)
+			.withTotal(100)
+			.withProcessed(10));
+
 		setupCall()
 			.withHeader(SENT_BY_HEADER, SENT_BY)
 			.withServicePath(PATH)
@@ -304,19 +319,14 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a run whose instance went away is ended rather than left holding the namespace for good, and that the service answers for it where its state is read")
+	@DisplayName("Verification that a run whose instance went away is ended by the scheduled sweep rather than left holding the namespace for good, and that the service answers for it where its state is read")
 	@Sql(statements = ABANDONED_PURGE_JOB)
 	void test09_abandonedRunIsEndedSoTheNamespaceIsNotBlockedForGood() throws Exception {
-		// Nothing has moved the job since the instance carrying it out went away, so the namespace is closed to new runs
-		setupCall()
-			.withHeader(SENT_BY_HEADER, SENT_BY)
-			.withServicePath(PATH)
-			.withHttpMethod(POST)
-			.withRequest(REQUEST_FILE)
-			.withRequestReplacement(CUTOFF_PLACEHOLDER, CUTOFF.toString())
-			.withExpectedResponseStatus(CONFLICT)
-			.sendRequest();
-
+		// Not asked for a purge first: startPurge's own JobService.stealStaleLease would reclaim this same abandoned
+		// lease on the spot (that reclaim is exactly what test04's sibling now demonstrates for a genuinely active
+		// run), leaving nothing left for the scheduled sweep below to find stale and report on. The sweep is what
+		// this test is about, so it runs first instead, against a job nothing has touched since its instance went
+		// away.
 		jobScheduler.maintainJobs();
 
 		assertThat(jobRepository.findById(ABANDONED_PURGE_JOB_ID))

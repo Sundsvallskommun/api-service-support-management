@@ -3,7 +3,6 @@ package se.sundsvall.supportmanagement.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 class ErrandPurgeConfig {
@@ -16,18 +15,18 @@ class ErrandPurgeConfig {
 	 * <p>
 	 * Bounded, since only one run at a time is allowed per namespace but nothing stops a service holding many namespaces
 	 * from having all of them purged at once, and they share a database and the services a deletion reaches into with
-	 * everything else the service does. The pool is given no queue, so a request that arrives with every thread busy is
-	 * rejected outright and answered as such. A bounded {@link org.springframework.core.task.SimpleAsyncTaskExecutor}
-	 * would instead hold the request thread until a run finished, which for a purge means hours.
+	 * everything else the service does. The pool is given no queue ({@link JobExecutors#bounded}), so a request that
+	 * arrives with every thread busy is rejected outright and answered as such. A bounded
+	 * {@link org.springframework.core.task.SimpleAsyncTaskExecutor} would instead hold the request thread until a run
+	 * finished, which for a purge means hours.
+	 * <p>
+	 * No shutdown grace period, unlike {@code LabelMoveConfig}'s own pool: a purge runs for hours, so any grace period
+	 * short enough to be worth configuring would be meaningless next to it - a run cut off by a deploy is no worse off
+	 * than one cut off at any other point in its walk, since each errand it removes is already committed on its own as
+	 * it goes.
 	 */
 	@Bean("errandPurgeTaskExecutor")
 	AsyncTaskExecutor errandPurgeTaskExecutor(final ErrandPurgeProperties properties) {
-		final var executor = new ThreadPoolTaskExecutor();
-		executor.setThreadNamePrefix("errand-purge-");
-		executor.setCorePoolSize(properties.maxConcurrentRuns());
-		executor.setMaxPoolSize(properties.maxConcurrentRuns());
-		executor.setQueueCapacity(0);
-		executor.setAllowCoreThreadTimeOut(true);
-		return executor;
+		return JobExecutors.bounded("errand-purge-", properties.maxConcurrentRuns());
 	}
 }

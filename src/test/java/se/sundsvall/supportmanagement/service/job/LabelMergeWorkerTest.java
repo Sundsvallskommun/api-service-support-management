@@ -1,5 +1,6 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigCondition
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +48,8 @@ class LabelMergeWorkerTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String STARTED_BY = "joe01doe";
 	private static final String TARGET_ID = "target";
+	private static final Duration PROGRESS_INTERVAL = Duration.ofMinutes(1);
+	private static final Duration SHUTDOWN_GRACE_PERIOD = Duration.ofSeconds(20);
 	private static final int BATCH_SIZE = 2;
 
 	@Mock
@@ -287,7 +292,7 @@ class LabelMergeWorkerTest {
 		// before that are not flagged for an unused stub.
 		lenient().when(transactionManagerMock.getTransaction(any())).thenReturn(transactionStatusMock);
 		return new LabelMergeWorker(errandsRepositoryMock, metadataLabelRepositoryMock, actionConfigRepositoryMock, errandServiceMock, jobServiceMock, eventServiceMock,
-			new LabelMoveProperties(batchSize, 2), transactionManagerMock);
+			new LabelMoveProperties(batchSize, 2, PROGRESS_INTERVAL, SHUTDOWN_GRACE_PERIOD, 10_000), transactionManagerMock);
 	}
 
 	private static ErrandEntity errandWithAccessLabels(final String... leafIds) {

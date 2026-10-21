@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.0"
 servers:
-- url: http://localhost:65312
+- url: http://localhost:65188
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -20279,7 +20279,11 @@ components:
       properties:
         container:
           type: boolean
-        number:
+        boolean:
+          type: boolean
+        missingNode:
+          type: boolean
+        pojo:
           type: boolean
         valueNode:
           type: boolean
@@ -20301,6 +20305,10 @@ components:
           type: boolean
         integralNumber:
           type: boolean
+        missingNode:
+          type: boolean
+        valueNode:
+          type: boolean
         pojo:
           type: boolean
         short:
@@ -20315,13 +20323,11 @@ components:
           type: boolean
         bigInteger:
           type: boolean
+        binary:
+          type: boolean
         textual:
           type: boolean
           deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
         floatingPointNumber:
           type: boolean
         empty:
@@ -20329,6 +20335,8 @@ components:
         array:
           type: boolean
         "null":
+          type: boolean
+        number:
           type: boolean
         object:
           type: boolean
@@ -21183,6 +21191,14 @@ components:
           type: string
           format: date-time
           description: When the job was last updated
+        affectedActions:
+          type: array
+          description: "Actions affected by the operation this job carries out - populated\
+            \ only on the response returned when the job is started, not on later\
+            \ reads through GET, since it reflects a dry-run-style computation done\
+            \ once at start time rather than state stored on the job itself"
+          items:
+            $ref: "#/components/schemas/AffectedAction"
     LabelMoveRequest:
       type: object
       description: Request for moving a label to a new parent

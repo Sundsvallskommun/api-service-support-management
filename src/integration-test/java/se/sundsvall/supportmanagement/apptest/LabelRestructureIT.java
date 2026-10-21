@@ -107,7 +107,7 @@ class LabelRestructureIT extends AbstractAppTest {
 		+ "('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'eeeeeeee-0000-0000-0000-000000000003'), "
 		+ "('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'eeeeeeee-0000-0000-0000-000000000007')";
 
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 		+ "VALUES ('dddddddd-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'eeeeeeee-0000-0000-0000-000000000005', NOW(), NOW())";
 
 	private static final String RUNNING_RESTRUCTURE_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, created, modified) "

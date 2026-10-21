@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.service;
+package se.sundsvall.supportmanagement.service.job;
 
 import java.util.function.IntConsumer;
 import org.slf4j.Logger;
@@ -7,25 +7,28 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.config.LabelMoveProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
+import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.EventService;
 
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
- * Carries out label moves accepted by {@link MetadataService#startLabelMove}.
+ * Internal helper {@link LabelTreeRestructureWorker} calls directly to carry out one MOVE step of a larger
+ * restructure, on its own worker thread, reporting progress against that caller's own composite job rather than one
+ * of this class's own - the public {@code /move} endpoint's own job is carried out by {@link LabelMoveRunner}
+ * instead, which this class predates. Kept around specifically because {@link #moveAndRestow} supports what that
+ * endpoint's own runner does not: a combined move+rename in one step, and progress reported through a caller-supplied
+ * {@link IntConsumer} rather than always against this class's own job.
  * <p>
  * A move re-parents one label, refreshes {@code resourcePath} for its whole subtree, and then walks every errand that
  * references the moved label (or any of its descendants — captured for free since an errand's stored label set already
- * carries the full ancestor chain) restowing its label set page by page. Never throws: whatever goes wrong ends the job
- * as failed, since the thread this runs on has nobody to report to.
+ * carries the full ancestor chain) restowing its label set page by page.
  */
 @Component
-public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
+public class LabelMoveWorker {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LabelMoveWorker.class);
 
-	private static final String ABORTED_MESSAGE = "Label move aborted: %s";
-	private static final String ENDED_WITHOUT_RESULT = "Label move ended without reaching a result of its own";
-	private static final String SUMMARY = "Label %s moved under %s, %d errand(s) restowed";
 	private static final String AUDIT_MESSAGE = "Label %s moved under %s by %s, %d errand(s) restowed";
 	private static final String LABEL_GONE = "Label %s no longer exists";
 	private static final String NEW_PARENT_GONE = "New parent %s no longer exists";
@@ -34,7 +37,6 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 	private final ErrandsRepository errandsRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final ErrandService errandService;
-	private final JobService jobService;
 	private final EventService eventService;
 	private final RestowPager restowPager;
 
@@ -42,60 +44,13 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 		final ErrandsRepository errandsRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final ErrandService errandService,
-		final JobService jobService,
 		final EventService eventService,
 		final LabelMoveProperties properties) {
-		super(jobService);
 		this.errandsRepository = errandsRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.errandService = errandService;
-		this.jobService = jobService;
 		this.eventService = eventService;
 		this.restowPager = new RestowPager(LOG, properties.batchSize(), MAX_BATCH_ATTEMPTS);
-	}
-
-	@Override
-	protected String jobId(final LabelMoveRun run) {
-		return run.jobId();
-	}
-
-	@Override
-	protected void work(final LabelMoveRun run) {
-		move(run);
-	}
-
-	@Override
-	protected void logStarted(final LabelMoveRun run) {
-		LOG.info("Label move {} started for label {} to parent {} in namespace {} for municipality {} by {}",
-			run.jobId(), sanitizeForLogging(run.labelId()), sanitizeForLogging(run.newParentId()),
-			sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()), sanitizeForLogging(run.startedBy()));
-	}
-
-	@Override
-	protected void logAborted(final LabelMoveRun run, final Exception e) {
-		LOG.error("Label move {} aborted for label {} in namespace {}", run.jobId(), sanitizeForLogging(run.labelId()), sanitizeForLogging(run.namespace()), e);
-	}
-
-	@Override
-	protected String abortedMessage(final Exception e) {
-		return ABORTED_MESSAGE.formatted(e.getMessage());
-	}
-
-	@Override
-	protected void logEnded(final LabelMoveRun run) {
-		LOG.info("Label move {} ended", run.jobId());
-	}
-
-	@Override
-	protected String endedWithoutResultMessage() {
-		return ENDED_WITHOUT_RESULT;
-	}
-
-	private void move(final LabelMoveRun run) {
-		final var restowed = moveAndRestow(run.jobId(), run.municipalityId(), run.labelId(), run.newParentId(), null, null, run.startedBy(),
-			processed -> jobService.updateProgress(run.jobId(), processed));
-
-		jobService.complete(run.jobId(), SUMMARY.formatted(run.labelId(), run.newParentId(), restowed));
 	}
 
 	/**
@@ -103,20 +58,19 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 	 * {@code displayName} at the same time (a combined move+rename, as a label-tree restructure's MOVE step allows), and
 	 * restows every affected errand, reporting cumulative progress through {@code progressReporter} as it goes.
 	 * <p>
-	 * Extracted out of {@link #move(LabelMoveRun)} so that {@code LabelTreeRestructureWorker} can carry out one MOVE
-	 * step of a larger restructure directly - on its own worker thread, not dispatched through the executor again -
-	 * reporting progress against its own composite job instead of a per-move job, and without this method itself
-	 * touching {@link JobService#complete}/{@code fail}, which only the caller that owns the job's lifecycle may do.
-	 * {@code jobId} is taken separately from that caller's own job rather than read off a {@link LabelMoveRun} - purely
-	 * for log correlation in {@link #fetchAndPersistPage}, so a restructure's MOVE step logs against the restructure's
-	 * own job rather than a move job that, called this way, never exists.
+	 * Called directly by {@code LabelTreeRestructureWorker} so it can carry out one MOVE step of a larger restructure
+	 * on its own worker thread, reporting progress against its own composite job instead of a per-move job, and
+	 * without this method itself touching {@code JobService#complete}/{@code fail}, which only the caller that owns
+	 * the job's lifecycle may do. {@code jobId} is taken separately from that caller's own job rather than carried on
+	 * a run of this class's own - purely for log correlation in {@link #restowErrands}, so a restructure's MOVE step
+	 * logs against the restructure's own job rather than a move job that, called this way, never exists.
 	 *
-	 * @param  newResourceName optional new resourceName to set in the same update, or {@code null} to keep it.
-	 * @param  newDisplayName  optional new displayName to set in the same update, or {@code null} to keep it.
-	 * @return                 number of errands restowed.
+	 * @param  step which label moves where, and the rename to combine with it, if any.
+	 * @return      number of errands restowed.
 	 */
-	int moveAndRestow(final String jobId, final String municipalityId, final String labelId, final String newParentId, final String newResourceName, final String newDisplayName,
-		final String startedBy, final IntConsumer progressReporter) {
+	int moveAndRestow(final String jobId, final String municipalityId, final LabelMoveStep step, final String startedBy, final IntConsumer progressReporter) {
+		final var labelId = step.labelId();
+		final var newParentId = step.newParentId();
 		final var labelToMove = metadataLabelRepository.findById(labelId)
 			.orElseThrow(() -> new IllegalStateException(LABEL_GONE.formatted(labelId)));
 		final var newParent = newParentId != null
@@ -124,11 +78,11 @@ public class LabelMoveWorker extends JobRunner<LabelMoveRun> {
 			: null;
 
 		labelToMove.setParent(newParent);
-		if (newResourceName != null) {
-			labelToMove.setResourceName(newResourceName);
+		if (step.newResourceName() != null) {
+			labelToMove.setResourceName(step.newResourceName());
 		}
-		if (newDisplayName != null) {
-			labelToMove.setDisplayName(newDisplayName);
+		if (step.newDisplayName() != null) {
+			labelToMove.setDisplayName(step.newDisplayName());
 		}
 		metadataLabelRepository.saveAndFlush(labelToMove);
 		// The @PreUpdate cascade on labelToMove (onUpdate -> updateChildrenPathsRecursively) recomputes resourcePath for
