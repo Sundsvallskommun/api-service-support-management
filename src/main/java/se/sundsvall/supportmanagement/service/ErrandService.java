@@ -88,7 +88,6 @@ public class ErrandService {
 	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 	private static final String LABELS_NOT_REBUILT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.";
-	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 	private static final String EVENT_LOG_CHANGE_PHASE = "Fasen har ändrats till %s";
 
 	private final ErrandsRepository repository;
@@ -300,11 +299,11 @@ public class ErrandService {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, entity, revisionResult, ASSIGNMENT);
 		}
 		if (nonNull(entity.getStatus()) && !Objects.equals(previousStatus, entity.getStatus())) {
-			logChangeEvent(EVENT_LOG_CHANGE_STATUS.formatted(entity.getStatus()), entity, revisionResult, STATUS);
+			logStatusChangeEvent(entity, revisionResult);
 		}
 		activePhaseOf(entity)
 			.filter(phase -> !Objects.equals(previousPhaseId, phase.getId()))
-			.ifPresent(phase -> logChangeEvent(EVENT_LOG_CHANGE_PHASE.formatted(phase.getName()), entity, revisionResult, PHASE));
+			.ifPresent(phase -> logChangeEvent(EVENT_LOG_CHANGE_PHASE.formatted(nameOf(phase)), entity, revisionResult, PHASE));
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
@@ -628,6 +627,20 @@ public class ErrandService {
 	}
 
 	/**
+	 * Logs the status of the errand having changed, apart from the change it is part of, as {@link #logChangeEvent} does
+	 * for the other parts of a change.
+	 */
+	private void logStatusChangeEvent(final ErrandEntity entity, final RevisionResult revisionResult) {
+		try {
+			eventService.createStatusChangeEvent(entity,
+				ofNullable(revisionResult).map(RevisionResult::latest).orElse(null),
+				ofNullable(revisionResult).map(RevisionResult::previous).orElse(null));
+		} catch (final Exception e) {
+			LOG.warn("Failed to log {} event for errand {}: {}", STATUS, entity.getId(), e.getMessage());
+		}
+	}
+
+	/**
 	 * Logs the labels having been added to the errand, one event for every label, apart from the change they were added
 	 * by. A log that cannot be written is not worth failing the request it describes.
 	 */
@@ -641,6 +654,15 @@ public class ErrandService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to log {} events for errand {}: {}", LABEL, entity.getId(), e.getMessage());
 		}
+	}
+
+	/**
+	 * The name a phase is told by, which is its display name, or its name for a phase without one.
+	 */
+	private static String nameOf(final PhaseEntity phase) {
+		return ofNullable(phase.getDisplayName())
+			.filter(displayName -> !displayName.isBlank())
+			.orElse(phase.getName());
 	}
 
 	/**
