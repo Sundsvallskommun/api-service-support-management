@@ -3,14 +3,15 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
+import java.util.Map.Entry;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
 
-import static java.util.Collections.frequency;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper.escapeMessageParameter;
 import static org.springframework.util.CollectionUtils.isEmpty;
@@ -32,9 +33,11 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
 		var hasErrors = false;
 
-		final var keys = value.stream().map(JsonParameter::getKey).toList();
-		final var duplicateKeys = keys.stream()
-			.filter(key -> frequency(keys, key) > 1)
+		final var duplicateKeys = value.stream()
+			.collect(toMap(JsonParameter::getKey, param -> 1, Integer::sum))
+			.entrySet().stream()
+			.filter(keyCount -> keyCount.getValue() > 1)
+			.map(Entry::getKey)
 			.collect(toSet());
 
 		for (int i = 0; i < value.size(); i++) {
