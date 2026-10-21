@@ -6,6 +6,7 @@ import generated.se.sundsvall.eventlog.Metadata;
 import generated.se.sundsvall.eventlog.PageEvent;
 import generated.se.sundsvall.notes.Note;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -28,11 +30,13 @@ import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
+import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
@@ -61,6 +65,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setNotify;
@@ -85,6 +90,9 @@ class EventServiceTest {
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
+
+	@Mock
+	private StatusRepository statusRepositoryMock;
 
 	@Mock
 	private PageEvent pageEventMock;
@@ -450,6 +458,51 @@ class EventServiceTest {
 		// The change the labels were added in notifies the assigned user and subscribes them, so the labels do neither
 		verifyNoInteractions(notificationServiceMock);
 		verify(eventPublisherMock, never()).publishEvent(any());
+	}
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		// The status is told of by its display name
+		"Pågående, Status har ändrats till Pågående",
+		// or by its name, for a status without a display name
+		"null, Status har ändrats till ONGOING",
+		"' ', Status har ändrats till ONGOING"
+	})
+	void createStatusChangeEvent(final String displayName, final String expectedMessage) {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withStatus("ONGOING")
+			.withAssignedUserId("anna01");
+		when(statusRepositoryMock.findByNamespaceAndMunicipalityIdAndName("MY_NAMESPACE", "2281", "ONGOING"))
+			.thenReturn(Optional.of(StatusEntity.create().withName("ONGOING").withDisplayName(displayName)));
+
+		service.createStatusChangeEvent(entity, null, null);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getType()).isEqualTo(EventType.UPDATE);
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo(STATUS.getValue());
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo(expectedMessage);
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getDescription()).isEqualTo(expectedMessage);
+		// The change the status changed in notifies the assigned user, so the status change does not
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
+	void createStatusChangeEventForAStatusNoLongerDefined() {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withStatus("REMOVED");
+		when(statusRepositoryMock.findByNamespaceAndMunicipalityIdAndName("MY_NAMESPACE", "2281", "REMOVED")).thenReturn(Optional.empty());
+
+		service.createStatusChangeEvent(entity, null, null);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("Status har ändrats till REMOVED");
 	}
 
 	@Test

@@ -25,7 +25,6 @@ import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchang
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageSubtype;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
@@ -37,7 +36,6 @@ public class MessageExchangeSyncService {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageExchangeSyncService.class);
 
 	private static final String EVENT_LOG_NEW_MESSAGE = "Nytt meddelande";
-	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ErrandAttachmentService attachmentService;
@@ -165,7 +163,7 @@ public class MessageExchangeSyncService {
 	 */
 	private void logStatusChange(final ErrandEntity errandEntity) {
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(errandEntity.getStatus()), errandEntity, null, null, false, STATUS);
+			eventService.createStatusChangeEvent(errandEntity, null, null);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log status change event for errand {}: {}", errandEntity.getId(), e.getMessage());
 		}

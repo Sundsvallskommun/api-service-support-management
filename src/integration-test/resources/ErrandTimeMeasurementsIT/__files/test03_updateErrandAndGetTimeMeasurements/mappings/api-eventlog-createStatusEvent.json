@@ -8,7 +8,7 @@
 		"method": "POST",
 		"bodyPatterns": [
 			{
-				"matchesJsonPath": "$[?(@.type == 'UPDATE' && @.subType == 'STATUS' && @.message == 'Status har ändrats till STATUS-3')]"
+				"matchesJsonPath": "$[?(@.type == 'UPDATE' && @.subType == 'STATUS' && @.message == 'Status har ändrats till Status 3')]"
 			},
 			{
 				"matchesJsonPath": "$.requestGroupId"
