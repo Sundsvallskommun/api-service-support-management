@@ -69,8 +69,8 @@ public class EventService {
 	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
 	private static final RevisionResult NO_REVISION = new RevisionResult(null, null);
 
-	private static final String EVENT_LOG_ADD_LABEL = "Ärendet uppdaterat med etikett %s";
-	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
+	private static final String EVENT_LOG_ADD_LABEL = "Ärendet uppdaterat med etikett \"%s\"";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till \"%s\"";
 
 	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
 	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, LABEL, PHASE, STATUS);
