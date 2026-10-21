@@ -24,10 +24,12 @@ import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
+import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
@@ -68,6 +70,7 @@ public class EventService {
 	private static final RevisionResult NO_REVISION = new RevisionResult(null, null);
 
 	private static final String EVENT_LOG_ADD_LABEL = "Ärendet uppdaterat med etikett %s";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 
 	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
 	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, LABEL, PHASE, STATUS);
@@ -91,9 +94,10 @@ public class EventService {
 	private final AccessControlService accessControlService;
 	private final ProcessEventPublisher processEventPublisher;
 	private final MetadataLabelRepository metadataLabelRepository;
+	private final StatusRepository statusRepository;
 
 	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
-		final AccessControlService accessControlService, final ProcessEventPublisher processEventPublisher, final MetadataLabelRepository metadataLabelRepository) {
+		final AccessControlService accessControlService, final ProcessEventPublisher processEventPublisher, final MetadataLabelRepository metadataLabelRepository, final StatusRepository statusRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
@@ -101,6 +105,7 @@ public class EventService {
 		this.accessControlService = accessControlService;
 		this.processEventPublisher = processEventPublisher;
 		this.metadataLabelRepository = metadataLabelRepository;
+		this.statusRepository = statusRepository;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
@@ -140,6 +145,28 @@ public class EventService {
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Logs the status of the errand having changed to the one it has now, apart from the change it was part of, so that
+	 * subscribers may be notified of it alone. No direct notification is made, as the change itself makes one.
+	 *
+	 * @param currentRevision  the revision of the errand the status changed in, or null
+	 * @param previousRevision the revision before it, or null
+	 */
+	public void createStatusChangeEvent(final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
+		createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(statusNameOf(errandEntity)), errandEntity, currentRevision, previousRevision, false, STATUS);
+	}
+
+	/**
+	 * The name the status of the errand is told by, which is its display name, or the status itself for one without a
+	 * display name or no longer defined in the namespace.
+	 */
+	private String statusNameOf(final ErrandEntity errandEntity) {
+		return statusRepository.findByNamespaceAndMunicipalityIdAndName(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getStatus())
+			.map(StatusEntity::getDisplayName)
+			.filter(displayName -> !displayName.isBlank())
+			.orElse(errandEntity.getStatus());
 	}
 
 	/**

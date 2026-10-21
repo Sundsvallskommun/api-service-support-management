@@ -48,7 +48,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 
 class EmailReaderWorkerTest {
 
@@ -137,7 +136,7 @@ class EmailReaderWorkerTest {
 
 		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000001", NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).save(same(errandEntity));
-		verify(eventServiceMock).createErrandEvent(EventType.UPDATE, "Status har ändrats till ONGOING", errandEntity, null, null, false, STATUS);
+		verify(eventServiceMock).createStatusChangeEvent(errandEntity, null, null);
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
@@ -167,7 +166,7 @@ class EmailReaderWorkerTest {
 
 		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock).save(same(errandEntity));
-		verify(eventServiceMock).createErrandEvent(EventType.UPDATE, "Status har ändrats till ONGOING", errandEntity, null, null, false, STATUS);
+		verify(eventServiceMock).createStatusChangeEvent(errandEntity, null, null);
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
