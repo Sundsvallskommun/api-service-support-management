@@ -40,7 +40,6 @@ public class EmailReaderWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(EmailReaderWorker.class);
 
 	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
-	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till %s";
 	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
 
 	private final EmailReaderClient emailReaderClient;
@@ -171,7 +170,7 @@ public class EmailReaderWorker {
 	 */
 	private void logStatusChange(final ErrandEntity errand) {
 		try {
-			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(errand.getStatus()), errand, null, null, false, EventSubType.STATUS);
+			eventService.createStatusChangeEvent(errand, null, null);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log status change event for errand {}: {}", errand.getId(), e.getMessage());
 		}

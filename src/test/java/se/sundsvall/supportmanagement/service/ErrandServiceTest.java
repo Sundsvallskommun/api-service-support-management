@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -91,7 +92,6 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntit
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -565,10 +565,17 @@ class ErrandServiceTest {
 		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
-	@Test
-	void updateErrandChangingStatusAndPhase() {
-		final var initialPhase = PhaseEntity.create().withId("phase-1").withName("Inledande");
-		final var nextPhase = PhaseEntity.create().withId("phase-2").withName("Utredning");
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		// The phase is told of by its display name
+		"Utredning, Fasen har ändrats till Utredning",
+		// or by its name, for a phase without a display name
+		"null, Fasen har ändrats till INVESTIGATION",
+		"' ', Fasen har ändrats till INVESTIGATION"
+	})
+	void updateErrandChangingStatusAndPhase(final String phaseDisplayName, final String expectedPhaseMessage) {
+		final var initialPhase = PhaseEntity.create().withId("phase-1").withName("INITIAL");
+		final var nextPhase = PhaseEntity.create().withId("phase-2").withName("INVESTIGATION").withDisplayName(phaseDisplayName);
 		final var entity = buildErrandEntity()
 			.withStatus("NEW")
 			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create().withPhaseEntity(initialPhase))));
@@ -594,8 +601,8 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		// The change is logged as such, and its status and its phase each by itself
 		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
-		verify(eventServiceMock).createErrandEvent(UPDATE, "Status har ändrats till ONGOING", entity, currentRevisionMock, previousRevisionMock, false, STATUS);
-		verify(eventServiceMock).createErrandEvent(UPDATE, "Fasen har ändrats till Utredning", entity, currentRevisionMock, previousRevisionMock, false, PHASE);
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, expectedPhaseMessage, entity, currentRevisionMock, previousRevisionMock, false, PHASE);
 	}
 
 	@Test
