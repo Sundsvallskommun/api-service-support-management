@@ -10,6 +10,8 @@ creating, updating, and tracking errand statuses and progress._
 - **Java 25 or higher**
 - **Maven**
 - **MariaDB**
+- **OpenSearch** (optional, only for [Errand Search](#errand-search))
+- **Docker or Podman** (for the integration tests, which use Testcontainers)
 - **Git**
 - **[Dependent Microservices](#dependencies)**
 
@@ -54,7 +56,7 @@ This microservice depends on the following services:
   - **Additional Notes:** Employee is a API serving data
     from [Metadatakatalogen](https://utveckling.sundsvall.se/digital-infrastruktur/metakatalogen).
 - **Eventlog**
-  - **Purpose:** Used for logging events
+  - **Purpose:** Used for logging errand events and reading them back as the history of the errand
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-eventlog)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **Messaging**
@@ -71,7 +73,7 @@ This microservice depends on the following services:
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-web-message-collector)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **Relation**
-  - **Purpose:** Used to fetch relation data (linked errands)
+  - **Purpose:** Used to fetch, create and remove relations (linked errands, referrals, handovers and conversations)
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/api-service-relations)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
 - **AccessMapper**
@@ -100,6 +102,14 @@ This microservice depends on the following services:
     processes — see [Process Integration](#process-integration).
   - **Repository:** [Link to the repository](https://github.com/Sundsvallskommun/pw-alkt)
   - **Setup Instructions:** Refer to its documentation for installation and configuration steps.
+- **Telia ACE**
+  - **Purpose:** Telia's contact centre platform. Errands that EmailReader creates or updates are delivered to it as
+    work items with a link to the errand. Only used for namespaces with `teliaAceWorkItemEnabled` and
+    `teliaAceWorkItemBaseUrl` in their namespace config, and only while `scheduler.telia-ace-work-item.enabled` is
+    `true` (default `false`).
+  - **Repository:** Not applicable, an external service provided by Telia.
+  - **Additional Notes:** Called with HTTP basic authentication rather than OAuth2. The service starts without it being
+    configured, and deliveries fail until it is.
 
 Ensure that these services are running and properly configured before starting this microservice.
 
@@ -107,7 +117,9 @@ Ensure that these services are running and properly configured before starting t
 
 Access the API documentation via Swagger UI:
 
-- **Swagger UI:** [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+- **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI specification:** [http://localhost:8080/api-docs](http://localhost:8080/api-docs) (JSON) and
+  [http://localhost:8080/api-docs.yaml](http://localhost:8080/api-docs.yaml) (YAML)
 
 Alternatively, refer to the `openapi.yaml` file located in `src/test/resources/api` for the OpenAPI specification.
 
@@ -120,7 +132,7 @@ Refer to the [API Documentation](#api-documentation) for detailed information on
 ### Example Request
 
 ```bash
-curl -X GET http://localhost:8080/2281/my.namespace/errands/b82bd8ac-1507-4d9a-958d-369261eecc15/communication
+curl -X GET http://localhost:8080/2281/MY_NAMESPACE/errands/b82bd8ac-1507-4d9a-958d-369261eecc15/communication
 ```
 
 ## Configuration
@@ -141,7 +153,7 @@ Configuration is crucial for the application to run successfully. Ensure all nec
   ```yaml
   spring:
     datasource:
-      url: jdbc:mysql://localhost:3306/your_database
+      url: jdbc:mariadb://localhost:3306/your_database
       username: your_db_username
       password: your_db_password
   ```
@@ -173,6 +185,10 @@ Configuration is crucial for the application to run successfully. Ensure all nec
       url: http://dependency_service_url
     relation:
       url: http://dependency_service_url
+    telia-ace:
+      url: http://dependency_service_url
+      username: the-username
+      password: the-password
     web-message-collector:
       url: http://dependency_service_url
 
@@ -249,6 +265,8 @@ Configuration is crucial for the application to run successfully. Ensure all nec
               client-secret: the-client-secret
   ```
 
+  Telia ACE authenticates with HTTP basic authentication and therefore has no entry under `spring.security.oauth2`.
+
 ### Database Initialization
 
 The project is set up with [Flyway](https://github.com/flyway/flyway) for database migrations. Flyway is disabled by
@@ -267,12 +285,14 @@ spring:
 
 `GET /{municipalityId}/{namespace}/errands/search` searches an OpenSearch index that
 [Hibernate Search](https://hibernate.org/search/) keeps in step with the errands and everything attached to them:
-stakeholders, parameters, JSON parameters, phases, measures, decisions, statements, investigations and communications.
+stakeholders, parameters, JSON parameters, labels, external tags, contact reason, attachments (file name and MIME type),
+phases, measures, decisions, statements, investigations and communications.
 The `query` parameter is a Lucene query string, documented in full on the endpoint in the API documentation.
 Drafts are left out of a search and of a count, as they are left out of the listing, unless the query names `lifecycle`:
 `lifecycle:DRAFT` finds them.
 
-Search is off unless the environment has an OpenSearch instance, and the endpoint answers 503 while it is off:
+Search is off unless the environment has an OpenSearch instance. The search, count and reindex endpoints answer 503
+while it is off or while the cluster cannot be reached, and a query OpenSearch cannot parse is answered with 400:
 
 ```yaml
 spring:
@@ -329,7 +349,8 @@ A query is at most 2000 characters, and a search that has not answered within `s
 default) is given up on with 504. A query string may ask for work the index cannot do cheaply - a wildcard open at both
 ends, a regular expression, a fuzzy term over many fields - and one client asking for it is not allowed to take the
 cluster away from everyone else. The syntax stays as it is, since searching by a word with anything on either side of it
-is what the endpoint is for.
+is what the endpoint is for. A page reaching beyond `search.max-result-window` (10000 results) is refused with 400, as is
+sorting on a property the search cannot sort on.
 
 One index holds every municipality and namespace, and a search is filtered on the same two fields the database filters
 on. The namespace is indexed lowercased, because the database compares it under a case insensitive collation: matching it
@@ -338,7 +359,8 @@ documents of one casing behind when a rebuild purged another.
 
 The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
 does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
-does it and a manual rebuild and the nightly one never overlap. Nothing is rebuilt when the service starts: a deploy
+does it and a manual rebuild and the nightly one never overlap. It is switched off with
+`scheduler.search-reindex.enabled: false`, and does nothing where search is off. Nothing is rebuilt when the service starts: a deploy
 leaves the index as it is and only brings the mapping up to date. A deploy that changes what is written into the index -
 a field added to it, a binder changed - therefore needs `POST /search/reindex` once, or the errands indexed before it
 answer by the old mapping until the nightly rebuild reaches them.
@@ -349,7 +371,8 @@ after startup rather than during it, so the service starts without OpenSearch. W
 `POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds that namespace from the database in the
 background. The whole index is rebuilt by `POST /search/reindex`, which belongs to no namespace because it empties the
 search of all of them, and which asks that the caller may administer every namespace that enforces access control. Errands created before
-search was introduced are indexed the same way. `/actuator/health` reports the cluster under `openSearch`.
+search was introduced are indexed the same way. Where search is on, `/actuator/health` reports the cluster under
+`openSearch`.
 
 Locally, an instance is one command away:
 
@@ -357,10 +380,12 @@ Locally, an instance is one command away:
 docker run -p 9200:9200 -e discovery.type=single-node -e DISABLE_SECURITY_PLUGIN=true -e DISABLE_INSTALL_DEMO_CONFIG=true opensearchproject/opensearch:3.6.0
 ```
 
-Access control applies to the query, not only to the answer: a query naming what the user may not read - a field of a
-resource their labels do not reach (communications, decisions and so on), a field of the errand their roles keep from
-them, or a key of a parameter or JSON parameter their roles do not grant - is refused with 403, since a hit or a miss
-would tell what the field holds. The same goes for sorting on such a field, and free text looks only in what is open.
+Where a namespace enforces access control, it applies to the query, not only to the answer: a query naming what the
+user may not read - a field of a resource their labels do not reach (communications, decisions and so on), a field of
+the errand their roles keep from them, or a key of a parameter or JSON parameter their roles do not grant - is refused
+with 403, since a hit or a miss would tell what the field holds. The same goes for sorting on such a field, and free
+text looks only in what is open. A wildcard in a field name, and a query that cannot be read in full, are refused with
+403 too where a route is restricted, since neither can be checked field by field.
 A resource is reached whole or not at all: roles restrict the fields of the errand, not the fields of what hangs off it,
 so a role keeping the description of an errand from a user leaves the body of its communications searchable to them.
 
@@ -434,8 +459,9 @@ the rest of this section:
 > **Namespace config answers "what may a non-AD role do on its own errand".**
 
 A case officer exists in AD, so the access mapper supplies everything for them: which errands they see, which
-sub-resources they may reach, and which role governs the payload they get back. A reporter is not in AD at all — no
-group, no patterns — so none of it applies to them, and their grants live in namespace config instead.
+sub-resources they may reach, and which role governs the payload they get back. A reporter typically holds no
+access-mapper groups — no labels, no patterns — so none of it applies to them, and their grants live in namespace config
+instead.
 
 The two never conflict. Namespace config only adds access where the access mapper is silent by construction, so a case
 officer who also happens to have reported an errand keeps their officer entitlements untouched.
@@ -451,23 +477,27 @@ Three levels, ordered `LR < R < RW`:
 | `RW`  | Read and write                                                |
 
 Every read guard in the service layer requires **at least `LR`**. That makes limited read a floor rather than a dead
-end: a namespace can widen `LR` all the way up to `R` by extending the resources and fields it covers.
+end: a namespace can widen `LR` all the way up to `R` by extending the resources and fields it covers. The exceptions
+are processes, process activities and the handover preview, which require `R` and cannot be reached at limited read.
 
 ### Access mapper group types
 
-The access mapper is queried per AD identity with three group types, each carrying ant-style patterns and a level:
+The access mapper is queried per AD identity with three group types. Label and resource entries carry ant-style
+patterns and a level:
 
-|    Type    |    Patterns match against     |                    Governs                     |
-|------------|-------------------------------|------------------------------------------------|
-| `label`    | metadata label resource paths | Which errands are visible / writable (Layer A) |
-| `resource` | `ProtectedResource` paths     | Which sub-resources are reachable (Layer B)    |
-| `role`     | free-form role names          | Which fields come back (Layer C)               |
+|    Type    |                        Patterns match against                         |                    Governs                     |
+|------------|-----------------------------------------------------------------------|------------------------------------------------|
+| `label`    | metadata label resource paths                                         | Which errands are visible / writable (Layer A) |
+| `resource` | `ProtectedResource` paths                                             | Which sub-resources are reachable (Layer B)    |
+| `role`     | role names, matched exactly regardless of case (the level is ignored) | Which fields come back (Layer C)               |
 
 ### The three layers
 
 **Layer A — visibility and write filtering.** A JPA specification restricts which errands come back and whether a
-write is allowed, based on the caller's label grants. An errand carrying no access labels is accessible to everyone.
-The labels an errand is given must belong to its own namespace and municipality; `POST` and `PATCH` answer `400`
+write is allowed, based on the caller's label grants. Labels are held against the errand's *access labels*: the labels
+it wears, less every label that is an ancestor of another one, so the most specific labels decide. An errand carrying
+no access labels is reached by everyone holding at least one label at the required level, and a caller holding no
+labels reaches no errand through labels at all. The labels an errand is given must belong to its own namespace and municipality; `POST` and `PATCH` answer `400`
 otherwise, since a label brings its access rules along.
 
 The level a label grant must reach depends on *what* is being written. `RW` is demanded for the errand itself, which is
@@ -475,17 +505,19 @@ what the labels are held against. For a resource **of** the errand the resource 
 only have to reach the errand at `R` — so a caller holding a category at read, plus `errand/conversation/message` at
 `RW`, may post a message while `PATCH /errands/{errandId}` stays refused. That split needs a second axis to be doing
 the restricting, so it applies only while `resourceAccessControl` is on; with it off the labels are all there is and
-carry the write themselves, exactly as before. A write is never permitted on an errand the caller only holds at `LR`.
+carry the write themselves, exactly as before. A write is never permitted on an errand the caller's labels only hold
+at `LR`; the reporter route is decided by `reporterAccess` alone.
 
 **Layer B — resource entitlement.** Which sub-resources the caller may reach, from the access mapper's `resource`
 groups. Gated by the `resourceAccessControl` flag: while it is `false`, resources are unrestricted and only labels
 apply. This exists so a namespace can enable `accessControl` before the access mapper has any `resource` groups
-configured, without every sub-resource turning into a 401.
+configured, without every sub-resource turning into a 403.
 
 **Layer C — field mapping.** Which fields of the errand payload are returned. `roleBasedMapping` governs the *role*
 restrictions only: while it is `false` no role trims anything, but an errand the caller only has limited read for is
-still trimmed, since limited read may never silently mean full read. The same grants bind writes, so a whole-errand
-`PATCH` can neither set nor delete a key the caller may not read.
+still trimmed, since limited read may never silently mean full read. The same grants bind writes: a `PATCH` naming a
+field the caller is not served, or a key they cannot read, is refused with 403. A key held to read may be sent back
+unchanged but not changed, and keys the caller cannot change are kept as they are when a collection is replaced.
 
 ### Resource taxonomy
 
@@ -493,28 +525,36 @@ still trimmed, since limited read may never silently mean full read. The same gr
 are matched against with `AntPathMatcher`. Note that `errand/**` matches `errand` itself as well as everything beneath
 it, so one pattern really does grant the whole errand tree. Where several patterns match, the most permissive wins.
 
-|          Constant          |                                                                        Path                                                                         |
-|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ERRAND`                   | `errand`                                                                                                                                            |
-| `ATTACHMENT`               | `errand/attachment`                                                                                                                                 |
-| `COMMUNICATION`            | `errand/communication`                                                                                                                              |
-| `COMMUNICATION_ATTACHMENT` | `errand/communication/attachment`                                                                                                                   |
-| `CONVERSATION`             | `errand/conversation`                                                                                                                               |
-| `CONVERSATION_MESSAGE`     | `errand/conversation/message`                                                                                                                       |
-| `CONVERSATION_ATTACHMENT`  | `errand/conversation/attachment`                                                                                                                    |
-| `EVENT`                    | `errand/event`                                                                                                                                      |
-| `NOTE`                     | `errand/note`                                                                                                                                       |
-| `NOTE_REVISION`            | `errand/note/revision`                                                                                                                              |
-| `PARAMETER`                | `errand/parameter`                                                                                                                                  |
-| `JSON_PARAMETER`           | `errand/json-parameter`                                                                                                                             |
-| `NOTIFICATION`             | `errand/notification`                                                                                                                               |
-| `REVISION`                 | `errand/revision`                                                                                                                                   |
-| `TIME_MEASURE`             | `errand/time-measure`                                                                                                                               |
-| `NAMESPACE_CONFIG`         | `namespace-config`                                                                                                                                  |
-| `METADATA_*`               | `metadata/category`, `metadata/contact-reason`, `metadata/external-id-type`, `metadata/label`, `metadata/phase`, `metadata/role`, `metadata/status` |
-| `SUBSCRIBER`               | `subscriber`                                                                                                                                        |
-| `SUBSCRIPTION`             | `subscriber/subscription`                                                                                                                           |
-| `SUBSCRIBER_NOTIFICATION`  | `subscriber-notification`                                                                                                                           |
+|               Constant                |                                                                                                                                                  Path                                                                                                                                                   |
+|---------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ERRAND`                              | `errand`                                                                                                                                                                                                                                                                                                |
+| `ATTACHMENT`                          | `errand/attachment`                                                                                                                                                                                                                                                                                     |
+| `COMMUNICATION`                       | `errand/communication`                                                                                                                                                                                                                                                                                  |
+| `COMMUNICATION_ATTACHMENT`            | `errand/communication/attachment`                                                                                                                                                                                                                                                                       |
+| `CONVERSATION`                        | `errand/conversation`                                                                                                                                                                                                                                                                                   |
+| `CONVERSATION_MESSAGE`                | `errand/conversation/message`                                                                                                                                                                                                                                                                           |
+| `CONVERSATION_ATTACHMENT`             | `errand/conversation/attachment`                                                                                                                                                                                                                                                                        |
+| `EVENT`                               | `errand/event`                                                                                                                                                                                                                                                                                          |
+| `NOTE`                                | `errand/note`                                                                                                                                                                                                                                                                                           |
+| `NOTE_REVISION`                       | `errand/note/revision`                                                                                                                                                                                                                                                                                  |
+| `PARAMETER`                           | `errand/parameter`                                                                                                                                                                                                                                                                                      |
+| `JSON_PARAMETER`                      | `errand/json-parameter`                                                                                                                                                                                                                                                                                 |
+| `MEASURE`                             | `errand/measure`                                                                                                                                                                                                                                                                                        |
+| `STATEMENT`                           | `errand/statement`                                                                                                                                                                                                                                                                                      |
+| `INVESTIGATION`                       | `errand/investigation`                                                                                                                                                                                                                                                                                  |
+| `DECISION`                            | `errand/decision`                                                                                                                                                                                                                                                                                       |
+| `NOTIFICATION`                        | `errand/notification`                                                                                                                                                                                                                                                                                   |
+| `PROCESS`                             | `errand/process`                                                                                                                                                                                                                                                                                        |
+| `PROCESS_ACTIVITY`                    | `errand/process-activity`                                                                                                                                                                                                                                                                               |
+| `REVISION`                            | `errand/revision`                                                                                                                                                                                                                                                                                       |
+| `TIME_MEASURE`                        | `errand/time-measure`                                                                                                                                                                                                                                                                                   |
+| `NAMESPACE_CONFIG`                    | `namespace-config`                                                                                                                                                                                                                                                                                      |
+| `EMAIL_INTEGRATION_CONFIG`            | `email-integration-config`                                                                                                                                                                                                                                                                              |
+| `MESSAGE_EXCHANGE_INTEGRATION_CONFIG` | `messageexchange-integration-config`                                                                                                                                                                                                                                                                    |
+| `METADATA_*`                          | `metadata/attachment-purpose`, `metadata/category`, `metadata/contact-reason`, `metadata/decision-outcome`, `metadata/external-id-type`, `metadata/label`, `metadata/label-classification`, `metadata/measure-type`, `metadata/phase`, `metadata/role`, `metadata/statement-outcome`, `metadata/status` |
+| `SUBSCRIBER`                          | `subscriber`                                                                                                                                                                                                                                                                                            |
+| `SUBSCRIPTION`                        | `subscriber/subscription`                                                                                                                                                                                                                                                                               |
+| `SUBSCRIBER_NOTIFICATION`             | `subscriber-notification`                                                                                                                                                                                                                                                                               |
 
 Everything from `NAMESPACE_CONFIG` down is **namespace-scoped** rather than errand-scoped — see below.
 
@@ -545,6 +585,10 @@ settled by the caller's labels, and within limited read a resource is simply rea
 partially read the way a payload can be trimmed. `reporterAccess.resources` keeps levels, because a reporter may
 legitimately be granted write, e.g. `CONVERSATION_MESSAGE: RW` so they can reply on their own errand.
 
+Unlike access-mapper patterns, the resources named in namespace config are exact constants, not subtrees: granting
+`CONVERSATION_MESSAGE` does not grant `CONVERSATION`, which a reporter also needs to list the conversations they reply
+in, and `COMMUNICATION` does not grant `COMMUNICATION_ATTACHMENT`.
+
 `ERRAND` is implicitly reachable on the limited path — that *is* what limited read means — so a namespace that
 configures nothing behaves exactly as it did before access control existed.
 
@@ -561,30 +605,38 @@ matches anyone.
 ### Key-level grants
 
 Three fields are *keyed*, meaning a grant may name individual keys instead of the whole collection:
-`PARAMETERS`, `JSON_PARAMETERS` and `EXTERNAL_TAGS`. A field granted with no keys exposes all of them.
+`PARAMETERS`, `JSON_PARAMETERS` and `EXTERNAL_TAGS`. A field granted with no keys exposes all of them. A grant on a
+keyed field may also carry a `level` of `R` or `RW` to hold those keys, or the whole collection, below the errand;
+leaving it out follows the errand. Keys and a level are refused with 400 on a field that is not keyed, as are `LR` as a
+field level, duplicate grants and a role listed twice.
 
 These grants bind the dedicated sub-resource endpoints too, not just the errand payload — otherwise a role limited to
-one parameter key could simply read every key through `/parameters`. Reads of an ungranted key return 401 and list
+one parameter key could simply read every key through `/parameters`. Reads of an ungranted key return 403 and list
 endpoints filter. Writes are covered on the same basis: a key you cannot read is a key you cannot write, so nobody can
 overwrite or remove data they are not allowed to see.
 
 ### Namespace-scoped resources
 
-Namespace config, metadata, subscribers, subscriptions and subscriber notifications are not errands, so they are
-guarded differently: **write** endpoints require `RW` on the corresponding `ProtectedResource` from the access mapper's
-`resource` groups. This exists so that a caller with broad errand rights cannot simply switch access control off. A
+Namespace config, integration config, metadata, subscribers, subscriptions and subscriber notifications are not
+errands, so they are guarded differently: **write** endpoints require `RW` on the corresponding `ProtectedResource`
+from the access mapper's `resource` groups whenever `accessControl` is on, whatever `resourceAccessControl` says. That
+covers the namespace config (its `validation` and `action-config` writes included), the e-mail and message exchange
+integration configs, every metadata type, and the two reindex endpoints of the search, which are guarded on
+`NAMESPACE_CONFIG`. This exists so that a caller with broad errand rights cannot simply switch access control off. A
 grant of `errand/**` deliberately does **not** cover `namespace-config`, `metadata/*` or `subscriber*`.
 
-Creating an errand subscription is additionally checked against the errand itself, requiring at least `LR` on
-`ERRAND` — subscribing reveals the errand's activity, and routing the lookup through the access control service also
-stops the endpoint being used as an existence oracle.
+Creating an errand subscription is not checked against the errand, since subscribing a colleague is supported; instead
+every notification is held to the subscriber's own access (`NOTIFICATION` at `LR`) before it is delivered, so a
+subscriber is never told about an errand they cannot reach.
 
 These guards live in the resource layer rather than the service layer, because placing them in `MetadataService`
-creates a circular dependency (`metadataService → accessControlService → accessMapperService → metadataService`).
+creates a circular dependency (`metadataService → accessControlService → accessMapperService → metadataService`). The
+reindex guards are the exception and sit in `ErrandReindexService`.
 
-Reads of namespace config and metadata are not currently guarded, and neither is **ownership** of subscribers: any
-caller may currently list, read or modify another identity's subscriber, subscriptions and notifications. Resource
-entitlement is the wrong tool for that — it needs an ownership rule — so it remains open.
+Reads of namespace config, integration config and metadata are not guarded. Subscribers, subscriptions and subscriber
+notifications are held to **ownership**, whether or not access control is on: only the identity a subscriber
+describes may change or delete it, or list and delete its subscriptions, and only the recipient may list, delete or
+acknowledge a notification. Listing and reading subscribers, and creating subscribers and subscriptions, stay open.
 
 ### Worked example
 
@@ -623,16 +675,19 @@ entitlement is the wrong tool for that — it needs an ownership rule — so it 
 ### How a request is evaluated
 
 1. If `accessControl` is `false` for the namespace, stop — everything is permitted.
-2. **Layer B** — if `resourceAccessControl` is on, the access mapper's `resource` grants must permit the target
-   resource at the required level, otherwise 401.
-3. **Layer A** — the errand must be reachable, which is true if either the caller's label grants cover it at the
-   level that resource demands of them — `RW` for a write to the errand itself, `R` for a write the resource grant
-   carries, `LR` where limited read is extended to the resource — or the caller is the reporter and `reporterAccess`
-   grants the resource at the required level.
+2. **Label route (Layers B and A)** — the caller's labels must cover the errand at the level the resource demands of
+   them: `RW` for a write to the errand itself, or for any write while `resourceAccessControl` is off; `R` for a write
+   the resource grant carries and for a read; `LR` for a read of `ERRAND` or of a resource `limitedReadAccess` lists.
+   If `resourceAccessControl` is on, the access mapper's `resource` grants must also permit the target resource at the
+   required level.
+3. **Reporter route** — otherwise the errand is still reached if the caller is its reporter and `reporterAccess` grants
+   the resource at the required level. The access mapper is not consulted on this route. If neither route reaches the
+   errand, 403.
 4. **Layer C** — on the way out the payload is trimmed: a limited errand uses `limitedReadAccess.fields` whatever the
    `roleBasedMapping` flag says, and otherwise the matched roles' `roleFieldRestrictions` apply if that flag is on.
    Reporter fields union on top of whichever restriction applied, and a caller no restriction applied to receives the
-   full errand.
+   full errand. A reporter none of whose labels reach the errand is held to `reporterAccess.fields` alone, falling back
+   to `ID`, `ERRAND_NUMBER`, `TITLE`, `STATUS` when none are configured.
 
 ### Discovering what may be configured
 
@@ -698,7 +753,7 @@ a jsonSchema driven form is editable before any data has been saved to it, which
   than by the `ProtectedResource` constant, for the same reason the fields are. The access definition above maps the two
   onto each other. The errand itself is reported as `level` rather than repeated here.
 
-A resource grant never stands in for the labels. Every endpoint needs both: the access mapper must grant the resource
+A resource grant never stands in for the labels. Every endpoint reached through labels needs both: the access mapper must grant the resource
 at the level the operation asks for, *and* the caller's labels must reach the errand at the level that resource demands
 of them. What the two are held against differs, though, which is why `resources` may report a level **above** `level`:
 with `resourceAccessControl` on, `{errand: R, errand/parameter: RW}` and labels at read opens
@@ -706,7 +761,8 @@ with `resourceAccessControl` on, `{errand: R, errand/parameter: RW}` and labels 
 exactly that — `level: "R"` with `errand/parameter` at `RW`.
 
 The keys of a keyed field follow the same split, so a `parameters` key may be reported `RW` on an errand reported `R`.
-Only `parameters` and `jsonParameters` have a write endpoint of their own; `externalTags` and every other field are
+Only `parameters` and `jsonParameters` are reported by the resource of their own write endpoint. `measures` has one too,
+`/measures` guarded on `errand/measure`, but is reported by the errand; `externalTags` and every other field are
 written through `PATCH /errands/{errandId}` alone and stay held against the errand.
 
 One grant the response cannot express: a whole keyed collection granted *and* held to read
@@ -770,7 +826,8 @@ Every environment needs `integration.pw-alkt.url` and the OAuth2 client `pw-alkt
    change**. Switching back is the same attribute change; neither needs a release.
 
 Whether events are getting through is visible in the health indicator `process_event_relay`, which turns unhealthy
-when the oldest undelivered event is older than `scheduler.process-event.unhealthy-after`.
+when the oldest undelivered event is older than `scheduler.process-event.unhealthy-after`, and at once when an
+undelivered event is addressed to a consumer other than `pw-alkt`, which nothing delivers.
 
 The process life of an errand and the locks on its decisions rest on the process service reporting a process as
 `COMPLETED` when it ends, and on it reconciling instances that vanish from the process engine without a report. Without
@@ -809,16 +866,17 @@ The process service in turn has to keep the contract `pw-alkt` keeps:
   last step, and reconcile instances that end without a report: the process life and the decision locks rest on it.
 - **Identify itself** in every call with `X-Sent-By: <consumer>; type=processEngine` and `processService` set to the
   consumer name, and send `X-Trigger-Process: false` on its writes, so that they do not wake the process again. A report
-  or a registration whose `X-Sent-By` names anyone else, an AD account included, is refused with `400`.
+  or a registration without `X-Sent-By`, with a `processService` other than the consumer, or whose `X-Sent-By` names
+  anyone else, an AD account included, is refused with `400`, as is one in a namespace without a process consumer.
 
 ### Turning it on
 
 Two namespace config values decide it:
 
-|       Field       |     Config key     |                                                                          Meaning                                                                           |
-|-------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `processConsumer` | `PROCESS_CONSUMER` | The process engine running the namespace's processes, and the address its events go to. The only one known is `pw-alkt`. Leaving it out means no processes |
-| `processTriggers` | `PROCESS_TRIGGER`  | The errand event sub types worth waking the process for                                                                                                    |
+|       Field       |     Config key     |                                                                                                Meaning                                                                                                |
+|-------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `processConsumer` | `PROCESS_CONSUMER` | The process engine running the namespace's processes, and the address its events go to. The only one known is `pw-alkt`, and any other value is refused with `400`. Leaving it out means no processes |
+| `processTriggers` | `PROCESS_TRIGGER`  | The errand event sub types worth waking the process for: any of `ATTACHMENT`, `DECISION`, `ERRAND`, `HANDOVER_IN`, `HANDOVER_OUT`, `MESSAGE` and `SUSPENSION`, each listed once                       |
 
 A process consumer **cannot be combined with access control**. The access mapper only grants access to AD accounts, so
 every read and write the process makes would be denied. A namespace config with both is refused with `400`.
@@ -835,11 +893,11 @@ before these rules is not checked until it is written again.
 
 The answer is read from the errand's **own** labels, through three label attributes:
 
-|     Attribute      |             Values              |                                                   Meaning                                                    |
-|--------------------|---------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `processKey`       | the key of a process            | Which process the errand runs                                                                                |
-| `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the label that gave the key                   |
-| `processBlocked`   | `true`, `false`                 | `true` keeps every process away from the errand, see [Blocking processes](#blocking-processes-for-an-errand) |
+|     Attribute      |             Values              |                                                             Meaning                                                             |
+|--------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `processKey`       | the key of a process            | Which process the errand runs                                                                                                   |
+| `processStartMode` | `AUTOMATIC` (default), `MANUAL` | Whether SupportManagement starts the process itself. Read from the labels that gave the key, where `MANUAL` on any of them wins |
+| `processBlocked`   | `true`, `false`                 | `true` keeps every process away from the errand, see [Blocking processes](#blocking-processes-for-an-errand)                    |
 
 The label tree is not walked, so the answer stays the same as long as the errand wears the same labels. Renaming a
 label leaves it alone, while moving one gives the errands wearing it new ancestors, which the label rules below hold
@@ -868,7 +926,7 @@ neither, and a key exchanged for another leaves the running process with nothing
 the errand just stops moving. Two rules therefore hold whenever labels are written:
 
 1. **An errand's labels may name at most one `processKey`.** This holds for every errand, with or without a process.
-2. **Once an errand has a process — live or completed — or a start of one on its way, a label change may not move it
+2. **Once an errand has a process — live, completed or failed — or a start of one on its way, a label change may not move it
    to another.** The keys the labels resolve to after the change must be the keys they resolved to before, so taking
    every key away is refused as well. A change that leaves them naming the process the errand actually runs, or is
    being started with, is always allowed, which is the way back for an errand whose label has lost its key.
@@ -879,7 +937,7 @@ Only the key is held still: `processStartMode` may be changed freely, even on an
 |-----------------------------------------------------------------------------------------------------------|---------|-----------------------------------------------------------------------------------|
 | `POST /errands` (also handover and e-mail intake)                                                         | 1       | `400` — a new errand has no process yet                                           |
 | `PATCH /errands/{errandId}`                                                                               | 1 and 2 | `400`                                                                             |
-| The `ADD_LABEL` action (scheduled)                                                                        | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
+| The `ADD_LABEL` action                                                                                    | 1 and 2 | The labels are not added, and an `ERROR` entry is written on the errand           |
 | Labels moved or merged in the metadata (`LabelMoveWorker`, `LabelMergeWorker`, also within a restructure) | 1 and 2 | The errand keeps the labels it had, and an `ERROR` entry is written on the errand |
 
 A scheduled action, or a label move or merge, that goes through is recorded as a revision and an errand event without a
@@ -888,8 +946,9 @@ notification, and reaches the process like any other change.
 The rules are checked against the labels the errand would actually wear, including the ancestors added to them.
 
 An errand can still end up naming two processes if `processKey` is added to a label the errand already wears, since no
-write to the errand happens. Such an errand gets `400` on every label change until one of the labels is removed — which
-is always allowed, as it resolves the errand to a single key.
+write to the errand happens. Such an errand gets `400` on every label change until the label naming a process other
+than the one it runs is removed — which is always allowed, as it resolves the errand to that process. An errand without
+a process may drop either label.
 
 ### Blocking processes for an errand
 
@@ -899,11 +958,14 @@ together with their ancestors, so a block on a parent label holds for every erra
 - **Nothing about the errand reaches a process.** No outbox row is written for any event of the errand — a creation,
   a change, an attachment, a decision, a message, a start, a signal or a deletion — whoever writes it, whatever
   `X-Trigger-Process` says, and whatever other labels the errand wears. The event itself is written to the event log as
-  usual. The block is asked right after whether the errand is a draft, before anything else.
+  usual. The block is asked after the draft, `X-Trigger-Process` and the triggers, and before the emergency brake, so a
+  blocked errand never trips the brake. Commands and deletions skip the header and the triggers, so for them the block
+  comes right after the draft.
 - `startable.status` is `PROCESS_BLOCKED`, and `POST .../processes/start` and `POST .../processes/{id}/signals` answer
   `409`.
-- **An AD account cannot take the label off.** A change to the labels made by an AD account that would leave the
-  errand without a label carrying `processBlocked=true` is refused with `409`, and nothing of the change is written. A
+- **An AD account cannot take the label off.** A change to the labels made by an AD account that takes off a label
+  carrying `processBlocked=true`, even while another such label stays, is refused with `409`, and nothing of the change
+  is written. A
   service identity may take the label off. Adding the label is open to both.
 - A label move, merge or restructure carries the identity of the one who asked for it. Asked for by an AD account, it
   leaves an errand whose blocking label it would take off with the labels it had, and writes an `ERROR` entry
@@ -920,31 +982,36 @@ together with their ancestors, so a block on a parent label holds for every erra
   `scheduler.process-event` for whatever the direct run did not reach.
 - Rows are delivered per errand, oldest first. The first row that does not go through ends the delivery for its errand:
   the rows before it are acknowledged, and it and the later rows of the errand are tried again on the next run. The
-  scheduled run then goes on with the rows of other errands, counting an errand that failed as one row against
-  `batch-size`, so an errand that never gets through holds back no other.
-- `422` from the process engine is permanent — the row is consumed and an `ERROR` entry is written. The status of an
-  instance is left to the reports of its process. Anything else is retried until the row passes
+  scheduled run then goes on with the rows of other errands, counting for an errand that failed the rows it tried, the
+  failing one included, against `batch-size`, so an errand that never gets through holds back no other. An open circuit
+  breaker of `pw-alkt` ends the run.
+- `422` from the process engine is permanent — the row is consumed and an `ERROR` entry `PROCESS_KEY_NOT_DEPLOYED` is
+  written on the errand, at most once per `window`, on its live instance if it has one, and none for a deletion. The
+  status of an instance is left to the reports of its process. Anything else is retried until the row passes
   `scheduler.process-event.max-age`.
 - The process engine sets `X-Trigger-Process: false` on its own writes, so that they do not wake it again. The header is
   **ignored for AD accounts**, so a handler's change always reaches the process.
 - An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (20
-  by default) have been delivered to its process within `window` (10 minutes). Further events are dropped and an
-  `ERROR` entry is written. Only delivered events are counted, so a delivery outage never trips it.
+  by default) written within `window` (10 minutes) have been delivered to its process. Further events are dropped and
+  an `ERROR` entry `EVENT_RATE_EXCEEDED` is written. Only delivered events are counted, so a delivery outage never trips
+  it.
 - A deletion passes the trigger filter, the header and the brake alike, though not a block (see above): it cannot loop, and holding it back would leave
   the process running for an errand that no longer exists.
 - So does a command, a handler's start or signal: it is a person pressing a button rather than something that
   happened to the errand.
 - Every event carries `startAllowed`, which says whether the process engine may start a process for it. It is set for
   a start command, and otherwise only when the errand has no live and no completed process, no start of another
-  process is on its way, and the label naming the key of the event has `processStartMode` `AUTOMATIC`.
+  process is on its way, and no label naming the key of the event has `processStartMode` `MANUAL`.
 - A decision concluded by an AD account passes the brake, and nothing else. It is the event a waiting process needs,
   and a person is no loop. A decision the process concludes itself is held to the brake like any other write of the
   process.
-- The retention purge tells the process of every errand it removes, with a `DELETE` event that writes nothing to the
-  event log and notifies no one.
+- The retention purge tells the process of every errand it removes, except a draft or one wearing a blocking label,
+  with a `DELETE` event that writes nothing to the event log and notifies no one.
+- `X-Notify: false` silences notifications only. The event reaches the process all the same.
 - The relay and the nightly cleanup are configured under `scheduler.process-event` and `scheduler.process-cleanup`. The
   settings of their own, and their defaults, are documented in `ProcessEventRelayProperties` and
-  `ProcessEventCleanupProperties`.
+  `ProcessEventCleanupProperties`. The direct run is configured under `process-engine.direct-run`, documented in
+  `ProcessEngineProperties`; a direct run arriving at a full pool is dropped and left to the schedule.
 - The namespace config is cached per pod for ten minutes, and a change to it evicts the cache only in the pod that took
   it. A changed `processConsumer` or trigger list can therefore take up to ten minutes to hold in every pod.
 
@@ -964,24 +1031,27 @@ All under `/{municipalityId}/{namespace}/errands/{errandId}`:
 The errand itself carries its process in `errand.process`: the live one, or the latest when none lives. A namespace
 without a process consumer reads no process at all.
 
-A report on an instance that has already run to its end (`COMPLETED`) that says anything else is answered `200` with
-the instance as it stands: the activities it carries are stored, and nothing else changes. A report that would make an
+A report on an instance that has already run to its end (`COMPLETED`) that says anything else, or on a `FAILED`
+instance that says anything but `FAILED` once another instance of the errand has completed, is answered `200` with the
+instance as it stands: the activities it carries are stored, and nothing else changes. A report that would make an
 instance live or completed while another instance of the errand lives is `409`; a `FAILED` report is taken beside it.
+A new instance on an errand whose process has completed, or with another key than its instances, is `409`.
 
 ### Starting a process by hand
 
 `GET .../processes` answers with `startable` beside the list, which is what a start button is lit, dimmed and
 explained by:
 
-| `startable.status`  |                                Meaning                                |
-|---------------------|-----------------------------------------------------------------------|
-| `AVAILABLE`         | A process may be started now, with one of the keys in `processKeys`   |
-| `LIVE_INSTANCE`     | A process is already running for the errand                           |
-| `PROCESS_COMPLETED` | A process has run to its end. A new process means a new errand        |
-| `START_PENDING`     | A start is on its way to the process engine and not yet delivered     |
-| `NO_PROCESS_KEY`    | No label of the errand names a process the errand can be started with |
-| `NO_PROCESS_ENGINE` | The namespace runs no processes                                       |
-| `PROCESS_BLOCKED`   | A label of the errand carries `processBlocked=true`                   |
+| `startable.status`  |                                    Meaning                                    |
+|---------------------|-------------------------------------------------------------------------------|
+| `AVAILABLE`         | A process may be started now, with one of the keys in `processKeys`           |
+| `LIVE_INSTANCE`     | A process is already running for the errand                                   |
+| `PROCESS_COMPLETED` | A process has run to its end. A new process means a new errand                |
+| `START_PENDING`     | A start is on its way to the process engine and not yet delivered             |
+| `NO_PROCESS_KEY`    | No label of the errand names a process the errand can be started with         |
+| `NO_PROCESS_ENGINE` | The namespace runs no processes                                               |
+| `PROCESS_BLOCKED`   | A label of the errand carries `processBlocked=true`                           |
+| `ERRAND_DRAFT`      | The errand is a draft. A process is started only once it has been made active |
 
 `processKeys` is empty whenever the status is not `AVAILABLE`, and holds two or more keys when the labels point at
 different processes. Once an errand has had a process, a start that failed included, only the key of that process is
@@ -991,13 +1061,13 @@ answer.
 A handler starts the process with `POST .../processes/start`, and `{ "processKey": "<key>" }` when more than one key is
 offered — the body may be left out otherwise, and a blank key counts as none:
 
-| Code  |                                                                            When                                                                            |
-|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `202` | The start is recorded and handed on to the process                                                                                                         |
-| `400` | No label names a process to start, several do and the request names none, the key is not among those offered, or the namespace runs no processes           |
-| `403` | The caller is not an AD account                                                                                                                            |
-| `404` | The errand does not exist in the namespace                                                                                                                 |
-| `409` | The errand has a live process, its process has run to its end, a start of another process is already on its way, or a label of the errand blocks processes |
+| Code  |                                                                                  When                                                                                  |
+|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The start is recorded and handed on to the process                                                                                                                     |
+| `400` | No label names a process to start, several do and the request names none, the key is not among those offered, or the namespace runs no processes                       |
+| `403` | The caller is not an AD account                                                                                                                                        |
+| `404` | The errand does not exist in the namespace                                                                                                                             |
+| `409` | The errand is a draft, has a live process, its process has run to its end, a start of another process is already on its way, or a label of the errand blocks processes |
 
 - An accepted start writes an entry of type `START` to the activity log, naming the sender and belonging to no process
   instance, and an errand event with the sub type `PROCESS` carrying the chosen key and `startAllowed`. It changes
@@ -1016,17 +1086,18 @@ Whether a step waits for a person is decided in the process model, not in Suppor
 named message is a manual one, and the process engine reports the names it waits for in `awaitingSignals` of its
 report — a name and a display label each. SupportManagement stores them without interpreting them, replaces them as a
 whole with every report, and shows them on `errand.process`. An empty list means the process waits for no person, and
-a process that has ended always waits for no one.
+a process that has run to its end (`COMPLETED`) always waits for no one. A `FAILED` process keeps, and still takes, the
+signals it last reported.
 
 A handler answers with `POST .../processes/{processInstanceId}/signals` and `{ "signal": "<name>" }`:
 
-| Code  |                                                                    When                                                                    |
-|-------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `202` | The signal is recorded and handed on to the process                                                                                        |
-| `400` | `signal` is missing or blank, or the namespace has no process consumer                                                                     |
-| `403` | The caller is not an AD account                                                                                                            |
-| `404` | The errand does not exist, or has no such process instance                                                                                 |
-| `409` | The process does not wait for the signal right now, or has ended — read the errand again. Also when a label of the errand blocks processes |
+| Code  |                                                                               When                                                                                |
+|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `202` | The signal is recorded and handed on to the process                                                                                                               |
+| `400` | `signal` is missing, blank or longer than 128 characters, or the namespace has no process consumer                                                                |
+| `403` | The caller is not an AD account                                                                                                                                   |
+| `404` | The errand does not exist, or has no such process instance                                                                                                        |
+| `409` | The process does not wait for the signal right now, or has run to its end (`COMPLETED`) — read the errand again. Also when a label of the errand blocks processes |
 
 - The name has to match one of `awaitingSignals` **exactly**, case included, since that is what the process engine
   correlates on. Names are stored and compared exactly too, so names differing only in case are two signals. A button
