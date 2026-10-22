@@ -50,7 +50,7 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 	private final int maxSize;
 
 	PayloadMaskingBodyFilter(final PayloadMaskingProperties properties) {
-		this.keep = KeepRules.of(properties.keep());
+		this.keep = KeepRules.compile(properties.keep());
 		this.placeholder = properties.placeholder();
 		this.maxSize = properties.maxSize();
 	}
@@ -111,7 +111,7 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 			path.add(property.getKey());
 			if (value.isObject() || value.isArray()) {
 				mask(value, path);
-			} else if (mustBeNamedToBeLogged(value) && !keep.keeps(path)) {
+			} else if (mustBeNamedToBeLogged(value) && !keep.keepsFieldAt(path)) {
 				replace.add(property.getKey());
 			}
 			path.removeLast();
@@ -124,7 +124,7 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 			final var element = array.get(i);
 			if (element.isObject() || element.isArray()) {
 				mask(element, path);
-			} else if (mustBeNamedToBeLogged(element) && !keep.keeps(path)) {
+			} else if (mustBeNamedToBeLogged(element) && !keep.keepsFieldAt(path)) {
 				array.set(i, placeholder);
 			}
 		}

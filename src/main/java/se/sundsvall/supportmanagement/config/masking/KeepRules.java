@@ -44,12 +44,13 @@ final class KeepRules {
 		this.endingInAny = endingInAny;
 	}
 
-	static KeepRules of(final Collection<String> entries) {
+	/** Compiles the configured entries, refusing any the walk could not act on. */
+	static KeepRules compile(final Collection<String> entries) {
 		final var byField = new HashMap<String, List<String[]>>();
 		final var endingInAny = new ArrayList<String[]>();
 
 		// Compiled once, at startup, and only read from afterwards: the rules are shared by every thread that logs
-		entries.stream().map(KeepRules::compile).forEach(rule -> {
+		entries.stream().map(KeepRules::compileEntry).forEach(rule -> {
 			final var last = rule[rule.length - 1];
 			if (ANY.equals(last)) {
 				endingInAny.add(rule);
@@ -66,7 +67,7 @@ final class KeepRules {
 	 *              not a field of its own, so the strings of {@code recipients} are asked about as {@code recipients}.
 	 * @return      whether the field at this path is kept as it is.
 	 */
-	boolean keeps(final List<String> path) {
+	boolean keepsFieldAt(final List<String> path) {
 		// The strings of an array at the root of a body are under no field at all, and no rule can name them
 		if (path.isEmpty()) {
 			return false;
@@ -75,34 +76,40 @@ final class KeepRules {
 		final var rules = byField.get(path.getLast());
 		if (rules != null) {
 			for (final var rule : rules) {
-				if (matches(rule, 0, path, 0)) {
+				if (matchesFrom(rule, 0, path, 0)) {
 					return true;
 				}
 			}
 		}
 		for (final var rule : endingInAny) {
-			if (matches(rule, 0, path, 0)) {
+			if (matchesFrom(rule, 0, path, 0)) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private static boolean matches(final String[] rule, final int r, final List<String> path, final int p) {
-		if (r == rule.length) {
-			return p == path.size();
+	/**
+	 * Whether the rest of the rule, from {@code ruleSegment}, names the rest of the path, from {@code pathField}. The
+	 * two run forward together, a segment against a field, except at a {@code ..}, which tries every number of fields
+	 * it could stand for.
+	 */
+	private static boolean matchesFrom(final String[] rule, final int ruleSegment, final List<String> path, final int pathField) {
+		if (ruleSegment == rule.length) {
+			// The rule is spent, so it names this path only if the path is spent as well
+			return pathField == path.size();
 		}
-		if (DESCENDANT.equals(rule[r])) {
-			for (var skipped = p; skipped <= path.size(); skipped++) {
-				if (matches(rule, r + 1, path, skipped)) {
+		if (DESCENDANT.equals(rule[ruleSegment])) {
+			for (var skipped = pathField; skipped <= path.size(); skipped++) {
+				if (matchesFrom(rule, ruleSegment + 1, path, skipped)) {
 					return true;
 				}
 			}
 			return false;
 		}
-		return p < path.size()
-			&& (ANY.equals(rule[r]) || rule[r].equals(path.get(p)))
-			&& matches(rule, r + 1, path, p + 1);
+		return pathField < path.size()
+			&& (ANY.equals(rule[ruleSegment]) || rule[ruleSegment].equals(path.get(pathField)))
+			&& matchesFrom(rule, ruleSegment + 1, path, pathField + 1);
 	}
 
 	/**
@@ -111,7 +118,7 @@ final class KeepRules {
 	 *                                  read is a field logged or withheld against what was meant, and neither is worth
 	 *                                  discovering from the logs.
 	 */
-	private static String[] compile(final String entry) {
+	private static String[] compileEntry(final String entry) {
 		if (entry == null || entry.isBlank()) {
 			throw new IllegalArgumentException("A field to keep cannot be blank");
 		}
@@ -121,26 +128,26 @@ final class KeepRules {
 		}
 
 		final var path = entry.substring(1).replace("[*]", "");
-		refuse(path, entry);
+		refuseUnsupportedSyntax(path, entry);
 
 		final var segments = new ArrayList<String>();
-		var i = 0;
-		while (i < path.length()) {
-			if (path.startsWith(DESCENDANT, i)) {
+		var read = 0;
+		while (read < path.length()) {
+			if (path.startsWith(DESCENDANT, read)) {
 				segments.add(DESCENDANT);
-				i += 2;
-			} else if (path.charAt(i) == '.') {
-				i++;
+				read += DESCENDANT.length();
+			} else if (path.charAt(read) == '.') {
+				read++;
 			} else {
 				throw new IllegalArgumentException("'%s' is not a path: a field must follow a '.'".formatted(entry));
 			}
-			final var end = indexOfDot(path, i);
-			final var field = path.substring(i, end);
+			final var endOfField = endOfFieldAt(path, read);
+			final var field = path.substring(read, endOfField);
 			if (field.isEmpty()) {
 				throw new IllegalArgumentException("'%s' names an empty field".formatted(entry));
 			}
 			segments.add(field);
-			i = end;
+			read = endOfField;
 		}
 
 		// A '..' is always followed by a field, since reading one is what the loop above does next, so the last segment
@@ -148,12 +155,14 @@ final class KeepRules {
 		return segments.toArray(String[]::new);
 	}
 
-	private static int indexOfDot(final String path, final int from) {
+	/** Where the field starting at {@code from} ends: at the next {@code .}, or at the end of the path. */
+	private static int endOfFieldAt(final String path, final int from) {
 		final var dot = path.indexOf('.', from);
 		return dot < 0 ? path.length() : dot;
 	}
 
-	private static void refuse(final String path, final String entry) {
+	/** Refuses the parts of JSONPath a field cannot be named by, rather than compiling a rule that never matches. */
+	private static void refuseUnsupportedSyntax(final String path, final String entry) {
 		if (path.indexOf('[') >= 0 || path.indexOf(']') >= 0) {
 			throw new IllegalArgumentException(
 				"'%s' uses a predicate, a slice or an index. Only '[*]' is supported, and it may be left out".formatted(entry));
