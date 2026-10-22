@@ -35,6 +35,8 @@ import se.sundsvall.supportmanagement.service.ProcessCommandService;
 import se.sundsvall.supportmanagement.service.RevisionService;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 import se.sundsvall.supportmanagement.service.SubscriberService;
+import se.sundsvall.supportmanagement.service.SubscriptionProfileMemberService;
+import se.sundsvall.supportmanagement.service.SubscriptionProfileService;
 import se.sundsvall.supportmanagement.service.SubscriptionService;
 import se.sundsvall.supportmanagement.service.TimeMeasurementService;
 import se.sundsvall.supportmanagement.service.config.EmailIntegrationConfigService;
@@ -96,6 +98,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 	RevisionService.class,
 	SubscriberNotificationService.class,
 	SubscriberService.class,
+	SubscriptionProfileMemberService.class,
+	SubscriptionProfileService.class,
 	SubscriptionService.class,
 	TimeMeasurementService.class,
 	ValidationService.class
