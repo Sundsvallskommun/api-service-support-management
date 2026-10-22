@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "17.2"
 servers:
-- url: http://localhost:65312
+- url: http://localhost:40887
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -139,6 +139,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -222,6 +232,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -4416,6 +4436,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -4482,6 +4512,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -12650,6 +12690,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -12728,6 +12778,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -12810,6 +12870,16 @@ paths:
           type: string
           format: uuid
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
       - name: X-notify
         in: header
         description: "Set to false to keep the operation from notifying the subscribers\
@@ -23556,16 +23626,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -23609,11 +23679,11 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
+        detail:
+          type: string
     Violation:
       type: object
       properties:
@@ -23793,19 +23863,27 @@ components:
             \ DECISION, for a process waiting for its decision to learn that it has\
             \ been made. Commands sent to the process (PROCESS, SIGNAL) are not errand\
             \ changes, are never filtered by this list and may not be listed. Nor\
-            \ may NOTE and SYSTEM, as no event of theirs is ever published to a process"
+            \ may NOTE, SYSTEM, ASSIGNMENT, LABEL, PHASE and STATUS, as no event of\
+            \ theirs is ever published to a process. A sub type selects those refining\
+            \ it, so MESSAGE selects MESSAGE_INTERNAL and MESSAGE_EXTERNAL"
           items:
             type: string
             enum:
+            - ASSIGNMENT
             - ATTACHMENT
             - DECISION
             - ERRAND
             - HANDOVER_IN
             - HANDOVER_OUT
+            - LABEL
             - MESSAGE
+            - MESSAGE_EXTERNAL
+            - MESSAGE_INTERNAL
             - NOTE
+            - PHASE
             - PROCESS
             - SIGNAL
+            - STATUS
             - SYSTEM
             - SUSPENSION
         excludeEventDescriptionsInEmail:
@@ -24158,35 +24236,15 @@ components:
     JsonNode:
       type: object
       properties:
-        container:
+        empty:
           type: boolean
-        string:
+        array:
           type: boolean
-        long:
+        "null":
           type: boolean
-        short:
+        object:
           type: boolean
-        int:
-          type: boolean
-        double:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        pojo:
-          type: boolean
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        container:
-          type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
+        float:
           type: boolean
         nodeType:
           type: string
@@ -24200,9 +24258,13 @@ components:
           - OBJECT
           - POJO
           - STRING
-        bigDecimal:
+        string:
+          type: boolean
+        integralNumber:
           type: boolean
         pojo:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
@@ -24214,21 +24276,22 @@ components:
           type: boolean
         bigDecimal:
           type: boolean
-        integralNumber:
-          type: boolean
         bigInteger:
           type: boolean
-        floatingPointNumber:
+        textual:
           type: boolean
-        empty:
+          deprecated: true
+        boolean:
           type: boolean
-        array:
+        binary:
           type: boolean
-        "null":
+        valueNode:
           type: boolean
-        object:
+        missingNode:
           type: boolean
-        float:
+        container:
+          type: boolean
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -24779,7 +24842,14 @@ components:
           pattern: ^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$
         subtype:
           type: string
-          description: "Event subtype. If null, all subtypes of the given type match. MESSAGE matches every message, while MESSAGE_INTERNAL and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively. Likewise ERRAND matches every change to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively. LABEL matches a label being added to an errand, logged once for every label added - as CREATE/LABEL for the labels an errand is created with and as UPDATE/LABEL for those added later."
+          description: "Event subtype. If null, all subtypes of the given type match.\
+            \ MESSAGE matches every message, while MESSAGE_INTERNAL and MESSAGE_EXTERNAL\
+            \ match only messages in internal conversations and messages from outside\
+            \ respectively. Likewise ERRAND matches every change to an errand, while\
+            \ STATUS and PHASE match only changes of its status and of its phase respectively.\
+            \ LABEL matches a label being added to an errand, logged once for every\
+            \ label added - as CREATE/LABEL for the labels an errand is created with\
+            \ and as UPDATE/LABEL for those added later."
           examples:
           - ATTACHMENT
           maxLength: 64
