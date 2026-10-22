@@ -217,7 +217,8 @@ public class ProcessEventPublisher {
 			.withProcessService(processService)
 			.withProcessKey(processKey)
 			.withEventType(processEventType)
-			.withEventSubType(eventSubType.getValue())
+			// The process knows the general sub types only, so an external message reaches it as a MESSAGE
+			.withEventSubType(eventSubType.general().getValue())
 			.withStartAllowed(isStartAllowed(errand.getId(), eventSubType, processKey, instances, selection))
 			// Never cut: a shortened name would correlate another gate, so one that does not fit fails the command loudly.
 			.withSignalName(ofNullable(command).map(ProcessCommand::signalName).orElse(null))

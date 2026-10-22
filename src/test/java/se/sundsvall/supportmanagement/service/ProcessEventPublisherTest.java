@@ -283,7 +283,7 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a trigger selects the sub types refining it, so MESSAGE lets an external message through while MESSAGE_INTERNAL does not")
+	@DisplayName("Verification that a trigger selects the sub types refining it, so MESSAGE lets an external message through, told as the MESSAGE the process knows")
 	void aTriggerSelectsTheSubTypesRefiningIt() {
 		givenNamespaceRunsProcess();
 		givenTriggers(MESSAGE);
@@ -293,7 +293,8 @@ class ProcessEventPublisherTest {
 		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
-		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(MESSAGE_EXTERNAL.getValue());
+		// The process knows the general sub types only
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(MESSAGE.getValue());
 	}
 
 	@Test
