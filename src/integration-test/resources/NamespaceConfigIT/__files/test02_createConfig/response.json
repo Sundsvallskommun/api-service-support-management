@@ -12,6 +12,7 @@
 	"singleDecisionPerErrand": false,
 	"teliaAceWorkItemEnabled": false,
 	"excludeEventDescriptionsInEmail": false,
+	"smsNotificationsEnabled": false,
 	"processConsumer": "pw-alkt",
 	"processTriggers": [
 		"ATTACHMENT",
