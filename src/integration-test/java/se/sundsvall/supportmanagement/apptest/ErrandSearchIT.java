@@ -492,6 +492,22 @@ class ErrandSearchIT extends AbstractAppTest {
 		assertThat(search(PATH, "created:[2025-05-31 TO 2025-06-01}")).isEmpty();
 	}
 
+	/**
+	 * A draft is left out of a search, as it is left out of the listing, unless the query names the life cycle.
+	 */
+	@Test
+	void test26_aDraftIsFoundOnlyByAQueryNamingTheLifecycle() throws InterruptedException {
+		jdbcTemplate.update("UPDATE errand SET lifecycle = 'DRAFT' WHERE errand_number = ?", INVOICE);
+		reindex();
+
+		assertThat(search(PATH, "")).containsExactly(LIGHTING, LEAK);
+		assertThat(search(PATH, "lindqvist")).isEmpty();
+		assertThat(search(PATH, "lifecycle:draft")).containsExactly(INVOICE);
+		assertThat(search(PATH, "lindqvist AND lifecycle:DRAFT")).containsExactly(INVOICE);
+		assertThat(search(PATH, "lifecycle:active")).containsExactlyInAnyOrder(LEAK, LIGHTING);
+		assertThat(search(PATH, "_exists_:lifecycle")).containsExactlyInAnyOrder(LEAK, INVOICE, LIGHTING);
+	}
+
 	private List<String> search(final String path, final String query) {
 		return errandNumbers(page(path, query));
 	}

@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "The errand 'aa000000-0000-0000-0000-0000000000a1' already has a live process, and a process is started only for an errand without one"
+}

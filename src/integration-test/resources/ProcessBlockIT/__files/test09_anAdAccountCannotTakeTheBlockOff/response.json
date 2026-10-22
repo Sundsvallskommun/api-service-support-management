@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "The change would take the label 'cb000000-0000-0000-0000-0000000000c1' off errand 'aa000000-0000-0000-0000-0000000000a2', and it carries processBlocked=true, which keeps every process away from the errand. An ad account cannot take that label off; a service identity can."
+}

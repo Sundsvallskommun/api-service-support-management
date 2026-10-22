@@ -22,8 +22,8 @@ public final class JsonParameterUtil {
 	private JsonParameterUtil() {}
 
 	/**
-	 * A key in the body that disagrees with the one in the path is a mistake worth naming rather than silently picking one
-	 * of. A body that omits the key says nothing, and the path decides.
+	 * Rejects a key in the body that disagrees with the one in the path. A body that omits the key is accepted, and the
+	 * path decides.
 	 */
 	public static void verifyKeyMatchesPath(final JsonParameter jsonParameter, final String key) {
 		if ((jsonParameter.getKey() != null) && !key.equals(jsonParameter.getKey())) {

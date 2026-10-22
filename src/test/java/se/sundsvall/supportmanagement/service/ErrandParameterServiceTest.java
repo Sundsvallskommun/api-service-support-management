@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
@@ -27,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -103,7 +103,7 @@ class ErrandParameterServiceTest {
 	void readErrandParameter() {
 
 		// Arrange
-		final var spy = Mockito.spy(errandParameterService);
+		final var spy = spy(errandParameterService);
 		final var errand = buildErrandEntity();
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
@@ -124,7 +124,7 @@ class ErrandParameterServiceTest {
 	void findErrandParameters() {
 
 		// Arrange
-		final var spy = Mockito.spy(errandParameterService);
+		final var spy = spy(errandParameterService);
 		final var errand = buildErrandEntity();
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 		when(accessControlServiceMock.readableKeyPredicate(any(), any(), any(), any(), any())).thenReturn(_ -> true);
@@ -143,7 +143,7 @@ class ErrandParameterServiceTest {
 	void updateErrandParameter() {
 
 		// Arrange
-		final var spy = Mockito.spy(errandParameterService);
+		final var spy = spy(errandParameterService);
 		final var errand = buildErrandEntity();
 		final var errandParameterValues = List.of("anotherValue");
 
@@ -165,7 +165,7 @@ class ErrandParameterServiceTest {
 	@Test
 	void deleteErrandParameter() {
 		// Arrange
-		final var spy = Mockito.spy(errandParameterService);
+		final var spy = spy(errandParameterService);
 		final var errand = buildErrandEntity().withParameters(new ArrayList<>(List.of(ParameterEntity.create().withKey(PARAMETER_KEY).withValues(List.of(PARAMETER_VALUE)))));
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errand);
 

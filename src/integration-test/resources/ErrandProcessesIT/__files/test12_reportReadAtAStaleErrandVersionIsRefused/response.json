@@ -1,0 +1,5 @@
+{
+	"title": "Precondition Failed",
+	"status": 412,
+	"detail": "The errand has changed since version 99, which the report says it was read at"
+}

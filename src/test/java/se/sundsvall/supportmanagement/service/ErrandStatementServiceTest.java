@@ -90,7 +90,7 @@ class ErrandStatementServiceTest {
 	private ErrandStatementService service;
 
 	/**
-	 * The identifier is bound to the thread, which the test classes run before this one share.
+	 * Removes the identifier bound to the thread before and after each test.
 	 */
 	@BeforeEach
 	@AfterEach
@@ -142,8 +142,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * What the validator accepts is StatementValidatorTest's business. What matters here is that it is consulted, and that
-	 * its rejection stops the statement before it is saved.
+	 * The validator is consulted, and its rejection stops the statement before it is saved.
 	 */
 	@Test
 	void createErrandStatementRejectedByValidator() {
@@ -180,8 +179,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * A read asks whether the errand may be read and nothing more. Locking it is for the writes, and a read taking the lock
-	 * would queue behind every one of them.
+	 * A read asks whether the errand may be read and nothing more; it does not lock the errand.
 	 */
 	@Test
 	void readErrandStatement() {
@@ -230,8 +228,8 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The validator is to judge the statement as it would be stored, so it is asked once the patch has been applied - a
-	 * status patched on its own has to be weighed against the sentAt already stored.
+	 * The validator judges the statement as it would be stored: it is asked once the patch has been applied, so a status
+	 * patched on its own is weighed against the sentAt already stored.
 	 */
 	@Test
 	void updateErrandStatement() {
@@ -265,7 +263,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * If-Match is opt-in. A request without one is let through rather than turned away.
+	 * If-Match is opt-in. A request without one is let through.
 	 */
 	@Test
 	void updateErrandStatementWithoutIfMatch() {
@@ -283,7 +281,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else just wrote.
+	 * An ETag that has moved on is refused, and what somebody else just wrote is left as it stands.
 	 */
 	@Test
 	void updateErrandStatementWithStaleIfMatch() {
@@ -338,7 +336,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The JSON parameters of the statement are its own and go with it, so removing the statement is all there is to it.
+	 * The JSON parameters of the statement go with it, so removing the statement is all the delete does.
 	 */
 	@Test
 	void deleteErrandStatement() {
@@ -384,8 +382,8 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The statement is flushed once the attachment is in its collection, so that the join table is written within the call
-	 * rather than at a commit the caller never sees fail.
+	 * The statement is flushed once the attachment is in its collection, so that the join table is written within the
+	 * call.
 	 */
 	@Test
 	void createStatementAttachment() {
@@ -409,8 +407,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * A collection the statement already has is handed on as it is. Hibernate tracks that one, and a statement whose
-	 * collection has been swapped for another has its join table written again from scratch.
+	 * A collection the statement already has is handed on as it is, not swapped for another.
 	 */
 	@Test
 	void linkStatementAttachment() {
@@ -449,7 +446,7 @@ class ErrandStatementServiceTest {
 	}
 
 	/**
-	 * The parameters are the statement's, so reading them asks for the statement grant and nothing of the errand.
+	 * Reading the parameters of a statement asks for the statement grant and nothing of the errand.
 	 */
 	@Test
 	void readStatementJsonParameters() {

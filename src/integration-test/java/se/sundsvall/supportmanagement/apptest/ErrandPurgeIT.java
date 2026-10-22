@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.apptest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
@@ -44,13 +46,12 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 /**
  * Errand purge IT tests.
  * <p>
- * A purge is answered before it is carried out, so what comes back says only that a run was accepted. What each test is
- * really about is what the run left behind once it ended, which is why every one of them waits for the job to reach a
- * state it cannot leave before looking at anything.
+ * A purge is answered before it is carried out, so every test waits for the job to reach a state it cannot leave before
+ * checking what the run left behind.
  * <p>
  * The errands walked are the ones in PURGE-NAMESPACE, which exist for these tests alone. Six of the nine are reached by
  * the cutoff the tests use and three are not, among them the one lying exactly on it. The errands of every other
- * namespace in the shared test data - several of them older still - are what a run has to leave where they are.
+ * namespace in the shared test data - several of them older still - are to be left where they are.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandPurgeIT/", classes = Application.class)
 @Sql({
@@ -69,16 +70,15 @@ class ErrandPurgeIT extends AbstractAppTest {
 	private static final String SENT_BY = "joe01doe; type=adAccount";
 
 	/**
-	 * The cutoff the tests are run with, in UTC because that is the wall clock the timestamps in the test data are
-	 * written against: the database runs in UTC and the entities store their times normalized to it. The two errands
-	 * either side of the cutoff are one millisecond apart, so reading it in the zone the build happens to run in would
-	 * put both of them on the same side of it.
+	 * The cutoff the tests are run with, in UTC, the zone the timestamps in the test data are written in. The two errands
+	 * either side of it are one millisecond apart.
 	 */
 	private static final OffsetDateTime CUTOFF = LocalDateTime.of(2023, 1, 1, 0, 0).atOffset(UTC);
 	private static final String CUTOFF_PLACEHOLDER = "<CUTOFF>";
 
 	// Last touched before the cutoff, and reached by a run in the order their ids sort in. The first of them is the one
-	// carrying an attachment, a stakeholder, a notification, revisions, a communication and a conversation.
+	// carrying an attachment, a stakeholder, a notification, revisions, a communication, a conversation, and an
+	// investigation and a decision with parameters.
 	private static final String FIRST_ERRAND_REACHED = "aaaa1111-0000-0000-0000-000000000001";
 	private static final String ERRAND_A_MILLISECOND_BEFORE_THE_CUTOFF = "aaaa1111-0000-0000-0000-000000000005";
 	private static final String ERRAND_DATED_BY_MODIFIED = "aaaa1111-0000-0000-0000-000000000007";
@@ -109,6 +109,12 @@ class ErrandPurgeIT extends AbstractAppTest {
 		"f4a7a771-bb75-487b-b7d8-2684a0c3512c",
 		"e29906af-3083-4dcf-bb8a-d787ccf2dcc4");
 
+	// The investigation and the decision of the first errand reached, and the one parameter each holds
+	private static final String INVESTIGATION_ID = "aaaa9999-0000-0000-0000-000000000001";
+	private static final String INVESTIGATION_PARAMETER_ID = "aaaa9999-0000-0000-0000-000000000002";
+	private static final String DECISION_ID = "aaaa9999-0000-0000-0000-000000000003";
+	private static final String DECISION_PARAMETER_ID = "aaaa9999-0000-0000-0000-000000000004";
+
 	private static final String ACCESS_CONTROLLED_ERRAND = "58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
 	private static final String RUNNING_PURGE_JOB_ID = "aaaaaaaa-0000-0000-0000-000000000001";
@@ -132,6 +138,9 @@ class ErrandPurgeIT extends AbstractAppTest {
 
 	@Autowired
 	private JobRepository jobRepository;
+
+	@Autowired
+	private ProcessEventOutboxRepository outboxRepository;
 
 	@Autowired
 	private JobScheduler jobScheduler;
@@ -162,6 +171,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 	@DisplayName("Verification that a run removes the errands past the cutoff along with everything hanging off them, and leaves every errand it was not pointed at where it is")
 	void test02_purgeRemovesErrandsPastTheCutoff() throws Exception {
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, FIRST_ERRAND_REACHED)).hasSize(2);
+		assertThat(artefactRowsOfThePurgedErrand()).allSatisfy((table, count) -> assertThat(count).as(table).isPositive());
 
 		final var job = startPurge(PATH);
 
@@ -189,6 +199,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 		assertThat(rowsIn("conversation", FIRST_ERRAND_REACHED)).isZero();
 		assertThat(communicationsFor("PU-23020001")).isZero();
 		assertThat(blobsOfThePurgedErrand()).isZero();
+		assertThat(artefactRowsOfThePurgedErrand()).allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 
 		// The revisions go with the errand as well, since each of them holds a full snapshot of what the run set out to remove
 		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, FIRST_ERRAND_REACHED)).isEmpty();
@@ -341,8 +352,86 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Asks for a purge and hands back the job it was answered with. A run is carried out on a thread of its own, so what
-	 * comes back says nothing yet about what it has done.
+	 * In a namespace running a process, the process is told of every errand a run removes, so that no instance is left
+	 * running for an errand that is gone. The errand has no process, so the deletion carries no process key: the process
+	 * consumer finds an instance by the errand all the same.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process publishes a deletion for every errand it removes")
+	@Sql("/db/scripts/testdata-it-purge-process.sql")
+	void test10_aPurgeInAProcessNamespaceTellsTheProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(FIRST_ERRAND_REACHED);
+				assertThat(row.getNamespace()).isEqualTo(NAMESPACE);
+				assertThat(row.getProcessService()).isEqualTo("pw-alkt");
+				assertThat(row.getProcessKey()).isNull();
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+				assertThat(row.isStartAllowed()).isFalse();
+				assertThat(row.getDeliveredAt()).isNull();
+			});
+		verifyStubs();
+	}
+
+	/**
+	 * The errand the run reaches wears a label blocking processes, so its deletion is held back from the process. The
+	 * errand is removed all the same.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process removes an errand wearing a label that blocks processes without telling the process")
+	@Sql({
+		"/db/scripts/testdata-it-purge-process.sql", "/db/scripts/testdata-it-purge-process-block.sql"
+	})
+	void test11_aPurgeOfABlockedErrandTellsNoProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(errandsRepository.existsById(FIRST_ERRAND_REACHED)).isFalse();
+		assertThat(outboxRepository.findAll()).isEmpty();
+		verifyStubs();
+	}
+
+	/**
+	 * The errand the run reaches has a process, and the deletion names it: the process is published before the removal
+	 * reaches the database, which then takes the process rows with the errand.
+	 */
+	@Test
+	@DisplayName("Verification that a run in a namespace running a process publishes the deletion of an errand with a process with the key of that process")
+	@Sql({
+		"/db/scripts/testdata-it-purge-process.sql", "/db/scripts/testdata-it-purge-process-instance.sql"
+	})
+	void test12_aPurgeOfAnErrandWithAProcessNamesItsProcess() throws Exception {
+		final var job = startPurge(PATH);
+
+		final var ended = awaitEndOf(job.getJobId());
+
+		assertThat(ended.getStatus()).isEqualTo(COMPLETED);
+		assertThat(ended.getMessage()).isEqualTo("Removed 1 of 1 errands reached, 0 could not be removed");
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(FIRST_ERRAND_REACHED);
+				assertThat(row.getProcessKey()).isEqualTo("alkt-ansokan");
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.isStartAllowed()).isFalse();
+			});
+		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM errand_process WHERE errand_id = ?", Integer.class, FIRST_ERRAND_REACHED)).isZero();
+		verifyStubs();
+	}
+
+	/**
+	 * Asks for a purge and hands back the job it was answered with. The run is carried out on a thread of its own.
 	 */
 	private JobResponse startPurge(final String servicePath) throws Exception {
 		return setupCall()
@@ -357,8 +446,7 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Waits for the run to reach a state it cannot leave and hands back the job as it ended. Answered by the job table
-	 * rather than by anything held on this side, which is what a caller following the run would read as well.
+	 * Waits for the run to reach a state it cannot leave and hands back the job as it ended, read from the job table.
 	 */
 	private JobEntity awaitEndOf(final String jobId) {
 		await()
@@ -382,11 +470,26 @@ class ErrandPurgeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The blobs the purged errand held: one belonging to an attachment of its own, and one shared between a
-	 * communication attachment and the copy of it kept on the errand. Removing the errand has to leave neither of them,
-	 * and has to reach the shared one in an order that does not take it out from under something still pointing at it.
+	 * Counts the blobs the purged errand held: one belonging to an attachment of its own, and one shared between a
+	 * communication attachment and the copy of it kept on the errand.
 	 */
 	private int blobsOfThePurgedErrand() {
 		return jdbcTemplate.queryForObject("SELECT count(*) FROM attachment_data WHERE id IN (101, 102)", Integer.class);
+	}
+
+	/**
+	 * Counts, by table, the rows of the investigation and the decision of the purged errand, of their parameters and of
+	 * the values of those.
+	 */
+	private Map<String, Integer> artefactRowsOfThePurgedErrand() {
+		return Map.of(
+			"investigation", rowsIn("investigation", FIRST_ERRAND_REACHED),
+			"investigation_parameter", jdbcTemplate.queryForObject("SELECT count(*) FROM investigation_parameter WHERE investigation_id = ?", Integer.class, INVESTIGATION_ID),
+			"investigation_parameter_values", jdbcTemplate.queryForObject("SELECT count(*) FROM investigation_parameter_values WHERE investigation_parameter_id = ?", Integer.class,
+				INVESTIGATION_PARAMETER_ID),
+			"decision", rowsIn("decision", FIRST_ERRAND_REACHED),
+			"decision_parameter", jdbcTemplate.queryForObject("SELECT count(*) FROM decision_parameter WHERE decision_id = ?", Integer.class, DECISION_ID),
+			"decision_parameter_values", jdbcTemplate.queryForObject("SELECT count(*) FROM decision_parameter_values WHERE decision_parameter_id = ?", Integer.class,
+				DECISION_PARAMETER_ID));
 	}
 }

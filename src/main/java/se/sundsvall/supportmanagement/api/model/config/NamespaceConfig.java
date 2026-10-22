@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -68,6 +69,15 @@ public class NamespaceConfig {
 	@Size(max = 230, message = "must be at most 230 characters, leaving room for the errand link appended to it")
 	@Schema(description = "Base URL used to build the Draken link sent to Telia ACE, e.g. https://draken.sundsvall.se/kontaktsundsvall. Required when teliaAceWorkItemEnabled is true.", examples = "https://draken.sundsvall.se/kontaktsundsvall")
 	private String teliaAceWorkItemBaseUrl;
+
+	@Schema(
+		description = "The process engine running the processes of this namespace, which is also the address its events are delivered to. The only one known is pw-alkt. A namespace has exactly one, and leaving it out means the namespace runs no processes at all. It cannot be combined with access control, as the access mapper only grants access to AD accounts",
+		examples = "pw-alkt")
+	private String processConsumer;
+
+	@Schema(
+		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace with a process consumer must list ERRAND, for its processes to start, and DECISION, for a process waiting for its decision to learn that it has been made. Commands sent to the process (PROCESS, SIGNAL) are not errand changes, are never filtered by this list and may not be listed. Nor may NOTE and SYSTEM, as no event of theirs is ever published to a process")
+	private List<@NotNull EventSubType> processTriggers;
 
 	@Schema(
 		description = "If set to true emails sent to subscribers only name the errands that were updated, without describing what happened to them. If no value is set it defaults to false.",
@@ -253,6 +263,32 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public String getProcessConsumer() {
+		return processConsumer;
+	}
+
+	public void setProcessConsumer(final String processConsumer) {
+		this.processConsumer = processConsumer;
+	}
+
+	public NamespaceConfig withProcessConsumer(final String processConsumer) {
+		this.processConsumer = processConsumer;
+		return this;
+	}
+
+	public List<EventSubType> getProcessTriggers() {
+		return processTriggers;
+	}
+
+	public void setProcessTriggers(final List<EventSubType> processTriggers) {
+		this.processTriggers = processTriggers;
+	}
+
+	public NamespaceConfig withProcessTriggers(final List<EventSubType> processTriggers) {
+		this.processTriggers = processTriggers;
+		return this;
+	}
+
 	public boolean isExcludeEventDescriptionsInEmail() {
 		return excludeEventDescriptionsInEmail;
 	}
@@ -347,7 +383,8 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, baseUrl, roleFieldRestrictions, roleBasedMapping,
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, baseUrl,
+			roleFieldRestrictions, roleBasedMapping,
 			shortCode,
 			teliaAceWorkItemEnabled, teliaAceWorkItemBaseUrl);
 	}
@@ -357,11 +394,11 @@ public class NamespaceConfig {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final NamespaceConfig other)) { return false; }
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-				other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail && Objects.equals(baseUrl,
-					other.baseUrl) && Objects.equals(
-						roleFieldRestrictions,
-						other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
+			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
+				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
+					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail && Objects.equals(
+						baseUrl, other.baseUrl) && Objects.equals(roleFieldRestrictions,
+							other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode) && teliaAceWorkItemEnabled == other.teliaAceWorkItemEnabled && Objects.equals(teliaAceWorkItemBaseUrl, other.teliaAceWorkItemBaseUrl);
 	}
 
@@ -371,9 +408,10 @@ public class NamespaceConfig {
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
 				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
-			.append(", baseUrl=").append(baseUrl).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=")
-			.append(reporterAccess).append(", roleFieldRestrictions=").append(
-				roleFieldRestrictions)
+			.append(", baseUrl=").append(baseUrl).append(", processConsumer=").append(processConsumer).append(", processTriggers=")
+			.append(
+				processTriggers).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
+					roleFieldRestrictions)
 			.append(", teliaAceWorkItemEnabled=").append(teliaAceWorkItemEnabled).append(", teliaAceWorkItemBaseUrl=").append(teliaAceWorkItemBaseUrl)
 			.append("]");
 		return builder.toString();

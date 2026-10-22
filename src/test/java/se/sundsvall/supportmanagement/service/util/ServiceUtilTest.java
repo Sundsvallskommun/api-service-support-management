@@ -16,13 +16,18 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.http.HttpStatus.CONFLICT;
 
 class ServiceUtilTest {
 
@@ -31,6 +36,7 @@ class ServiceUtilTest {
 	@AfterEach
 	void clearRequestGroupId() {
 		ServiceUtil.clearRequestGroupId();
+		ServiceUtil.clearTriggerProcess();
 		ServiceUtil.clearNotify();
 		Identifier.remove();
 	}
@@ -40,6 +46,22 @@ class ServiceUtilTest {
 	private static final String DOCX_FILE_NAME = "document.docx";
 	private static final String PDF_FILE_NAME = "document.pdf";
 	private static final String TXT_FILE_NAME = "document.txt";
+
+	@Test
+	void requireActiveRefusesADraftWith409() {
+		final var draft = ErrandEntity.create().withId("errand-id").withLifecycle(ErrandLifecycle.DRAFT);
+
+		assertThatThrownBy(() -> ServiceUtil.requireActive(draft))
+			.isInstanceOf(ThrowableProblem.class)
+			.hasFieldOrPropertyWithValue("status", CONFLICT)
+			.hasMessage("Conflict: The errand 'errand-id' is a draft. Make the errand active first");
+	}
+
+	@Test
+	void requireActiveLetsAnErrandThatIsNoDraftThrough() {
+		assertThatNoException().isThrownBy(() -> ServiceUtil.requireActive(ErrandEntity.create().withLifecycle(ErrandLifecycle.ACTIVE)));
+		assertThatNoException().isThrownBy(() -> ServiceUtil.requireActive(ErrandEntity.create()));
+	}
 
 	@Test
 	void getRequestGroupIdReturnsSetValue() {
@@ -69,6 +91,16 @@ class ServiceUtilTest {
 		ServiceUtil.setRequestGroupId("  ");
 
 		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	/**
+	 * Verifies that a request group id is cut to 36 characters, the width of the columns storing it.
+	 */
+	@Test
+	void setRequestGroupIdCutsAValueWiderThanTheColumnsStoringIt() {
+		ServiceUtil.setRequestGroupId("x".repeat(40));
+
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo("x".repeat(36));
 	}
 
 	@Test
@@ -240,8 +272,7 @@ class ServiceUtilTest {
 	}
 
 	/**
-	 * Ad account names are not case sensitive and nothing normalises the value on the way in, so a subscriber stored in a
-	 * different case than they later send must still be recognised as the owner of their own settings.
+	 * Verifies that the type and the value of the identifier are compared without regard to case.
 	 */
 	@Test
 	void isRequestingUserIgnoresCase() {
@@ -267,5 +298,33 @@ class ServiceUtilTest {
 	@Test
 	void isRequestingUserOwnsNothingWithoutAnIdentifier() {
 		assertThat(ServiceUtil.isRequestingUser("adAccount", "jo12doe")).isFalse();
+	}
+
+	@Test
+	void getTriggerProcessReturnsTheValueAsItArrived() {
+		ServiceUtil.setTriggerProcess("  FALSE ");
+
+		assertThat(ServiceUtil.getTriggerProcess()).isEqualTo("  FALSE ");
+	}
+
+	@Test
+	void getTriggerProcessReturnsNullWhenNotSet() {
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
+	}
+
+	@Test
+	void setTriggerProcessWithBlankValueClearsIt() {
+		ServiceUtil.setTriggerProcess("false");
+		ServiceUtil.setTriggerProcess("  ");
+
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
+	}
+
+	@Test
+	void clearTriggerProcessRemovesValue() {
+		ServiceUtil.setTriggerProcess("false");
+		ServiceUtil.clearTriggerProcess();
+
+		assertThat(ServiceUtil.getTriggerProcess()).isNull();
 	}
 }

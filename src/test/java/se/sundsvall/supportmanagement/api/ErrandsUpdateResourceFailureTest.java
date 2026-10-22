@@ -1,26 +1,23 @@
 package se.sundsvall.supportmanagement.api;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.ExternalTag;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.errand.Suspension;
@@ -42,13 +39,10 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandsUpdateResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands";
@@ -60,13 +54,13 @@ class ErrandsUpdateResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandService errandServiceMock;
 
-	@MockitoBean
+	@Autowired
 	private MetadataService metadataServiceMock;
 
-	@MockitoBean
+	@Autowired
 	private JsonSchemaClient jsonSchemaClientMock;
 
 	private static Errand createErrandInstance() {
@@ -388,6 +382,110 @@ class ErrandsUpdateResourceFailureTest {
 			tuple("updateErrand.errand.channel", "size must be between 0 and 255"));
 	}
 
+	/**
+	 * Key, display name and group longer than their 255 character columns are refused with 400.
+	 */
+	@Test
+	void updateErrandWithTooLongParameterFields() {
+		final var tooLong = "x".repeat(256);
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withParameters(List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "size must be between 0 and 255"),
+				tuple("parameters[0].displayName", "size must be between 0 and 255"),
+				tuple("parameters[0].group", "size must be between 0 and 255"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	/**
+	 * A parameter without a key, or with a value longer than its 3000 character column, is refused with 400, on the errand
+	 * as on its stakeholders.
+	 */
+	@Test
+	void updateErrandWithParameterWithoutKeyOrWithTooLongValue() {
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withParameters(List.of(
+					Parameter.create().withValues(List.of("value")),
+					Parameter.create().withKey("key").withValues(List.of("x".repeat(3001)))))
+				.withStakeholders(List.of(Stakeholder.create().withParameters(List.of(
+					Parameter.create().withValues(List.of("value")))))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "must not be blank"),
+				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
+				tuple("stakeholders[0].parameters[0].key", "must not be blank"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	/**
+	 * A parameter that is null, or a value that is null or blank, is refused with 400, on the errand as on its
+	 * stakeholders.
+	 */
+	@Test
+	void updateErrandWithNullParameterOrBlankValue() {
+		final var parameters = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH + "/{errandId}").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Errand.create()
+				.withParameters(parameters)
+				.withStakeholders(List.of(Stakeholder.create().withParameters(parameters))))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0]", "must not be null"),
+				tuple("parameters[1].values[1]", "must not be blank"),
+				tuple("parameters[1].values[2]", "must not be blank"),
+				tuple("stakeholders[0].parameters[0]", "must not be null"),
+				tuple("stakeholders[0].parameters[1].values[1]", "must not be blank"),
+				tuple("stakeholders[0].parameters[1].values[2]", "must not be blank"));
+
+		// Verification
+		verifyNoInteractions(errandServiceMock);
+	}
+
 	@Test
 	void updateErrandWithEmptyJsonParameterKey() {
 		// Call
@@ -420,8 +518,7 @@ class ErrandsUpdateResourceFailureTest {
 	}
 
 	/**
-	 * A key the database would take for another one - here by the trailing space its comparison ignores - is refused
-	 * before it gets that far.
+	 * A key outside the allowed characters, here one with a trailing space, is refused before it reaches the service.
 	 */
 	@Test
 	void updateErrandWithJsonParameterKeyOutsideTheAllowedCharacters() {

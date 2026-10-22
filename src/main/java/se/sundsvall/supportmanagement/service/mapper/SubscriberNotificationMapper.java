@@ -31,7 +31,8 @@ public final class SubscriberNotificationMapper {
 	}
 
 	/**
-	 * Returns a mutable list, since it is handed to a {@code @OneToMany} collection that Hibernate manages.
+	 * Maps the dispatched events to notification event entities, in a mutable list that can be handed to a
+	 * {@code @OneToMany} collection that Hibernate manages. A null list maps to an empty one.
 	 */
 	public static List<SubscriberNotificationEventEntity> toEventEntities(final List<NotificationDispatchEntity> events) {
 		return ofNullable(events).orElseGet(List::of).stream()

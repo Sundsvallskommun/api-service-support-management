@@ -12,7 +12,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import static jakarta.persistence.FetchType.LAZY;
 
 /**
- * A JSON parameter of a measure. See {@link AbstractArtefactJsonParameterEntity} for why it is not one of the errand.
+ * A JSON parameter of a measure, held apart from the JSON parameters of the errand. See
+ * {@link AbstractArtefactJsonParameterEntity} for how it is held.
  */
 @Entity
 @Table(name = "measure_json_parameter",

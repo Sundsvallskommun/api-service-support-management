@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.validation.ValidLabelAttributes;
+import se.sundsvall.supportmanagement.api.validation.ValidProcessLabelAttributes;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -44,11 +46,22 @@ public class Label {
 	private Boolean deprecated;
 
 	@ArraySchema(arraySchema = @Schema(ref = "#/components/schemas/Label"))
+	@Valid
 	private List<Label> labels;
 
 	@Schema(
-		description = "Free-form key/value data owned by the client. Stored and returned as-is by the service, which does not interpret the contents (apart from rejecting duplicate keys per label). Keys are conventions agreed between clients (e.g. 'escalationEmail').")
+		description = """
+			Free-form key/value data owned by the client, stored and returned as-is. Duplicate keys per label are rejected, \
+			and three keys are read by the service itself. processKey names the process an errand wearing the label runs. \
+			processStartMode says whether that process starts by itself when the errand changes (AUTOMATIC, which is also \
+			what leaving it out means) or only when a handler starts it (MANUAL); it has to be exactly one of those two, \
+			and is allowed only on a label that also has processKey. processBlocked set to true keeps every process away \
+			from an errand wearing the label; it has to be exactly true or false, and needs no processKey. The three keys \
+			are matched exactly as spelled, and a key spelled like any of them in any other way is rejected. Other keys \
+			are conventions agreed between clients (e.g. 'escalationEmail').""")
 	@Valid
+	@ValidLabelAttributes
+	@ValidProcessLabelAttributes
 	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private List<LabelAttribute> attributes;
 

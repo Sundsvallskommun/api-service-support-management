@@ -120,7 +120,7 @@ public class EmailReaderWorker {
 	}
 
 	private void sendEmail(final ErrandEntity errand, final EmailRequest emailRequest) {
-		if (emailRequest != null) {
+		if (emailRequest != null && !errand.isDraft()) {
 			communicationService.sendEmail(errand, emailRequest);
 		}
 	}
@@ -141,11 +141,11 @@ public class EmailReaderWorker {
 	}
 
 	/**
-	 * An inactive errand, a delivery status report or an auto-reply is not a case worker needing to act, so none of
-	 * them should page an agent in Telia ACE to open the errand.
+	 * A draft, an inactive errand, a delivery status report or an auto-reply is not a case worker needing to act, so
+	 * none of them should page an agent in Telia ACE to open the errand.
 	 */
 	private boolean shouldNotifyTeliaAce(final ErrandEntity errand, final EmailWorkerConfigEntity config, final Email email) {
-		return !isErrandInactive(errand, config) && !isDeliveryStatusReport(email) && !isAutoReply(email);
+		return !errand.isDraft() && !isErrandInactive(errand, config) && !isDeliveryStatusReport(email) && !isAutoReply(email);
 	}
 
 	/**

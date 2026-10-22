@@ -27,7 +27,7 @@ class DecisionEntityTest {
 	// What the artefact points at rather than what it is. None of it identifies the artefact, and comparing it would
 	// walk back into the errand the artefact already hangs on.
 	private static final String[] RELATIONS = {
-		"errandEntity", "investigationEntity", "terms", "attachments", "jsonParameters"
+		"errandEntity", "investigationEntity", "terms", "attachments", "jsonParameters", "parameters"
 	};
 
 	@BeforeAll
@@ -83,6 +83,7 @@ class DecisionEntityTest {
 		final var terms = List.of(DecisionTermEntity.create());
 		final var attachments = List.of(AttachmentEntity.create());
 		final var jsonParameters = List.of(DecisionJsonParameterEntity.create());
+		final var parameters = List.of(DecisionParameterEntity.create());
 
 		// Act
 		final var result = DecisionEntity.create()
@@ -116,7 +117,8 @@ class DecisionEntityTest {
 			.withErrandProcessId(errandProcessId)
 			.withTerms(terms)
 			.withAttachments(attachments)
-			.withJsonParameters(jsonParameters);
+			.withJsonParameters(jsonParameters)
+			.withParameters(parameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -136,8 +138,8 @@ class DecisionEntityTest {
 			.extracting(DecisionEntity::getValidFrom, DecisionEntity::getValidTo, DecisionEntity::getInvestigationEntity, DecisionEntity::getErrandProcessId)
 			.containsExactly(validFrom, validTo, investigationEntity, errandProcessId);
 		assertThat(result)
-			.extracting(DecisionEntity::getTerms, DecisionEntity::getAttachments, DecisionEntity::getJsonParameters)
-			.containsExactly(terms, attachments, jsonParameters);
+			.extracting(DecisionEntity::getTerms, DecisionEntity::getAttachments, DecisionEntity::getJsonParameters, DecisionEntity::getParameters)
+			.containsExactly(terms, attachments, jsonParameters, parameters);
 	}
 
 	@Test
@@ -153,6 +155,15 @@ class DecisionEntityTest {
 	void onUpdateSetsModified() {
 		final var entity = DecisionEntity.create();
 		entity.onUpdate();
+
+		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");
+	}
+
+	@Test
+	void markModifiedSetsModified() {
+		final var entity = DecisionEntity.create();
+		entity.markModified();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
 		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("modified");

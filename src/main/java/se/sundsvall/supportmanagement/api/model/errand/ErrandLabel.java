@@ -1,8 +1,13 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
+import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
+import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
@@ -10,7 +15,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 public class ErrandLabel {
 
 	@Schema(description = "Label ID", examples = "5f79a808-0ef3-4985-99b9-b12f23e202a7")
-	@ValidUuid
+	@ValidUuid(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String id;
 
 	@Schema(description = "Label version for optimistic concurrency control. When set, validated against the current version in DB on errand create/update — mismatch yields 412.")
@@ -30,6 +37,10 @@ public class ErrandLabel {
 
 	@Schema(description = "Resource name", examples = "keycard", accessMode = READ_ONLY)
 	private String resourceName;
+
+	@Schema(description = "Attributes of the label, as registered for the namespace. Changed through the label metadata, never through the errand", accessMode = READ_ONLY)
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	private List<LabelAttribute> attributes;
 
 	public static ErrandLabel create() {
 		return new ErrandLabel();
@@ -126,9 +137,22 @@ public class ErrandLabel {
 		return this;
 	}
 
+	public List<LabelAttribute> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(final List<LabelAttribute> attributes) {
+		this.attributes = attributes;
+	}
+
+	public ErrandLabel withAttributes(final List<LabelAttribute> attributes) {
+		setAttributes(attributes);
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(classification, classificationDisplayName, displayName, id, resourceName, resourcePath, version);
+		return Objects.hash(attributes, classification, classificationDisplayName, displayName, id, resourceName, resourcePath, version);
 	}
 
 	@Override
@@ -143,14 +167,13 @@ public class ErrandLabel {
 			return false;
 		}
 		ErrandLabel other = (ErrandLabel) obj;
-		return Objects.equals(classification, other.classification) && Objects.equals(classificationDisplayName, other.classificationDisplayName) && Objects.equals(displayName, other.displayName) && Objects.equals(id, other.id) && Objects.equals(
-			resourceName, other.resourceName)
-			&& Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(classification, other.classification) && Objects.equals(classificationDisplayName, other.classificationDisplayName) && Objects.equals(displayName, other.displayName)
+			&& Objects.equals(id, other.id) && Objects.equals(resourceName, other.resourceName) && Objects.equals(resourcePath, other.resourcePath) && Objects.equals(version, other.version);
 	}
 
 	@Override
 	public String toString() {
 		return "ErrandLabel [id=" + id + ", version=" + version + ", classification=" + classification + ", classificationDisplayName=" + classificationDisplayName + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", resourceName="
-			+ resourceName + "]";
+			+ resourceName + ", attributes=" + attributes + "]";
 	}
 }

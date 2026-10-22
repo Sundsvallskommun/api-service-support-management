@@ -1,0 +1,9 @@
+[
+	{
+		"entityType": "ErrandEntity",
+		"created": "${json-unit.any-string}",
+		"entityId": "${json-unit.any-string}",
+		"id": "${json-unit.any-string}",
+		"version": 0
+	}
+]

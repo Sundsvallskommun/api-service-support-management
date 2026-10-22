@@ -64,8 +64,8 @@ public class SubscriberNotificationService {
 	 * Creates a new notification holding every event the subscriber should be told about for this errand. Each dispatch
 	 * results in its own notification, so an already acknowledged one is never resurrected.
 	 * <p>
-	 * Deliberately joins the caller's transaction, so a failure further down the dispatch rolls this notification back
-	 * together with the rest of the group.
+	 * Joins the caller's transaction, so a failure further down the dispatch rolls this notification back together with
+	 * the rest of the group.
 	 */
 	@Transactional
 	public void create(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
@@ -77,9 +77,9 @@ public class SubscriberNotificationService {
 	}
 
 	/**
-	 * A notification belongs to the identity it was created for, so only that identity may read or change it. This is
-	 * ownership rather than access control: the access mapper says nothing about who owns a notification, and being
-	 * allowed to reach an errand does not make someone the recipient of another user's notifications about it.
+	 * Refuses with 403 unless the requesting user is the identity the notification was created for, since only that
+	 * identity may read or change it. Being allowed to reach the errand does not make someone the recipient of another
+	 * user's notifications about it.
 	 * <p>
 	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
 	 * returns. A request without an identifier owns nothing and is refused.

@@ -1,0 +1,32 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"urlPath": "/api-pw-alkt/2281/PROCESS-NAMESPACE/process/errand-events",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"eventId": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+					"eventType": "UPDATE",
+					"eventSubType": "SIGNAL",
+					"errandId": "aa000000-0000-0000-0000-0000000000a1",
+					"processKey": "alkt-ansokan",
+					"startAllowed": false,
+					"signalName": "granskning-godkand",
+					"occurredAt": "${json-unit.any-string}"
+				}
+			}
+		]
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-pw-alkt-handleErrandEvent"
+}

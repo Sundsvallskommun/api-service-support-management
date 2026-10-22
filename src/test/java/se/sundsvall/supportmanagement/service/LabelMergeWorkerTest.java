@@ -100,14 +100,14 @@ class LabelMergeWorkerTest {
 			.thenReturn(List.of(errand));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(metadataLabelRepositoryMock).existsById("source-2");
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
@@ -115,8 +115,79 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).delete(source2);
 		verify(transactionManagerMock).commit(transactionStatusMock);
 		assertThat(parent.getMetadataLabels()).containsExactly(target);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-2"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
+	}
+
+	@Test
+	@DisplayName("Verification that an errand keeping its labels is counted apart from the errands restowed, in the summary of the job and in the audit event")
+	void run_errandKeepingItsLabels_isCountedApartFromTheErrandsRestowed() {
+		var sourceIds = Set.of("source-1");
+		var errand = errandWithAccessLabels("source-1").withId("errand-1");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+
+		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable)).thenReturn(List.of(errand));
+		when(errandServiceMock.persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true)).thenReturn(1);
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
+
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
+
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
+		verify(metadataLabelRepositoryMock).existsById("source-1");
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
+		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels")));
+	}
+
+	@Test
+	@DisplayName("Verification that a source label an errand still wears is kept rather than deleted, that an action condition naming it names the destination in its place, since a condition requires every label it names, and that the summary and the audit event name the label kept")
+	void run_sourceLabelStillWorn_isKeptWhileTheConditionsNameTheDestination() {
+		var sourceIds = Set.of("source-1", "source-2");
+		var errand = errandWithAccessLabels("source-1").withId("errand-1");
+		var pageable = PageRequest.ofSize(BATCH_SIZE);
+		var condition = ActionConfigConditionEntity.create().withKey("hasLabel").withValues(List.of("source-1", "source-2"));
+		var config = ActionConfigEntity.create().withConditions(List.of(condition));
+		var source2 = MetadataLabelEntity.create().withId("source-2");
+
+		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(true);
+		when(metadataLabelRepositoryMock.existsById("source-2")).thenReturn(true);
+		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable)).thenReturn(List.of(errand));
+		when(errandServiceMock.persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true)).thenReturn(1);
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("source-1"))).thenReturn(true);
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("source-2"))).thenReturn(false);
+		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config));
+		when(metadataLabelRepositoryMock.findAllById(Set.of("source-2"))).thenReturn(List.of(source2));
+
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
+
+		assertThat(condition.getValues()).containsExactly(TARGET_ID);
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
+		verify(metadataLabelRepositoryMock).existsById("source-1");
+		verify(metadataLabelRepositoryMock).existsById("source-2");
+		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
+		verify(jobServiceMock).updateProgress(JOB_ID, 1);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-2"));
+		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(actionConfigRepositoryMock).saveAll(List.of(config));
+		verify(metadataLabelRepositoryMock).findAllById(Set.of("source-2"));
+		verify(metadataLabelRepositoryMock).delete(source2);
+		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY),
+			argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels, labels [source-1] kept since errands still wear them")));
+		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.endsWith(", 0 errand(s) restowed, 1 kept their labels, labels [source-1] kept since errands still wear them")));
 	}
 
 	@Test
@@ -136,7 +207,7 @@ class LabelMergeWorkerTest {
 			.thenReturn(List.of(errand));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(config, unrelatedConfig));
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
 
 		assertThat(condition.getValues()).containsExactlyInAnyOrder(TARGET_ID, "unrelated");
 		assertThat(unrelatedCondition.getValues()).containsExactly("OPEN");
@@ -146,9 +217,10 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -172,13 +244,13 @@ class LabelMergeWorkerTest {
 			.thenReturn(List.of());
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
-		pagedWorker.run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY));
+		pagedWorker.run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
 
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "errand-1", pageable);
 		verify(errandsRepositoryMock).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "errand-2", pageable);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand1), sourceIds, TARGET_ID);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand2), sourceIds, TARGET_ID);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand1), sourceIds, TARGET_ID, true);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(errand2), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
 		verify(jobServiceMock).setRunning(JOB_ID);
@@ -186,6 +258,7 @@ class LabelMergeWorkerTest {
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -203,21 +276,22 @@ class LabelMergeWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable))
 			.thenReturn(List.of(staleErrand), List.of(freshErrand));
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
-			.doNothing()
-			.when(errandServiceMock).persistLabelMergeBatch(any(), eq(sourceIds), eq(TARGET_ID));
+			.doReturn(0)
+			.when(errandServiceMock).persistLabelMergeBatch(any(), eq(sourceIds), eq(TARGET_ID), eq(true));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
 
 		verify(errandsRepositoryMock, times(2)).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(staleErrand), sourceIds, TARGET_ID);
-		verify(errandServiceMock).persistLabelMergeBatch(List.of(freshErrand), sourceIds, TARGET_ID);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(staleErrand), sourceIds, TARGET_ID, true);
+		verify(errandServiceMock).persistLabelMergeBatch(List.of(freshErrand), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).updateProgress(JOB_ID, 1);
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
 		verify(metadataLabelRepositoryMock).existsById("source-1");
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(metadataLabelRepositoryMock).findAllById(sourceIds);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-1"));
 		verify(eventServiceMock).createLabelMergeEvent(eq(MUNICIPALITY_ID), eq(TARGET_ID), eq(STARTED_BY), any());
 		verify(jobServiceMock).complete(eq(JOB_ID), any());
 	}
@@ -234,12 +308,12 @@ class LabelMergeWorkerTest {
 		when(errandsRepositoryMock.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable))
 			.thenReturn(List.of(errand));
 		doThrow(new ObjectOptimisticLockingFailureException(ErrandEntity.class, "errand-1"))
-			.when(errandServiceMock).persistLabelMergeBatch(any(), eq(sourceIds), eq(TARGET_ID));
+			.when(errandServiceMock).persistLabelMergeBatch(any(), eq(sourceIds), eq(TARGET_ID), eq(true));
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, sourceIds, STARTED_BY, true));
 
 		verify(errandsRepositoryMock, times(3)).findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(sourceIds, "", pageable);
-		verify(errandServiceMock, times(3)).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID);
+		verify(errandServiceMock, times(3)).persistLabelMergeBatch(List.of(errand), sourceIds, TARGET_ID, true);
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
 		verify(metadataLabelRepositoryMock).existsById("source-1");
@@ -253,7 +327,7 @@ class LabelMergeWorkerTest {
 	void run_targetNoLongerExists_failsJobWithoutTouchingErrandsOrAuditing() {
 		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(false);
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, Set.of("source-1"), STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, Set.of("source-1"), STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);
@@ -267,7 +341,7 @@ class LabelMergeWorkerTest {
 		when(metadataLabelRepositoryMock.existsById(TARGET_ID)).thenReturn(true);
 		when(metadataLabelRepositoryMock.existsById("source-1")).thenReturn(false);
 
-		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, Set.of("source-1"), STARTED_BY));
+		worker().run(new LabelMergeRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, TARGET_ID, Set.of("source-1"), STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).existsById(TARGET_ID);

@@ -1,0 +1,10 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-gateway/token"
+	},
+	"response": {
+		"status": 500
+	},
+	"name": "api-gateway"
+}

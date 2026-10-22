@@ -12,7 +12,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import static jakarta.persistence.FetchType.LAZY;
 
 /**
- * A JSON parameter of a statement. See {@link AbstractArtefactJsonParameterEntity} for why it is not one of the errand.
+ * A JSON parameter of a statement, held apart from those of the errand. See
+ * {@link AbstractArtefactJsonParameterEntity}.
  */
 @Entity
 @Table(name = "statement_json_parameter",

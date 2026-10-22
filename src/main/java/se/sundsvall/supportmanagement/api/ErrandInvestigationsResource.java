@@ -58,10 +58,10 @@ import static se.sundsvall.supportmanagement.service.util.ETagUtil.formatOrNull;
 /**
  * The investigations of an errand, together with the attachments and the business content that belong to them.
  * <p>
- * The attachments have no read operation here on purpose. An attachment linked to an investigation <em>is</em> an
- * attachment of the errand, and is read - content and all - through
- * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}. What this resource adds is
- * which attachments belong to the investigation.
+ * The attachments have no read operation here. An attachment linked to an investigation <em>is</em> an attachment of
+ * the errand, and is read - content and all - through
+ * {@code GET /{municipalityId}/{namespace}/errands/{errandId}/attachments/{attachmentId}}. This resource manages which
+ * attachments belong to the investigation.
  */
 @RestController
 @Validated
@@ -144,6 +144,9 @@ class ErrandInvestigationsResource {
 	@Operation(summary = "Delete errand investigation", description = "Deletes the investigation matching the provided errand id and investigation id", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
+		@ApiResponse(responseCode = "409",
+			description = "Conflict - a decision that can no longer be changed rests on the investigation",
+			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412", description = "Precondition Failed - If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<Void> deleteErrandInvestigation(

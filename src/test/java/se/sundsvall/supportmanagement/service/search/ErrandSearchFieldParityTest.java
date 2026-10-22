@@ -11,12 +11,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
 import se.sundsvall.supportmanagement.api.model.config.FieldAccess;
 import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
@@ -62,8 +61,7 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * reading of the rule here: {@link AccessControlSpecificationParityTest} already holds that specification to the
  * in memory check, and {@link ErrandSearchPredicates} renders the same {@code AccessScope} for the index.
  */
-@SpringBootTest
-@ActiveProfiles("junit")
+@ApplicationTest
 @Sql(scripts = {
 	"/db/scripts/truncate.sql"
 })

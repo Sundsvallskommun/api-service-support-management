@@ -1,0 +1,12 @@
+[
+	{
+		"classification": "CATEGORY",
+		"resourceName": "NY_TILLSYN",
+		"attributes": [
+			{
+				"key": "processStartMode",
+				"value": "MANUAL"
+			}
+		]
+	}
+]

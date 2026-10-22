@@ -1,0 +1,20 @@
+{
+	"startable": {
+		"status": "LIVE_INSTANCE",
+		"processKeys": []
+	},
+	"processes": [
+		{
+			"id": "${json-unit.any-string}",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-loop-guard",
+			"processStatus": "RUNNING",
+			"currentActivityId": "granska-ansokan",
+			"currentActivityName": "Granska ansokan",
+			"awaitingSignals": [],
+			"created": "${json-unit.any-string}",
+			"modified": "${json-unit.any-string}"
+		}
+	]
+}

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
@@ -16,7 +17,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.service.ErrandLabelService;
 import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.ProcessKeyGuard;
 
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
@@ -26,11 +29,20 @@ public class AddLabelAction extends AbstractAction {
 	private static final String LABEL = "label";
 	private static final Set<OperationType> VALID_OPERATION_TYPES = Set.of(OperationType.CREATE, OperationType.UPDATE);
 
-	private final ErrandsRepository errandsRepository;
+	private static final String LEFT_OFF = """
+		The labels a scheduled action was to add were therefore left off the errand. Take the label off the action, or give \
+		the action a condition that keeps it away from the errands it must not relabel.""";
 
-	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final Clock clock) {
+	private final ErrandsRepository errandsRepository;
+	private final ErrandLabelService errandLabelService;
+	private final ProcessKeyGuard processKeyGuard;
+
+	public AddLabelAction(final MetadataService metadataService, final ErrandsRepository errandsRepository, final ErrandLabelService errandLabelService, final ProcessKeyGuard processKeyGuard,
+		final Clock clock) {
 		super(metadataService, clock);
 		this.errandsRepository = errandsRepository;
+		this.errandLabelService = errandLabelService;
+		this.processKeyGuard = processKeyGuard;
 	}
 
 	@Override
@@ -86,8 +98,18 @@ public class AddLabelAction extends AbstractAction {
 		return createActionWithDuration(errand, actionConfigEntity);
 	}
 
+	/**
+	 * Puts the labels of the action on the errand, unless doing so would leave it naming a process it does not belong to.
+	 * <p>
+	 * The labels the errand would wear, those it already wears included, are expanded to their ancestors before the guard
+	 * is asked, so a process key carried by an ancestor is held to as well. The ancestors the errand lacks are put on with
+	 * the labels.
+	 * <p>
+	 * A refused change leaves the labels off and answers false, and the guard writes what happened on the errand.
+	 * Otherwise answers whether any label was added. The access labels of the errand are left as they are.
+	 */
 	@Override
-	public void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
+	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var newLabels = actionConfigEntity.getParameters().stream()
 			.filter(parameter -> parameter.getKey().equals(LABEL))
 			.findFirst()
@@ -96,11 +118,25 @@ public class AddLabelAction extends AbstractAction {
 			.flatMap(List::stream)
 			.map(labelId -> ErrandLabelEmbeddable.create().withMetadataLabelId(labelId))
 			.filter(label -> !errand.getLabels().contains(label))
+			.distinct()
 			.toList();
 
-		errand.getLabels().addAll(newLabels);
+		var current = List.copyOf(errand.getLabels());
+		var labelsAfter = errandLabelService.withAncestors(errand.getNamespace(), errand.getMunicipalityId(), Stream.concat(current.stream(), newLabels.stream()).toList());
+
+		if (processKeyGuard.refusesLabelChange(errand.getId(), current, labelsAfter, LEFT_OFF)) {
+			return false;
+		}
+
+		var added = labelsAfter.stream()
+			.filter(label -> !current.contains(label))
+			.toList();
+
+		errand.getLabels().addAll(added);
 
 		errandsRepository.save(errand);
+
+		return !added.isEmpty();
 	}
 
 	@Override

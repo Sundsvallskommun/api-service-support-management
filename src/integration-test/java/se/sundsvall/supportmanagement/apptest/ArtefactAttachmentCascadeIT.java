@@ -26,15 +26,10 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 /**
- * The five removal cases the attachment link has to survive.
+ * The five removal cases the attachment link has to survive, and the linking and purpose of an errand attachment.
  * <p>
- * Every one of them verifies <b>both</b> halves of its requirement - that the right row went, and that the right row
- * stayed. A test that only checked the first would say yes to a model that takes the attachment with it, which is
- * exactly
- * the failure the link exists to prevent.
- * <p>
- * The rows are counted with SQL rather than read back through JPA on purpose: a collection in memory can be stale where
- * the database is right, and it is the database these cases are about.
+ * Every removal case verifies <b>both</b> halves of its requirement - that the right row went, and that the right row
+ * stayed. The rows are counted with SQL, in the database.
  */
 @WireMockAppTestSuite(files = "classpath:/ArtefactAttachmentCascadeIT/", classes = Application.class)
 @Sql({
@@ -69,12 +64,9 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	private JdbcTemplate jdbcTemplate;
 
 	/**
-	 * Case 1 - the attachment is removed where Hibernate does not see it: the purge job, a manual correction, a bulk
-	 * removal still to be written. The foreign keys take every link with it, and none of the artefacts it was linked to.
-	 * <p>
-	 * This is the {@code on delete cascade} of the migration at work, which is also what removes the links when the
-	 * attachment goes through the errand in case 4 - the only way to reach it on its own is to go around the application,
-	 * which is why the row is removed with SQL.
+	 * Case 1 - the attachment is removed with SQL, where Hibernate does not see it, as the purge job or a manual
+	 * correction would. The {@code on delete cascade} of the foreign keys takes every link with it, and none of the
+	 * artefacts it was linked to.
 	 */
 	@Test
 	void test01_deletingAttachmentOutsideHibernateRemovesLinksButKeepsArtefacts() {
@@ -147,14 +139,16 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections and terms, their links and
-	 * the attachments.
+	 * Case 5 - the errand is removed. Everything goes: all four artefacts with their sections, terms and parameters,
+	 * their links and the attachments.
 	 */
 	@Test
 	void test05_deletingErrandRemovesEverything() {
 
 		assertThat(artefactCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
 		assertThat(linkCounts()).allSatisfy((table, count) -> assertThat(count).as(table).isOne());
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class)).isEqualTo(3);
+		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter_values", Integer.class)).isEqualTo(3);
 
 		setupCall()
 			.withServicePath(ERRAND_PATH)
@@ -165,16 +159,23 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		assertThat(artefactCounts()).as("every artefact went with the errand").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_section where investigation_id = ?", Integer.class, INVESTIGATION_ID))
 			.as("the sections went with the investigation").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter where investigation_id = ?", Integer.class, INVESTIGATION_ID))
+			.as("the parameters went with the investigation").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter_values", Integer.class))
+			.as("and so did their values").isZero();
 		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_term where decision_id = ?", Integer.class, DECISION_ID))
 			.as("the terms went with the decision").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter where decision_id = ?", Integer.class, DECISION_ID))
+			.as("the parameters went with the decision").isZero();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision_parameter_values", Integer.class))
+			.as("and so did their values").isZero();
 		assertThat(linkCounts()).as("the links went").allSatisfy((table, count) -> assertThat(count).as(table).isZero());
 		assertThat(attachments()).as("the attachments went").isZero();
 	}
 
 	/**
-	 * The invariant JPA cannot express: the two foreign keys of a link know nothing about each other, so nothing but the
-	 * lookup stops an attachment of one errand from being linked to an artefact of another. Fetching the attachment through
-	 * the errand is what makes it a 404 rather than a link nobody meant to allow.
+	 * An attachment of another errand cannot be linked: it is looked up through the errand, so the call gives 404 and no
+	 * link is written.
 	 */
 	@Test
 	void test06_linkingAttachmentFromAnotherErrandGives404() {
@@ -190,8 +191,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Linking an attachment that is already linked says so rather than writing a second row - the unique key on the pair
-	 * would refuse it anyway, and a constraint violation deep in the flush is not an answer a caller can act on.
+	 * Linking an attachment that is already linked gives 409 and writes no second row.
 	 */
 	@Test
 	void test07_linkingTwiceIsAConflict() {
@@ -206,8 +206,8 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Uploading through the statement puts the attachment on the errand and links it in one call, which is what makes the
-	 * errand attachment resource the place it is read from.
+	 * Uploading through the statement puts the attachment on the errand and links it in one call, and the location
+	 * returned is the errand attachment resource.
 	 */
 	@Test
 	void test08_uploadingThroughStatementPutsAttachmentOnErrand() throws Exception {
@@ -229,8 +229,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The purpose belongs to the attachment, not to any link to it. That is what lets the errand show it in its own
-	 * attachment list, and what lets a file linked to nothing carry one at all.
+	 * The purpose is written on the attachment, not on any link to it, and the errand shows it in its attachment list.
 	 */
 	@Test
 	void test09_purposeIsWrittenOnTheAttachmentAndShownByTheErrand() {
@@ -254,7 +253,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A purpose the namespace has not registered is refused, so an id from somewhere else cannot become a purpose here.
+	 * A purpose the namespace has not registered is refused, and the purpose already set stays.
 	 */
 	@Test
 	void test10_anUnregisteredPurposeIsRejected() {
@@ -287,8 +286,8 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The statement owns its join table, so linking an attachment and unlinking it again are both changes to the statement,
-	 * and each moves the version its ETag carries - a caller holding the ETag from before is told the statement changed.
+	 * Linking an attachment and unlinking it again are both changes to the statement, and each moves the version its
+	 * ETag carries.
 	 */
 	@Test
 	void test12_linkingAndUnlinkingMoveTheVersionOfTheStatement() {
@@ -352,7 +351,7 @@ class ArtefactAttachmentCascadeIT extends AbstractAppTest {
 		return jdbcTemplate.queryForObject("select count(*) from statement where id = ?", Integer.class, STATEMENT_ID);
 	}
 
-	/** Only the attachment these cases own - the errand carries others, seeded for tests about something else. */
+	/** Only the attachment these cases own, not the other attachments of the errand. */
 	private int attachments() {
 		return jdbcTemplate.queryForObject("select count(*) from attachment where id = ?", Integer.class, ATTACHMENT_ID);
 	}

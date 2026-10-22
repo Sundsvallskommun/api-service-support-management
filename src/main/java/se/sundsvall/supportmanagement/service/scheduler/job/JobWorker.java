@@ -13,21 +13,17 @@ import static java.util.stream.Collectors.joining;
 /**
  * Ends the jobs nobody is reporting on any more.
  * <p>
- * A run taken down with the instance carrying it out leaves a job that says it is running and nothing that will ever
- * say otherwise. The row would read that way for as long as it lives, and since a job under way rules out another run
- * of its kind in the same namespace, every run after it would be refused. Nothing else moves such a job, which is what
- * this is here for.
+ * A run taken down with the instance carrying it out leaves a job that says it is running, and a job under way rules
+ * out another run of its kind in the same namespace. Such a job is ended here, which lets the next run of its kind
+ * start.
  * <p>
- * Jobs are not removed, however old. What a run leaves behind is one row, and for a purge that row is the only lasting
- * record that the errands it walked were removed on purpose.
+ * Jobs are not removed, however old.
  */
 @Component
 public class JobWorker {
 
 	/**
-	 * How many jobs the account of a sweep names one by one. The rest are counted, since what is read here is a line in
-	 * a health page rather than a report: enough to see what kind of work stopped and where to go looking, without the
-	 * page turning into a list.
+	 * How many jobs the account of a sweep names one by one. The rest are counted.
 	 */
 	private static final int MAX_JOBS_NAMED = 5;
 
@@ -46,9 +42,8 @@ public class JobWorker {
 	/**
 	 * Ends the jobs that stopped being reported on, and accounts for what was ended.
 	 * <p>
-	 * The account is what the caller reports the health of the service against, so it names the work rather than
-	 * counting it: whoever reads a service that has gone restricted needs to know which kind of run stopped, in which
-	 * namespace, and when it was last heard from - not that something, somewhere, went wrong.
+	 * The account is what the caller reports the health of the service against. It names each run that stopped - its
+	 * kind, its namespace and when it was last heard from - up to {@code MAX_JOBS_NAMED}, and counts the rest.
 	 *
 	 * @return what was ended, in a sentence, or empty when nothing had been abandoned.
 	 */

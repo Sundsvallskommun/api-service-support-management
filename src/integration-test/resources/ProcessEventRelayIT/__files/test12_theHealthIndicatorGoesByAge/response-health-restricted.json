@@ -1,0 +1,6 @@
+{
+	"status": "RESTRICTED",
+	"details": {
+		"Reason": "${json-unit.regex}the oldest undelivered process event was written at .+, which is more than PT15M ago"
+	}
+}

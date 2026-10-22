@@ -9,6 +9,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidLabelAttributesConstraintValidator;
 
+/**
+ * Validates that no two attributes of a label share a key.
+ */
 @Documented
 @Target({
 	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
@@ -17,7 +20,7 @@ import se.sundsvall.supportmanagement.api.validation.impl.ValidLabelAttributesCo
 @Constraint(validatedBy = ValidLabelAttributesConstraintValidator.class)
 public @interface ValidLabelAttributes {
 
-	String message() default "each label must have unique attribute keys";
+	String message() default "attribute keys must be unique";
 
 	Class<?>[] groups() default {};
 

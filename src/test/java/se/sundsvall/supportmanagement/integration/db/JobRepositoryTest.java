@@ -21,9 +21,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
 
 /**
- * What is worth pinning down against a real database is the pair of queries that stand in for asking whether a job has
- * gone quiet. A job gets a modified of its own only once the work reports on it, so neither query answers that on its
- * own: one finds what has been reported on and fallen silent, the other what was never reported on at all.
+ * Verifies against a real database the pair of queries that together find the jobs that have gone quiet: one finds
+ * what has been reported on and fallen silent, the other what was never reported on at all. A job gets a modified of
+ * its own only once the work reports on it.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)

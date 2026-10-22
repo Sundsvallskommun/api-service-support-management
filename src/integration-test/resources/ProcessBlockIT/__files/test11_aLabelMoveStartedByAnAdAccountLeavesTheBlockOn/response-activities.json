@@ -1,0 +1,23 @@
+{
+	"content": [
+		{
+			"id": "${json-unit.any-string}",
+			"activityType": "CONFIG",
+			"severity": "ERROR",
+			"message": "The change would take the label 'cb000000-0000-0000-0000-0000000000c1' off errand 'aa000000-0000-0000-0000-0000000000a2', and it carries processBlocked=true, which keeps every process away from the errand. An ad account cannot take that label off; a service identity can. The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.",
+			"errorCode": "LABEL_REMOVES_PROCESS_BLOCK",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		}
+	],
+	"pageable": "${json-unit.ignore}",
+	"totalPages": 1,
+	"last": true,
+	"totalElements": 1,
+	"size": 50,
+	"number": 0,
+	"sort": "${json-unit.ignore}",
+	"first": true,
+	"numberOfElements": 1,
+	"empty": false
+}

@@ -36,9 +36,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 /**
- * The walk itself is what these tests pin down: how far it goes, what it counts and what it tells the job it reports
- * against. Which errands the batches hold is settled by a specification handed to the database, so that the predicate
- * behind it belongs to a test with a database rather than to this one.
+ * The walk of the purge worker: how far it goes, what it counts and what it tells the job it reports against. Which
+ * errands the batches hold is settled by a specification handed to the database, and is not asserted here.
  */
 @ExtendWith(MockitoExtension.class)
 class ErrandPurgeWorkerTest {
@@ -51,8 +50,8 @@ class ErrandPurgeWorkerTest {
 	private static final int BATCH_SIZE = 2;
 
 	/**
-	 * Long enough that no batch in these tests comes due for a report of its own, so that what the other tests see is
-	 * the reporting a batch does when it ends.
+	 * Long enough that no batch in these tests comes due for a report of its own, leaving only the reporting a batch
+	 * does when it ends.
 	 */
 	private static final Duration PROGRESS_INTERVAL = Duration.ofMinutes(1);
 
@@ -227,7 +226,7 @@ class ErrandPurgeWorkerTest {
 	}
 
 	/**
-	 * The job as a run under way sees it, which is what makes the walk carry on to its own end rather than stop.
+	 * The job as a run under way sees it, so the walk carries on to its own end.
 	 */
 	private void stillRunning() {
 		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
@@ -264,8 +263,7 @@ class ErrandPurgeWorkerTest {
 	}
 
 	/**
-	 * Typed rather than raw, since the repository carries several counts and findBys and a matcher has to say which one
-	 * is meant.
+	 * Matches any specification, typed so that it picks one of the several counts and findBys of the repository.
 	 */
 	private static Specification<ErrandEntity> anySpecification() {
 		return ArgumentMatchers.any();

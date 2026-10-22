@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.service.MessageExchangeSyncService;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.RELATION_ID_KEY;
 
 @Component
@@ -37,7 +38,6 @@ public class MessageExchangeWorker {
 	private final MessageExchangeSyncService messageExchangeSyncService;
 	private final RelationClient relationClient;
 	private final ErrandsRepository errandsRepository;
-	private static final String THIS_SERVICE = "supportmanagement";
 
 	public MessageExchangeWorker(final MessageExchangeClient messageExchangeClient, final MessageExchangeSyncRepository messageExchangeSyncRepository,
 		final ConversationRepository conversationRepository, final MessageExchangeSyncService messageExchangeSyncService,
@@ -104,8 +104,9 @@ public class MessageExchangeWorker {
 
 	private Predicate<ResourceIdentifier> resourceIdentifierMatchesErrand() {
 		return resourceIdentifier -> {
+			// The relation service also holds relations that name this service support-management.
 			final var service = ofNullable(resourceIdentifier.getService()).orElse("").replace("-", "").replace("_", "");
-			return THIS_SERVICE.equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
+			return RELATION_SERVICE.equalsIgnoreCase(service) && errandsRepository.findById(resourceIdentifier.getResourceId()).isPresent();
 		};
 	}
 

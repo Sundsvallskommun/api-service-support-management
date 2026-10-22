@@ -31,13 +31,20 @@ public interface Action {
 
 	boolean conditionsFulfilled(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
-	void executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
+	/**
+	 * Carries out the action on the errand.
+	 *
+	 * @param  errand             the errand to act on.
+	 * @param  actionConfigEntity the configuration of the action.
+	 * @return                    whether the errand itself was changed, which is what decides whether a scheduled run
+	 *                            records the change. Sending something about the errand leaves it as it was.
+	 */
+	boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity);
 
 	boolean validForOperationType(OperationType operationType);
 
 	/**
-	 * The operations this action runs on. A config may narrow this set and may not widen it, so a client configuring one
-	 * has to be able to read it rather than discover it by being refused.
+	 * The operations this action runs on. A config may narrow this set and may not widen it.
 	 */
 	Set<OperationType> getValidOperationTypes();
 }

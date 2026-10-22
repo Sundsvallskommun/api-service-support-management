@@ -268,21 +268,28 @@ VALUES ('1',
 -- -----------------------------------
 -- Attachment
 -- -----------------------------------
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, sequence_number)
 VALUES ('25d266a7-1ff2-4bf4-b6f3-0473b2b86fcd', '1', 'Test_image.jpg', 'image/jpeg',
-        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE-1', '2281', 5068),
+        'ec677eb3-604c-4935-bff7-f8f0b500c8f4', 'NAMESPACE-1', '2281', 5068, 1),
        ('c697642d-4d8d-4b07-8816-025a2734b09a', '2', 'Test.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274, 1),
        ('c8d88089-5136-4a1a-aa10-5f435cb6e69f', '3', 'Test2.txt', 'text/plain',
-        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274),
+        'cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 'NAMESPACE-1', '2281', 274, 2),
        ('99fa4dd0-9308-4d45-bb8e-4bb881a9a536', '4', 'Test3.txt', 'text/plain',
-        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE-1', '2281', 274),
+        '1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'NAMESPACE-1', '2281', 274, 1),
        ('95ea267a-28ec-4636-922c-a717d79bd029', '5', 'birthday-card.txt', 'text/plain',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281', 13),
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE.1', '2281', 13, 1),
        ('1c49e30d-50d9-468f-89f3-3e3b87ea93e2', '6', 'data.txt', 'text/plain',
-        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE-1', '2281', 4),
+        'b481b191-dd37-47ca-b417-ed3a56ba724c', 'NAMESPACE-1', '2281', 4, 1),
        ('b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3', '7', 'Test_image.jpg', 'image/jpeg',
-        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE-1', '2281', 5068);
+        '147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'NAMESPACE-1', '2281', 5068, 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('ec677eb3-604c-4935-bff7-f8f0b500c8f4', 1),
+       ('cc236cf1-c00f-4479-8341-ecf5dd90b5b9', 2),
+       ('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 1),
+       ('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 2),
+       ('b481b191-dd37-47ca-b417-ed3a56ba724c', 1);
 
 -- -----------------------------------
 -- Revision
@@ -725,9 +732,9 @@ VALUES ('d1000000-0000-0000-0000-000000000001', 'SUPPORTS', 'Tillstyrker', 1, tr
 INSERT INTO attachment_data(id, file)
 VALUES ('100', '68656a');
 
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id, sequence_number)
 VALUES ('a5000000-0000-0000-0000-000000000001', '100', 'yttrande.txt', 'text/plain',
-        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000001');
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000001', 1);
 
 -- -----------------------------------
 -- Statement (remiss)
@@ -758,6 +765,15 @@ VALUES ('f3000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-0000000
         'Inga betalningsanmärkningar finns registrerade.'),
        ('f3000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'premises', 'Lokalen', 2, 'PENDING', null);
 
+INSERT INTO investigation_parameter(id, investigation_id, parameters_key, display_name, parameter_group)
+VALUES ('fa000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-000000000001', 'checkedSources', 'Kontrollerade källor', 'underlag'),
+       ('fa000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'riskLevel', null, null);
+
+INSERT INTO investigation_parameter_values(investigation_parameter_id, value_order, value)
+VALUES ('fa000000-0000-0000-0000-000000000001', 0, 'Skatteverket'),
+       ('fa000000-0000-0000-0000-000000000001', 1, 'Kronofogden'),
+       ('fa000000-0000-0000-0000-000000000002', 0, 'low');
+
 -- -----------------------------------
 -- Decision (beslut) and its terms
 -- -----------------------------------
@@ -772,6 +788,15 @@ VALUES ('f4000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-0000000
 INSERT INTO decision_term(id, decision_id, sort_order, category, text)
 VALUES ('f5000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', 1, 'serveringstid', 'Servering får ske mellan 11.00 och 01.00.'),
        ('f5000000-0000-0000-0000-000000000002', 'f4000000-0000-0000-0000-000000000001', 2, 'brandskydd', 'Högst 120 gäster får vistas i lokalen samtidigt.');
+
+INSERT INTO decision_parameter(id, decision_id, parameters_key, display_name, parameter_group)
+VALUES ('f7000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', 'servingArea', 'Serveringsyta', 'lokal'),
+       ('f7000000-0000-0000-0000-000000000002', 'f4000000-0000-0000-0000-000000000001', 'maxGuests', null, null);
+
+INSERT INTO decision_parameter_values(decision_parameter_id, value_order, value)
+VALUES ('f7000000-0000-0000-0000-000000000001', 0, 'inomhus'),
+       ('f7000000-0000-0000-0000-000000000001', 1, 'uteservering'),
+       ('f7000000-0000-0000-0000-000000000002', 0, '120');
 
 -- -----------------------------------
 -- Attachment links
@@ -797,9 +822,12 @@ VALUES ('f9000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-0000000
 INSERT INTO attachment_data(id, file)
 VALUES ('110', '68656a');
 
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id)
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, namespace, municipality_id, file_size, attachment_purpose_id, sequence_number)
 VALUES ('a5000000-0000-0000-0000-000000000002', '110', 'protokoll.txt', 'text/plain',
-        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000005');
+        'a0000000-0000-0000-0000-000000000001', 'NAMESPACE-ARTEFACT', '2281', 3, 'f6000000-0000-0000-0000-000000000005', 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number)
+VALUES ('a0000000-0000-0000-0000-000000000001', 2);
 
 INSERT INTO measure(id, errand_id, municipality_id, namespace, status, type, title, created_by, created, version)
 VALUES ('ee000000-0000-0000-0000-000000000200', 'a0000000-0000-0000-0000-000000000001', '2281', 'NAMESPACE-ARTEFACT', 'ACTIVE', 'MEASURE-1',
@@ -825,3 +853,52 @@ VALUES ('f9000000-0000-0000-0000-000000000004', 'f4000000-0000-0000-0000-0000000
 
 INSERT INTO measure_json_parameter(id, measure_id, parameter_key, schema_id, value, version)
 VALUES ('f9000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000200', 'measureForm', 'test-schema-1.0', '{"answer":"pending"}', 0);
+
+-- Process integration
+-- -----------------------------------
+-- A namespace of its own rather than a process consumer bolted onto NAMESPACE-1: the consumer is what decides whether
+-- a process report is accepted at all, and switching it on for the namespace every other test uses would change the
+-- shape of a config five NamespaceConfigIT fixtures assert on.
+INSERT INTO namespace_config(id, municipality_id, namespace, created, modified)
+VALUES (80, '2281', 'PROCESS-NAMESPACE', '2026-01-01 10:00:00.000', null);
+
+INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
+VALUES (80, 'DISPLAY_NAME', 'Process namespace', 'STRING'),
+       (80, 'SHORT_CODE', 'PN', 'STRING'),
+       (80, 'NOTIFICATION_TTL_IN_DAYS', '10', 'INTEGER'),
+       (80, 'ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (80, 'NOTIFY_REPORTER', 'false', 'BOOLEAN'),
+       (80, 'ROLE_BASED_MAPPING', 'false', 'BOOLEAN'),
+       (80, 'RESOURCE_ACCESS_CONTROL', 'false', 'BOOLEAN'),
+       (80, 'PROCESS_CONSUMER', 'pw-alkt', 'STRING');
+
+-- Two errands: one already running a process, one with none at all, so that creating and updating can each be asked
+-- of an errand in the state the question needs without one test depending on another having run.
+INSERT INTO errand(municipality_id, id, assigned_group_id, assigned_user_id, category, namespace,
+                   priority, reporter_user_id, status, title, type, created, modified, resolution,
+                   description, escalation_email, errand_number, business_related, previous_status, channel, touched)
+VALUES ('2281', 'aa000000-0000-0000-0000-0000000000a1', null, null, 'CATEGORY-1', 'PROCESS-NAMESPACE',
+        'MEDIUM', 'joe01doe', 'STATUS-1', 'Errand running a process', 'TYPE-1',
+        '2026-01-01 10:00:00.000', null, null, null, null, 'PN-26010001', false, null, null,
+        '2026-01-01 10:00:00.000'),
+       ('2281', 'aa000000-0000-0000-0000-0000000000a2', null, null, 'CATEGORY-1', 'PROCESS-NAMESPACE',
+        'MEDIUM', 'joe01doe', 'STATUS-1', 'Errand without a process', 'TYPE-1',
+        '2026-01-01 10:00:00.000', null, null, null, null, 'PN-26010002', false, null, null,
+        '2026-01-01 10:00:00.000');
+
+INSERT INTO errand_process(id, errand_id, municipality_id, namespace, process_service, process_key,
+                           process_instance_id, process_status, current_activity_id, current_activity_name,
+                           started, ended, active_marker, created, modified)
+VALUES ('ep-it-live', 'aa000000-0000-0000-0000-0000000000a1', '2281', 'PROCESS-NAMESPACE', 'pw-alkt', 'alkt-ansokan',
+        'pi-it-live', 'RUNNING', 'granska-ansokan', 'Granska ansokan',
+        '2026-01-01 10:00:00.000', null, 1, '2026-01-01 10:00:00.000', null);
+
+-- The second entry belongs to no instance, which is what makes narrowing the log to one instance a question worth
+-- asking over the wire: it is present unfiltered and absent filtered.
+INSERT INTO errand_process_activity(id, errand_process_id, errand_id, external_task_id, activity_type, activity_id,
+                                    activity_name, severity, message, error_code, occurred_at, created)
+VALUES ('epa-it-task', 'ep-it-live', 'aa000000-0000-0000-0000-0000000000a1', 'task-it-1', 'TASK', 'granska-ansokan',
+        'Granska ansokan', 'INFO', null, null, '2026-01-01 11:00:00.000', '2026-01-01 11:00:00.000'),
+       ('epa-it-config', null, 'aa000000-0000-0000-0000-0000000000a1', null, 'CONFIG', null,
+        null, 'ERROR', 'Two labels resolve to different process keys', 'AMBIGUOUS_PROCESS_KEY',
+        '2026-01-01 10:30:00.000', '2026-01-01 10:30:00.000');

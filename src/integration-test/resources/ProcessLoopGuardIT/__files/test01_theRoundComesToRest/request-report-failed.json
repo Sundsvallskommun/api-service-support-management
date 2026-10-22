@@ -1,0 +1,9 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "FAILED",
+	"error": {
+		"code": "INCIDENT",
+		"message": "The work step gave up"
+	}
+}

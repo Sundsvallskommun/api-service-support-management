@@ -9,12 +9,14 @@ import java.util.Set;
  * fold into which destination, and who asked for it. The job row carries no payload of its own, so this is the only
  * place these travel - mirrors {@link LabelMoveRun}.
  *
- * @param jobId          id of the job the run reports its progress against.
- * @param namespace      namespace the merged labels belong to.
- * @param municipalityId id of the municipality the merged labels belong to.
- * @param targetLabelId  id of the destination label the sources are merged into.
- * @param sourceLabelIds ids of the source labels being merged into the destination.
- * @param startedBy      who asked for the run.
+ * @param jobId              id of the job the run reports its progress against.
+ * @param namespace          namespace the merged labels belong to.
+ * @param municipalityId     id of the municipality the merged labels belong to.
+ * @param targetLabelId      id of the destination label the sources are merged into.
+ * @param sourceLabelIds     ids of the source labels being merged into the destination.
+ * @param startedBy          who asked for the run.
+ * @param startedByAdAccount whether the one who asked for the run is an ad account, which holds its label changes to
+ *                           the rule that an ad account may not take a label blocking processes off an errand.
  */
-public record LabelMergeRun(String jobId, String namespace, String municipalityId, String targetLabelId, Set<String> sourceLabelIds, String startedBy) {
+public record LabelMergeRun(String jobId, String namespace, String municipalityId, String targetLabelId, Set<String> sourceLabelIds, String startedBy, boolean startedByAdAccount) {
 }

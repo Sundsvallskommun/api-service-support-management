@@ -98,15 +98,15 @@ class LabelTreeRestructureWorkerTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET")).thenReturn(Optional.of(mergeTarget));
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE")).thenReturn(Optional.of(mergeSource));
 
-		when(labelMoveWorkerMock.moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), any()))
+		when(labelMoveWorkerMock.moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), eq(true), any()))
 			.thenAnswer(invocation -> {
-				((IntConsumer) invocation.getArgument(7)).accept(3);
-				return 3;
+				((IntConsumer) invocation.getArgument(8)).accept(3);
+				return new RestowPager.Outcome(2, 1);
 			});
-		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any()))
+		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), eq(true), any()))
 			.thenAnswer(invocation -> {
-				((IntConsumer) invocation.getArgument(6)).accept(2);
-				return 2;
+				((IntConsumer) invocation.getArgument(7)).accept(2);
+				return new LabelMergeWorker.MergeOutcome(new RestowPager.Outcome(2, 0), Set.of());
 			});
 
 		final var steps = List.of(
@@ -116,7 +116,7 @@ class LabelTreeRestructureWorkerTest {
 			moveStep(List.of("CATEGORY", "MOVE_ME"), List.of("CATEGORY", "DEST")),
 			mergeStep(List.of("CATEGORY", "MERGE_TARGET"), List.of(List.of("CATEGORY", "MERGE_SOURCE"))));
 
-		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, STARTED_BY));
+		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 
@@ -135,16 +135,17 @@ class LabelTreeRestructureWorkerTest {
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MOVE_ME");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/DEST");
-		verify(labelMoveWorkerMock).moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), any());
+		verify(labelMoveWorkerMock).moveAndRestow(eq(JOB_ID), eq(MUNICIPALITY_ID), eq("move-id"), eq("dest-parent-id"), isNull(), isNull(), eq(STARTED_BY), eq(true), any());
 		verify(jobServiceMock).updateProgress(JOB_ID, 3);
 
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET");
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE");
-		verify(labelMergeWorkerMock).mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), any());
+		verify(labelMergeWorkerMock).mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), eq(true), any());
 		// Cumulative across both restow-reporting steps (3 from the move, then +2 from the merge), onto the one composite job.
 		verify(jobServiceMock).updateProgress(JOB_ID, 5);
 
-		verify(jobServiceMock).complete(eq(JOB_ID), argThat(message -> message.contains("5 step(s) applied") && message.contains("5 errand(s) restowed")));
+		// The errand the move left with its labels is counted apart from the four restowed.
+		verify(jobServiceMock).complete(JOB_ID, "5 step(s) applied, 4 errand(s) restowed, 1 kept their labels");
 	}
 
 	@Test
@@ -161,7 +162,7 @@ class LabelTreeRestructureWorkerTest {
 			renameStep(List.of("CATEGORY", "GONE"), "Renamed"),
 			moveStep(List.of("CATEGORY", "SHOULD_NOT_RUN"), List.of()));
 
-		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, STARTED_BY));
+		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/NEW_TYPE");
@@ -175,12 +176,38 @@ class LabelTreeRestructureWorkerTest {
 	}
 
 	@Test
+	@DisplayName("Verification that a merge keeping source labels that errands still wear stops the run, since the steps after it were checked against a tree without them")
+	void run_mergeKeepingSourceLabels_stopsAndFailsJob() {
+		final var mergeTarget = labelEntity("merge-target-id", "CATEGORY/MERGE_TARGET");
+		final var mergeSource = labelEntity("merge-source-id", "CATEGORY/MERGE_SOURCE");
+
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET")).thenReturn(Optional.of(mergeTarget));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE")).thenReturn(Optional.of(mergeSource));
+		when(labelMergeWorkerMock.mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), eq(true), any()))
+			.thenReturn(new LabelMergeWorker.MergeOutcome(new RestowPager.Outcome(1, 1), Set.of("merge-source-id")));
+
+		final var steps = List.of(
+			mergeStep(List.of("CATEGORY", "MERGE_TARGET"), List.of(List.of("CATEGORY", "MERGE_SOURCE"))),
+			deleteStep(List.of("CATEGORY", "SHOULD_NOT_RUN")));
+
+		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, STARTED_BY, true));
+
+		verify(jobServiceMock).setRunning(JOB_ID);
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_TARGET");
+		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/MERGE_SOURCE");
+		verify(labelMergeWorkerMock).mergeAndRestow(eq(JOB_ID), eq(NAMESPACE), eq(MUNICIPALITY_ID), eq("merge-target-id"), eq(Set.of("merge-source-id")), eq(STARTED_BY), eq(true), any());
+		verify(jobServiceMock).fail(eq(JOB_ID), argThat(message -> message.startsWith("Label tree restructure aborted: Step 0 (MERGE) failed")
+			&& message.contains("labels [merge-source-id] kept since errands still wear them")));
+		verify(metadataLabelRepositoryMock, never()).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/SHOULD_NOT_RUN");
+	}
+
+	@Test
 	@DisplayName("Verification that ADD is a no-op when the path already exists, so a resubmitted request is safe")
 	void run_addAlreadyPresent_skipsWithoutSaving() {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/EXISTING"))
 			.thenReturn(Optional.of(labelEntity("existing-id", "CATEGORY/EXISTING")));
 
-		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, List.of(addStep(List.of("CATEGORY", "EXISTING"), "Existing", "TYPE")), STARTED_BY));
+		worker().run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, List.of(addStep(List.of("CATEGORY", "EXISTING"), "Existing", "TYPE")), STARTED_BY, true));
 
 		verify(jobServiceMock).setRunning(JOB_ID);
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/EXISTING");

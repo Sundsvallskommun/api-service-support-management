@@ -1,0 +1,16 @@
+{
+	"title": "Utkast som inte syns",
+	"priority": "MEDIUM",
+	"status": "STATUS-1",
+	"lifecycle": "DRAFT",
+	"reporterUserId": "joe01doe",
+	"classification": {
+		"category": "CATEGORY-1",
+		"type": "TYPE-1"
+	},
+	"labels": [
+		{
+			"id": "ef000000-0000-0000-0000-0000000000f3"
+		}
+	]
+}

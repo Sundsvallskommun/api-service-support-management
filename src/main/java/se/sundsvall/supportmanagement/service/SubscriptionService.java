@@ -92,7 +92,7 @@ public class SubscriptionService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleAutoSubscribeEvent(final AutoSubscribeEvent event) {
 		try {
-			autoSubscribeErrandAssignee(event.errandEntity());
+			subscribeAssignee(event.errandEntity());
 		} catch (final Exception e) {
 			LOG.warn("Auto-subscribe failed for errand '{}' – continuing without subscription", event.errandEntity().getId(), e);
 		}
@@ -100,6 +100,10 @@ public class SubscriptionService {
 
 	@Transactional
 	public void autoSubscribeErrandAssignee(final ErrandEntity errand) {
+		subscribeAssignee(errand);
+	}
+
+	private void subscribeAssignee(final ErrandEntity errand) {
 		final var assignedUserId = errand.getAssignedUserId();
 		if (assignedUserId == null) {
 			return;
@@ -125,9 +129,8 @@ public class SubscriptionService {
 	}
 
 	/**
-	 * A subscriber's subscriptions are their own to read and remove. Anyone may create one, since subscribing a
-	 * colleague is a supported workflow and the creator is recorded on the subscription, but listing or deleting them
-	 * discloses or changes another user's state and is therefore limited to the subscriber themselves.
+	 * Refuses with 403 unless the subscriber is the requesting user. A subscriber's subscriptions are their own to list
+	 * and remove, while anyone may create one.
 	 * <p>
 	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
 	 * returns. A request without an identifier owns nothing and is refused.
