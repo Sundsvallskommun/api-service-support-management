@@ -2,6 +2,8 @@ package se.sundsvall.supportmanagement.config.masking;
 
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,14 +30,42 @@ class PayloadMaskingBodyFilterTest {
 	}
 
 	@Test
-	void keepsEveryPropertyNameAndEveryNonTextValue() {
-		final var result = filter().filter(JSON,
+	void keepsEveryPropertyNameAndEveryBooleanAndNull() {
+		final var result = filter("$..fileSize").filter(JSON,
 			"""
 				{"fileSize":274,"internal":false,"viewed":null,"fileName":"anna.pdf"}""");
 
 		assertThat(result).isEqualTo(
 			"""
 				{"fileSize":274,"internal":false,"viewed":null,"fileName":"[masked]"}""");
+	}
+
+	@Test
+	void judgesANumberByTheKeepListJustAsItJudgesText() {
+		final var result = filter("$..fileSize").filter(JSON,
+			"""
+				{"fileSize":274,"legalId":9001011234,"counted":17}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"fileSize":274,"legalId":"[masked]","counted":"[masked]"}""");
+	}
+
+	@Test
+	void withholdsTheCoordinatesOfAnAddressTheyWouldPinpoint() {
+		// What the Citizen service answers with: the address is text, the coordinates are numbers, and masking the one
+		// without the other would leave the registered address of a person in the log
+		final var result = filter("$..id", "$..addressType").filter(JSON,
+			"""
+				{"id":"1","addresses":[{"addressType":"POPULATION_REGISTRATION_ADDRESS","address":"Storgatan 1",\
+				"postalCode":"85230","city":"Sundsvall","xCoordLocal":6921345.12,"yCoordLocal":615234.56}]}""");
+
+		assertThat(result)
+			.doesNotContain("6921345", "615234", "Storgatan")
+			.isEqualTo(
+				"""
+					{"id":"1","addresses":[{"addressType":"POPULATION_REGISTRATION_ADDRESS","address":"[masked]",\
+					"postalCode":"[masked]","city":"[masked]","xCoordLocal":"[masked]","yCoordLocal":"[masked]"}]}""");
 	}
 
 	@Test
@@ -77,7 +107,7 @@ class PayloadMaskingBodyFilterTest {
 
 	@Test
 	void masksThePageRowsWithoutReplacingThePageItself() {
-		final var result = filter("$..id").filter(JSON,
+		final var result = filter("$..id", "$..totalElements").filter(JSON,
 			"""
 				{"content":[{"id":"1","content":"Bifogar en fil"}],"totalElements":1}""");
 
@@ -90,7 +120,26 @@ class PayloadMaskingBodyFilterTest {
 	void leavesABodyThatIsNotJsonAlone() {
 		assertThat(filter().filter("text/plain", "Testing! :)")).isEqualTo("Testing! :)");
 		assertThat(filter().filter("application/xml", "<a>b</a>")).isEqualTo("<a>b</a>");
-		assertThat(filter().filter(null, "{\"a\":\"b\"}")).isEqualTo("{\"a\":\"b\"}");
+		assertThat(filter().filter("text/json", "{\"title\":\"Something broken\"}")).isEqualTo("{\"title\":\"Something broken\"}");
+		assertThat(filter().filter(null, "{\"title\":\"Something broken\"}")).isEqualTo("{\"title\":\"Something broken\"}");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/json", "application/json;charset=UTF-8", "application/problem+json",
+		"APPLICATION/JSON", "application/json ; charset=UTF-8",
+		// A content type Logbook logs as JSON and MediaType.parseMediaType refuses to read. Judged by the text of the
+		// header, as Logbook judges it, so that a client sending nonsense after the semicolon cannot have its payload
+		// logged unmasked
+		"application/json;charset=bogus", "application/json;boundary=\""
+	})
+	void masksEveryContentTypeLogbookLogsAsJson(final String contentType) {
+		assertThat(filter("$..id").filter(contentType,
+			"""
+				{"id":"1","title":"Something broken"}"""))
+			.isEqualTo(
+				"""
+					{"id":"1","title":"[masked]"}""");
 	}
 
 	@Test
@@ -180,10 +229,27 @@ class PayloadMaskingBodyFilterTest {
 
 	@Test
 	void keepsAnyOneFieldForAWildcardSegment() {
-		assertThat(filter("$.*.id").filter(JSON, """
-			{"a":{"id":"1","x":"m"},"b":{"id":"2"},"c":{"d":{"id":"3"}}}"""))
-			.isEqualTo("""
-				{"a":{"id":"1","x":"[masked]"},"b":{"id":"2"},"c":{"d":{"id":"[masked]"}}}""");
+		final var result = filter("$.*.id").filter(JSON,
+			"""
+				{
+				  "errand": {
+				    "id": "1",
+				    "title": "Something broken"
+				  },
+				  "notification": {
+				    "id": "2"
+				  },
+				  "revision": {
+				    "previous": {
+				      "id": "3"
+				    }
+				  }
+				}""");
+
+		// One segment is one field, so `errand` and `notification` are reached and `revision.previous` is one too deep
+		assertThat(result).isEqualTo(
+			"""
+				{"errand":{"id":"1","title":"[masked]"},"notification":{"id":"2"},"revision":{"previous":{"id":"[masked]"}}}""");
 	}
 
 	@Test

@@ -2,9 +2,9 @@ package se.sundsvall.supportmanagement.config.masking;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.zalando.logbook.BodyFilter;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -12,24 +12,25 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import static java.util.Objects.isNull;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 /**
- * Replaces the text a JSON payload carries before it is logged, keeping only the fields
+ * Replaces the values a JSON payload carries before it is logged, keeping only the fields
  * {@link PayloadMaskingProperties#keep()} names.
  * <p>
  * Registered as a {@link BodyFilter} bean, which dept44's Logbook configuration collects and applies to every request
- * and response it logs, ours and the ones made to the services around us.
+ * and response it logs, ours and the ones made to the services around us. The body is parsed once, walked once and
+ * written once, whatever the number of rules involved.
  * <p>
- * The body is parsed once, walked once and written once, whatever the number of rules involved. The JSONPath filters
- * dept44 builds from {@code logbook.body-filters} parse and write the whole body once per path, which measured about
- * 160 times this for fifty rules on a small errand, and most of half a second for a page of a hundred. Both run on the
- * thread that is answering the request.
- * <p>
- * Kept as it is, regardless of the field it belongs to: every property name, so a log line still shows the shape of
- * what was sent, and every number, boolean and null, which carry sizes, counts, versions and flags rather than text.
- * A personal identity number written as a number rather than a string is therefore not caught here - that is what
- * {@code dept44.logback.pii-masking} is under this.
+ * The contract:
+ * <ul>
+ * <li>a string or a number is logged where a rule names its field, and replaced with
+ * {@link PayloadMaskingProperties#placeholder()} where none does;</li>
+ * <li>every property name is kept, so a log line still shows the shape of what was sent;</li>
+ * <li>a boolean and a null are kept: one bit under a name that is already visible names nobody;</li>
+ * <li>a body of more than {@link PayloadMaskingProperties#maxSize()} characters is never parsed, and its length is
+ * logged instead;</li>
+ * <li>a body that is not JSON is passed on untouched, and one that cannot be read is replaced whole.</li>
+ * </ul>
  */
 class PayloadMaskingBodyFilter implements BodyFilter {
 
@@ -37,14 +38,10 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-	/**
-	 * What replaces a body that is not logged at all. A JSON document rather than a bare word, because the formatter
-	 * embeds a body it takes for JSON into the log entry as it is, without quoting or checking it: Logbook's
-	 * {@code JsonHttpLogFormatter} is built here without body validation, and its {@code looksLikeJson} asks only
-	 * whether the first and last character could begin and end one. A plain {@code [masked]} passes that test on its
-	 * brackets alone and leaves the entry unparseable, which costs the entry its fields wherever the log server reads
-	 * them as JSON.
-	 */
+	/** What Logbook requires of a JSON content type before the rest of the header is read. */
+	private static final String APPLICATION_TYPE = "application/";
+
+	/** What replaces a body that is not logged at all. A JSON document, so that the entry it lands in stays one. */
 	private static final String UNREADABLE_BODY = "{\"masked\":\"unreadable\"}";
 	private static final String TOO_LARGE_BODY = "{\"masked\":\"too large\",\"characters\":%d}";
 
@@ -64,10 +61,10 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 			return body;
 		}
 
-		// Answered before the body is read, so that nothing the size of an attachment is parsed or copied. A string is
-		// immutable: every filter that reads one and writes one back holds both at once, and a tree of a body is
-		// several times the body. The length is what is logged instead, since that is the one thing worth knowing
-		// about a body too big to log.
+		// Answered before the body is read, so that nothing the size of an attachment is parsed. A tree of a body is
+		// several times the body, which is the cost worth avoiding here; the filters dept44 puts before this one have
+		// already scanned and copied the string by the time it arrives. The length is what is logged instead, since
+		// that is the one thing worth knowing about a body too big to log.
 		if (body.length() > maxSize) {
 			return TOO_LARGE_BODY.formatted(body.length());
 		}
@@ -114,7 +111,7 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 			path.add(property.getKey());
 			if (value.isObject() || value.isArray()) {
 				mask(value, path);
-			} else if (value.isString() && !keep.keeps(path)) {
+			} else if (mustBeNamedToBeLogged(value) && !keep.keeps(path)) {
 				replace.add(property.getKey());
 			}
 			path.removeLast();
@@ -127,22 +124,42 @@ class PayloadMaskingBodyFilter implements BodyFilter {
 			final var element = array.get(i);
 			if (element.isObject() || element.isArray()) {
 				mask(element, path);
-			} else if (element.isString() && !keep.keeps(path)) {
+			} else if (mustBeNamedToBeLogged(element) && !keep.keeps(path)) {
 				array.set(i, placeholder);
 			}
 		}
 	}
 
+	/**
+	 * Whether a value is one a rule has to name for it to be logged. A number is, because a personal identity number
+	 * and a coordinate are numbers; a boolean and a null are not, since one bit under a name that is already visible
+	 * names nobody, and asking for every flag by name would say nothing and cost the whole list.
+	 */
+	private static boolean mustBeNamedToBeLogged(final JsonNode value) {
+		return value.isString() || value.isNumber();
+	}
+
+	/**
+	 * Whether Logbook will log this body as JSON, read the way Logbook reads it: by the text of the header, not by
+	 * parsing it. A content type cannot be parsed into a {@link org.springframework.http.MediaType} and judged here
+	 * instead, because a malformed parameter - {@code application/json;charset=bogus} is enough - makes that throw,
+	 * and a body this returned false for is logged exactly as it came. Logbook's own {@code ContentType} asks only
+	 * what the header says, so a client that sends nonsense after the semicolon would have had its payload logged
+	 * unmasked.
+	 * <p>
+	 * A problem is answered as {@code application/problem+json}, whose detail is as free as any other text, so every
+	 * {@code +json} subtype counts.
+	 */
 	private static boolean isJson(final String contentType) {
 		if (isNull(contentType)) {
 			return false;
 		}
-		try {
-			final var mediaType = MediaType.parseMediaType(contentType);
-			// A problem is answered as application/problem+json, and its detail is as free as any other text
-			return mediaType.isCompatibleWith(APPLICATION_JSON) || mediaType.getSubtype().endsWith("+json");
-		} catch (final Exception e) {
+		final var type = contentType.toLowerCase(Locale.ROOT);
+		if (!type.startsWith(APPLICATION_TYPE)) {
 			return false;
 		}
+		final var parameters = type.indexOf(';');
+		final var mimeType = (parameters < 0 ? type : type.substring(0, parameters)).trim();
+		return mimeType.endsWith("/json") || mimeType.endsWith("+json");
 	}
 }
