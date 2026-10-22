@@ -68,6 +68,16 @@ public enum EventSubType {
 			.orElseGet(() -> Objects.equals(filterSubtype, eventSubtype));
 	}
 
+	/**
+	 * The subtype this one is a refinement of at the root, or itself for a subtype refining none, as MESSAGE for
+	 * MESSAGE_INTERNAL. For a consumer that knows only the subtypes refining none.
+	 *
+	 * @return the subtype at the root of the refinements
+	 */
+	public EventSubType general() {
+		return refines == null ? this : refines.general();
+	}
+
 	private boolean isSelectedBy(final String filterSubtype) {
 		return name().equals(filterSubtype) || (refines != null && refines.isSelectedBy(filterSubtype));
 	}

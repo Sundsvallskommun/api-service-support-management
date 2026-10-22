@@ -124,4 +124,17 @@ class EventSubTypeTest {
 	void selects(final String filterSubtype, final String eventSubtype, final boolean expected) {
 		assertThat(EventSubType.selects(filterSubtype, eventSubtype)).isEqualTo(expected);
 	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"MESSAGE_INTERNAL, MESSAGE",
+		"MESSAGE_EXTERNAL, MESSAGE",
+		"STATUS, ERRAND",
+		"PHASE, ERRAND",
+		"MESSAGE, MESSAGE",
+		"LABEL, LABEL"
+	})
+	void general(final EventSubType subtype, final EventSubType expected) {
+		assertThat(subtype.general()).isEqualTo(expected);
+	}
 }
