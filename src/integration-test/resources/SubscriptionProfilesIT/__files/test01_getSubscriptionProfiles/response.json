@@ -6,7 +6,7 @@
 		"eventFilters": [
 			{
 				"type": "UPDATE",
-				"subtype": "MESSAGE"
+				"subtype": "MESSAGE_EXTERNAL"
 			}
 		],
 		"channels": [
@@ -24,7 +24,7 @@
 			},
 			{
 				"type": "UPDATE",
-				"subtype": "MESSAGE"
+				"subtype": "MESSAGE_EXTERNAL"
 			}
 		],
 		"channels": [

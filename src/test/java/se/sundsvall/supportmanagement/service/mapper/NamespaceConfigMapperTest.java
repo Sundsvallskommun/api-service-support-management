@@ -418,7 +418,7 @@ class NamespaceConfigMapperTest {
 			.withDisplayName("displayName")
 			.withShortCode("shortCode")
 			.withProcessConsumer("pw-alkt")
-			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE, EventSubType.DECISION));
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL, EventSubType.DECISION));
 
 		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
 
@@ -428,7 +428,7 @@ class NamespaceConfigMapperTest {
 			.containsExactly(
 				tuple(PROPERTY_PROCESS_CONSUMER, "pw-alkt", STRING),
 				tuple(PROPERTY_PROCESS_TRIGGER, "ERRAND", STRING),
-				tuple(PROPERTY_PROCESS_TRIGGER, "MESSAGE", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "MESSAGE_EXTERNAL", STRING),
 				tuple(PROPERTY_PROCESS_TRIGGER, "DECISION", STRING));
 	}
 
@@ -450,14 +450,14 @@ class NamespaceConfigMapperTest {
 	void toNamespaceConfigReadsEveryProcessTrigger() {
 		final var entity = withProcessRows(createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true),
 			processRow(PROPERTY_PROCESS_CONSUMER, "pw-alkt"),
-			processRow(PROPERTY_PROCESS_TRIGGER, "MESSAGE"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "MESSAGE_EXTERNAL"),
 			processRow(PROPERTY_PROCESS_TRIGGER, "ERRAND"),
 			processRow(PROPERTY_PROCESS_TRIGGER, "DECISION"));
 
 		final var config = mapper.toNamespaceConfig(entity);
 
 		assertThat(config.getProcessConsumer()).isEqualTo("pw-alkt");
-		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.DECISION, EventSubType.ERRAND, EventSubType.MESSAGE);
+		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.DECISION, EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL);
 	}
 
 	@Test

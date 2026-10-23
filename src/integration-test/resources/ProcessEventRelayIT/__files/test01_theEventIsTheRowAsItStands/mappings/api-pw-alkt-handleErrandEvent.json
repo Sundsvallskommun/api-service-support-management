@@ -48,7 +48,7 @@
 						"equalToJson": {
 							"eventId": "row-message",
 							"eventType": "UPDATE",
-							"eventSubType": "MESSAGE",
+							"eventSubType": "MESSAGE_EXTERNAL",
 							"errandId": "cc236cf1-c00f-4479-8341-ecf5dd90b5b9",
 							"processKey": "alkt-ansokan",
 							"startAllowed": false,

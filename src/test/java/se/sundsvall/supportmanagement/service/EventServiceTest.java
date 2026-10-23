@@ -67,7 +67,7 @@ import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
@@ -545,8 +545,9 @@ class EventServiceTest {
 	@EnumSource(value = EventSubType.class, names = {
 		"ASSIGNMENT", "LABEL", "PHASE", "STATUS"
 	})
-	void createEventLoggedAlongsideErrandChangeLeavesSubscribingAndTheProcessToTheChangeItIsPartOf(final EventSubType subtype) {
-		// The errand event logged alongside already subscribes the assignee and tells the process, so this event does neither
+	void createEventLoggedAlongsideErrandChangeLeavesSubscribingToTheChangeItIsPartOf(final EventSubType subtype) {
+		// The errand event logged alongside already subscribes the assignee, so this event does not, while the process is
+		// told of it as of any other event
 		final var entity = ErrandEntity.create()
 			.withMunicipalityId("2281")
 			.withNamespace("MY_NAMESPACE")
@@ -557,7 +558,8 @@ class EventServiceTest {
 
 		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
 		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(subtype.getValue());
-		verifyNoInteractions(eventPublisherMock, notificationServiceMock, processEventPublisherMock);
+		verify(processEventPublisherMock).publish(entity, EventType.UPDATE, subtype, "executingUserId", null, null, false);
+		verifyNoInteractions(eventPublisherMock, notificationServiceMock);
 	}
 
 	@Test
@@ -571,7 +573,7 @@ class EventServiceTest {
 		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("handler");
 
 		// Call
-		service.createErrandEvent(EventType.UPDATE, "Ny händelse för topic", entity, null, null, false, MESSAGE, actor);
+		service.createErrandEvent(EventType.UPDATE, "Ny händelse för topic", entity, null, null, false, MESSAGE_EXTERNAL, actor);
 
 		// Verify the event log and the dispatch both name the actor, which is what keeps them from being notified of it
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(errandId), eventCaptor.capture());
