@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
 
 /**
  * A publication that cannot write its row has to take the errand change down with it: the transaction is marked
@@ -68,7 +68,7 @@ class ProcessEventRollbackTest {
 			errandsRepository.saveAndFlush(errand);
 
 			try {
-				eventService.createErrandEvent(EventType.UPDATE, "Nytt meddelande", errand, null, null, false, MESSAGE_EXTERNAL);
+				eventService.createErrandEvent(EventType.UPDATE, "Nytt meddelande", errand, null, null, false, MESSAGE_CONVERSATION_EXTERNAL);
 			} catch (final Exception swallowed) {
 				// Precisely what every call site does today, and the reason the rollback cannot be left to them
 			}

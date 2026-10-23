@@ -45,6 +45,7 @@ class ActionConfigEntityTest {
 		final var namespace = "namespace";
 		final var name = "name";
 		final var active = true;
+		final var notify = false;
 		final var displayValue = "displayValue";
 		final var conditions = List.of(ActionConfigConditionEntity.create());
 		final var parameters = List.of(ActionConfigParameterEntity.create());
@@ -58,6 +59,7 @@ class ActionConfigEntityTest {
 			.withNamespace(namespace)
 			.withName(name)
 			.withActive(active)
+			.withNotify(notify)
 			.withDisplayValue(displayValue)
 			.withConditions(conditions)
 			.withParameters(parameters)
@@ -71,6 +73,7 @@ class ActionConfigEntityTest {
 		assertThat(entity.getNamespace()).isEqualTo(namespace);
 		assertThat(entity.getName()).isEqualTo(name);
 		assertThat(entity.getActive()).isEqualTo(active);
+		assertThat(entity.getNotify()).isEqualTo(notify);
 		assertThat(entity.getDisplayValue()).isEqualTo(displayValue);
 		assertThat(entity.getOperationTypes()).isEqualTo(operationTypes);
 		assertThat(entity.getConditions()).isEqualTo(conditions);
@@ -85,7 +88,7 @@ class ActionConfigEntityTest {
 		entity.onCreate();
 
 		assertThat(entity.getCreated()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes", "created")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "notify", "conditions", "parameters", "operationTypes", "created")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
@@ -98,7 +101,7 @@ class ActionConfigEntityTest {
 		entity.onUpdate();
 
 		assertThat(entity.getModified()).isCloseTo(now(), within(1, SECONDS));
-		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes", "modified")
+		assertThat(entity).hasAllNullFieldsOrPropertiesExcept("active", "notify", "conditions", "parameters", "operationTypes", "modified")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
@@ -107,12 +110,12 @@ class ActionConfigEntityTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(ActionConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes")
+		assertThat(ActionConfigEntity.create()).hasAllNullFieldsOrPropertiesExcept("active", "notify", "conditions", "parameters", "operationTypes")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();
 			});
-		assertThat(new ActionConfigEntity()).hasAllNullFieldsOrPropertiesExcept("active", "conditions", "parameters", "operationTypes")
+		assertThat(new ActionConfigEntity()).hasAllNullFieldsOrPropertiesExcept("active", "notify", "conditions", "parameters", "operationTypes")
 			.satisfies(e -> {
 				assertThat(e.getConditions()).isEmpty();
 				assertThat(e.getParameters()).isEmpty();

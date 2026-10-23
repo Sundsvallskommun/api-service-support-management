@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,8 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.TeliaAceNotificationRequestedEvent;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -40,6 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -47,7 +51,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EMAIL_EXTERNAL;
 
 class EmailReaderWorkerTest {
 
@@ -141,7 +145,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE_EXTERNAL));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
 		verify(emailReaderMapperMock).toAttachmentDataEntity(bytes);
 		verifyNoInteractions(errandServiceMock);
@@ -171,7 +175,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE_EXTERNAL));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verify(emailReaderClientMock).getAttachment(MUNICIPALITY_ID, 2);
 		verify(emailReaderMapperMock).toAttachmentDataEntity(new byte[0]);
 		verifyNoInteractions(errandServiceMock);
@@ -198,7 +202,7 @@ class EmailReaderWorkerTest {
 
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
-		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any());
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), any(), any());
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verifyNoInteractions(consumerMock);
 	}
@@ -225,12 +229,12 @@ class EmailReaderWorkerTest {
 		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
 		verify(emailReaderMapperMock).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq(emailConfig.getErrandClosedEmailHTMLTemplate()),
 			eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
-		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest));
+		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest), isNull());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE_EXTERNAL));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verifyNoInteractions(errandServiceMock);
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
@@ -246,7 +250,7 @@ class EmailReaderWorkerTest {
 
 		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
-		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any(EventSubType.class));
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), nullable(RevisionResult.class), any(EventSubType.class), any(ErrandEventOptions.class));
 
 		assertThatNoException().isThrownBy(() -> emailReaderWorker.processEmail(email, emailConfig, consumerMock));
 
@@ -319,12 +323,12 @@ class EmailReaderWorkerTest {
 		verify(emailReaderMapperMock).createEmailRequest(email.subject("Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4"), emailConfig.getErrandNewEmailSender(), emailConfig.getErrandNewEmailTemplate(),
 			emailConfig.getErrandNewEmailHTMLTemplate(), "Bekräftelse ärende #errandNumber Ansökan om bygglov för fastighet KATARINA 4");
 		verify(emailReaderMapperMock).toErrand(same(email), eq(emailConfig));
-		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest));
+		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest), isNull());
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE_EXTERNAL));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
@@ -354,7 +358,7 @@ class EmailReaderWorkerTest {
 		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
 		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
 		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(MESSAGE_EXTERNAL));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verify(eventPublisherMock).publishEvent(teliaAceEventCaptor.capture());
 		assertThat(teliaAceEventCaptor.getValue().errand()).isSameAs(errandEntity);
 		assertThat(teliaAceEventCaptor.getValue().email()).isSameAs(email);
@@ -503,12 +507,12 @@ class EmailReaderWorkerTest {
 		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(), any(), any(), any())).thenReturn(emailRequest);
-		doThrow(new RuntimeException("Messaging down")).when(communicationServiceMock).sendEmail(any(ErrandEntity.class), any());
+		doThrow(new RuntimeException("Messaging down")).when(communicationServiceMock).sendEmail(any(ErrandEntity.class), any(), any());
 
 		assertThatNoException().isThrownBy(() -> emailReaderWorker.processEmail(email, emailConfig, consumerMock));
 
 		verify(consumerMock).accept("Failed to send confirmation email");
-		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), eq(null));
+		verify(communicationServiceMock, never()).sendEmail(any(ErrandEntity.class), eq(null), any());
 	}
 
 	private EmailWorkerConfigEntity buildBaseConfig() {

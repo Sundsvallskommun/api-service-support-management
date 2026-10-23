@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -39,14 +40,17 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
 import se.sundsvall.supportmanagement.service.mapper.CommunicationMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
+import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -56,6 +60,10 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.INSUFFICIENT_STORAGE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EMAIL_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_SMS_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.EMAIL;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.ESERVICE;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEmailAttachments;
@@ -64,6 +72,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toEm
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toMessagingMessageRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toSmsRequest;
 import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toWebMessageRequest;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getStakeholderMatchingRole;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.retrieveUsername;
@@ -76,6 +85,10 @@ public class CommunicationService {
 	private static final String ATTACHMENT_WITH_ERRAND_NUMBER_NOT_FOUND = "Communication attachment not found for this errand";
 	private static final boolean ASYNCHRONOUSLY = false;
 	private static final String MESSAGE_ID_TEMPLATE = "<%s@%s>";
+	public static final String EVENT_LOG_EMAIL_SENT = "Meddelande skickat via e-post";
+	private static final String EVENT_LOG_BULK_EMAIL_SENT = "Meddelande skickat via e-post till %d mottagare";
+	private static final String EVENT_LOG_SMS_SENT = "Meddelande skickat via SMS";
+	private static final String EVENT_LOG_WEB_MESSAGE_SENT = "Meddelande skickat via e-tjänsten";
 	private final AccessControlService accessControlService;
 	private final CommunicationRepository communicationRepository;
 	private final CommunicationAttachmentRepository communicationAttachmentRepository;
@@ -87,6 +100,7 @@ public class CommunicationService {
 	private final CitizenIntegration citizenIntegration;
 	private final MessagingSettingsIntegration messagingSettingsIntegration;
 	private final ChunkedDeleter chunkedDeleter;
+	private final EventService eventService;
 
 	public CommunicationService(
 		final AccessControlService accessControlService,
@@ -99,7 +113,8 @@ public class CommunicationService {
 		final EmployeeService employeeService,
 		final CitizenIntegration citizenIntegration,
 		final MessagingSettingsIntegration messagingSettingsIntegration,
-		final ChunkedDeleter chunkedDeleter) {
+		final ChunkedDeleter chunkedDeleter,
+		final EventService eventService) {
 
 		this.accessControlService = accessControlService;
 		this.messagingClient = messagingClient;
@@ -112,6 +127,7 @@ public class CommunicationService {
 		this.citizenIntegration = citizenIntegration;
 		this.messagingSettingsIntegration = messagingSettingsIntegration;
 		this.chunkedDeleter = chunkedDeleter;
+		this.eventService = eventService;
 	}
 
 	public List<Communication> readCommunications(final String namespace, final String municipalityId, final String errandId) {
@@ -177,10 +193,18 @@ public class CommunicationService {
 
 	public void sendEmail(final String namespace, final String municipalityId, final String id, final EmailRequest request) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, id, false, ProtectedResource.COMMUNICATION, RW);
-		sendEmail(errandEntity, request);
+		sendEmail(errandEntity, request, EVENT_LOG_EMAIL_SENT);
 	}
 
-	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request) {
+	/**
+	 * Sends the email and keeps it as a communication of the errand.
+	 *
+	 * @param errandEntity the errand the email is about
+	 * @param request      the email
+	 * @param eventMessage the text the email being sent is logged with, which tells what sent it, or null for an email that
+	 *                     is not logged, such as the confirmation of an email having been received
+	 */
+	public void sendEmail(final ErrandEntity errandEntity, final EmailRequest request, final String eventMessage) {
 		requireActive(errandEntity);
 
 		Optional.ofNullable(request.getEmailHeaders()).ifPresentOrElse(headers -> {
@@ -202,7 +226,7 @@ public class CommunicationService {
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, errandEntity);
-
+		ofNullable(eventMessage).ifPresent(message -> logSentMessage(errandEntity, message, MESSAGE_EMAIL_EXTERNAL));
 	}
 
 	public void sendBulkEmail(final String namespace, final String municipalityId, final String id, final BulkEmailRequest request) {
@@ -227,6 +251,20 @@ public class CommunicationService {
 				saveAttachment(communicationEntity, errandEntity);
 				attachmentSaved = true;
 			}
+		}
+		logSentMessage(errandEntity, EVENT_LOG_BULK_EMAIL_SENT.formatted(request.getRecipients().size()), MESSAGE_EMAIL_EXTERNAL);
+	}
+
+	/**
+	 * Logs a message having been sent, for the subscribers of the errand to be notified of. The assigned user is not
+	 * notified, as sending a message never notified them. A log that cannot be written is not worth failing the sending
+	 * over, since the message is already on its way.
+	 */
+	private void logSentMessage(final ErrandEntity errandEntity, final String message, final EventSubType subtype) {
+		try {
+			eventService.createErrandEvent(UPDATE, message, errandEntity, null, subtype, new ErrandEventOptions(false, getExecutingUser(), Set.of()));
+		} catch (final Exception e) {
+			LOGGER.warn("Failed to log sent message event for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
 	}
 
@@ -254,6 +292,7 @@ public class CommunicationService {
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
+		logSentMessage(entity, EVENT_LOG_SMS_SENT, MESSAGE_SMS_EXTERNAL);
 	}
 
 	public void sendWebMessage(final String namespace, final String municipalityId, final String id, final WebMessageRequest request) {
@@ -277,6 +316,10 @@ public class CommunicationService {
 
 		saveCommunication(communicationEntity);
 		saveAttachment(communicationEntity, entity);
+		// A message kept on the errand without being sent is not logged
+		if (request.isDispatch()) {
+			logSentMessage(entity, EVENT_LOG_WEB_MESSAGE_SENT, MESSAGE_WEB_MESSAGE_EXTERNAL);
+		}
 	}
 
 	String getFullName(final String municipalityId) {

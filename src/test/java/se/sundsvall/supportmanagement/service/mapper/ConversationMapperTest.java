@@ -79,10 +79,10 @@ class ConversationMapperTest {
 
 	@ParameterizedTest
 	@CsvSource(nullValues = "null", value = {
-		"EXTERNAL, MESSAGE_EXTERNAL",
-		"INTERNAL, MESSAGE_INTERNAL",
-		"unknownType, MESSAGE_INTERNAL",
-		"null, MESSAGE_INTERNAL"
+		"EXTERNAL, MESSAGE_CONVERSATION_EXTERNAL",
+		"INTERNAL, MESSAGE_CONVERSATION_INTERNAL",
+		"unknownType, MESSAGE_CONVERSATION_INTERNAL",
+		"null, MESSAGE_CONVERSATION_INTERNAL"
 	})
 	void toMessageSubtype(final String conversationType, final EventSubType expected) {
 		assertThat(ConversationMapper.toMessageSubtype(ConversationEntity.create().withType(conversationType))).isEqualTo(expected);

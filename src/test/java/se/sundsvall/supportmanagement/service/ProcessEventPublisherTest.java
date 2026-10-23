@@ -79,8 +79,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Activity
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
@@ -180,7 +180,7 @@ class ProcessEventPublisherTest {
 	void aNamespaceWithoutAProcessConsumerWritesNothing() {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock, processKeySelectorMock, applicationEventPublisherMock);
 	}
@@ -219,7 +219,7 @@ class ProcessEventPublisherTest {
 		asMachine();
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verifyNoInteractions(outboxRepositoryMock, processRepositoryMock, activityRepositoryMock);
 	}
@@ -233,11 +233,11 @@ class ProcessEventPublisherTest {
 		setTriggerProcess(header);
 
 		if (expectedToPublish) {
-			givenTriggers(MESSAGE_EXTERNAL);
+			givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 			givenLabels(APPLICATION, AUTOMATIC);
 		}
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, expectedToPublish ? times(1) : never()).save(any());
 	}
@@ -246,12 +246,12 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a handler's write wakes the process however the client sets the header, which closes the one hole a freely set header opens")
 	void theHeaderIsNotHonouredForAnAdAccount() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue(EXECUTED_BY));
 		setTriggerProcess("false");
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(any());
 	}
@@ -260,10 +260,10 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a scheduled job, which has no request to carry a header at all, publishes")
 	void aWriteWithoutARequestContextIsPublished() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, null, null, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, null, null, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getExecutedBy()).isNull();
@@ -273,7 +273,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a sub type that is no trigger of the namespace writes nothing, and is dropped before the labels are read")
 	void aSubTypeThatIsNoTriggerOfTheNamespaceWritesNothing() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 
 		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -282,26 +282,26 @@ class ProcessEventPublisherTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a trigger on external messages lets an external message through, told as the MESSAGE_EXTERNAL it is")
+	@DisplayName("Verification that a trigger on external messages lets an external message through, told as the MESSAGE_CONVERSATION_EXTERNAL it is")
 	void aTriggerOnExternalMessagesLetsAnExternalMessageThrough() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
-		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(MESSAGE_EXTERNAL.getValue());
+		assertThat(outboxCaptor.getValue().getEventSubType()).isEqualTo(MESSAGE_CONVERSATION_EXTERNAL.getValue());
 	}
 
 	@Test
 	@DisplayName("Verification that a trigger on internal messages holds back an external message")
 	void aTriggerOnInternalMessagesHoldsBackAnExternalMessage() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_INTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_INTERNAL);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 	}
@@ -310,11 +310,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the labels of an errand are read once for a publication, for the block and the key alike")
 	void theLabelsAreReadOnceForAPublication() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
@@ -326,10 +326,10 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the brake measures what has reached the process, so a pile of undelivered rows cannot trip it")
 	void theBrakeCountsDeliveredRowsWithinTheWindow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenDeliveredCount(THRESHOLD + 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(ERRAND_ID, OffsetDateTime.now(clock).minus(WINDOW));
 		verify(outboxRepositoryMock, never()).save(any());
@@ -339,10 +339,10 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the maximum is the most that reaches the process: with that many delivered, the next event is dropped")
 	void theBrakeDropsTheEventThatWouldGoPastTheMaximum() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenDeliveredCount(THRESHOLD);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 	}
@@ -351,11 +351,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that an errand one event short of the maximum still gets its event through")
 	void theBrakeLetsTheEventThatReachesTheMaximumThrough() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenDeliveredCount(THRESHOLD - 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(any());
 	}
@@ -364,10 +364,10 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the entry the brake writes hangs on no process instance, since it fires when there is none")
 	void theBrakeWritesAnErrorEntryWithoutAnInstance() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenDeliveredCount(THRESHOLD + 1L);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue()).satisfies(entry -> {
@@ -383,11 +383,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a loop producing event after event leaves one entry per window behind, not one per event")
 	void theBrakeEntryIsWrittenOncePerErrandAndWindow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenDeliveredCount(THRESHOLD + 1L);
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(eq(ERRAND_ID), eq("EVENT_RATE_EXCEEDED"), any())).thenReturn(true);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, PROCESS_SERVICE, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock, never()).save(any());
 	}
@@ -465,11 +465,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that labels pointing in two directions stop the publication and say so on the errand, naming both keys")
 	void ambiguousLabelsWriteAnErrorEntryAndNoRow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		givenAmbiguousLabels();
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock).save(activityCaptor.capture());
@@ -485,12 +485,12 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a key too long for its column is reported as the configuration fault it is, rather than left to fail the insert and take the errand change with it")
 	void aProcessKeyLongerThanItsColumnWritesAnErrorEntryAndNoRow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		final var oversized = "a".repeat(PROCESS_KEY_LENGTH + 1);
 		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(oversized, AUTOMATIC, List.of(oversized))));
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock).save(activityCaptor.capture());
@@ -506,12 +506,12 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a key of exactly the width of its column is published, so the check refuses nothing it should not")
 	void aProcessKeyOfExactlyTheColumnWidthIsPublished() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		final var exact = "a".repeat(PROCESS_KEY_LENGTH);
 		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(exact, AUTOMATIC, List.of(exact))));
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(exact);
@@ -521,11 +521,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that an entry naming two enormous keys still fits the column it is written to")
 	void theAmbiguityEntryFitsItsColumnHoweverLongTheKeysAre() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, new ProcessKeySelection(null, null, List.of("b".repeat(40_000), "c".repeat(40_000)))));
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(activityRepositoryMock).save(activityCaptor.capture());
 		assertThat(activityCaptor.getValue().getMessage())
@@ -537,11 +537,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that an identity too long for its column is cut rather than allowed to fail a write it only traces")
 	void anOversizedIdentityIsCutToFit() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, "x".repeat(EXECUTED_BY_LENGTH + 100), REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, "x".repeat(EXECUTED_BY_LENGTH + 100), REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getExecutedBy()).hasSize(EXECUTED_BY_LENGTH);
@@ -551,7 +551,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that ten events on an ambiguous errand leave one entry behind, not ten")
 	void theAmbiguityEntryIsWrittenOncePerErrandAndWindow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		givenAmbiguousLabels();
 		when(activityRepositoryMock.existsByErrandIdAndErrorCodeAndCreatedAfter(eq(ERRAND_ID), eq("AMBIGUOUS_PROCESS_KEY"), any()))
@@ -559,7 +559,7 @@ class ProcessEventPublisherTest {
 			.thenReturn(true);
 
 		for (var i = 0; i < 10; i++) {
-			publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 		}
 
 		verify(activityRepositoryMock, times(1)).save(any());
@@ -569,11 +569,11 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the key of an errand with a process instance is nailed down by the instance, so a changed label cannot move it")
 	void theKeyIsTakenFromTheInstanceRatherThanFromTheLabels() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(SUPERVISION, AUTOMATIC);
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(List.of(instance(APPLICATION, WAITING)));
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue().getProcessKey()).isEqualTo(APPLICATION);
@@ -626,7 +626,7 @@ class ProcessEventPublisherTest {
 			arguments(UPDATE, ERRAND, null, false),
 			arguments(UPDATE, ATTACHMENT, null, false),
 			arguments(UPDATE, DECISION, null, true),
-			arguments(UPDATE, MESSAGE_EXTERNAL, null, false),
+			arguments(UPDATE, MESSAGE_CONVERSATION_EXTERNAL, null, false),
 			arguments(UPDATE, PROCESS, new ProcessCommand(APPLICATION, null), false),
 			arguments(UPDATE, SIGNAL, new ProcessCommand(null, SIGNAL_NAME), false),
 			arguments(DELETE, ERRAND, null, false));
@@ -707,11 +707,11 @@ class ProcessEventPublisherTest {
 	@Test
 	void anEventOtherThanADeletionIsNotPublishedWithoutAKey() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenNoInstances();
 		when(processKeySelectorMock.read(any(ErrandEntity.class))).thenReturn(new ProcessLabels(false, ProcessKeySelection.NONE));
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).save(any());
 		verify(activityRepositoryMock, never()).save(any());
@@ -845,7 +845,7 @@ class ProcessEventPublisherTest {
 		givenNamespaceRunsProcess();
 		givenTriggers(ERRAND);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock, never()).countByErrandIdAndDeliveredAtIsNotNullAndCreatedAfter(any(), any());
 		verify(outboxRepositoryMock, never()).save(any());
@@ -856,15 +856,15 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that the rows written for an errand in one transaction signal the direct run once, while each errand of the transaction signals it for itself")
 	void theDirectRunIsSignalledOncePerErrandAndTransaction() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		final var otherErrand = ErrandEntity.create().withId("other-errand").withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID);
 		TransactionSynchronizationManager.initSynchronization();
 
 		try {
-			publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
-			publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
-			publisher.publish(otherErrand, UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+			publisher.publish(otherErrand, UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 		} finally {
 			TransactionSynchronizationManager.clearSynchronization();
 		}
@@ -878,11 +878,11 @@ class ProcessEventPublisherTest {
 	@Test
 	void theRowCarriesWhereItIsHeadedAndWhoWroteIt() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		assertThat(outboxCaptor.getValue()).satisfies(row -> {
@@ -892,7 +892,7 @@ class ProcessEventPublisherTest {
 			assertThat(row.getProcessService()).isEqualTo(PROCESS_SERVICE);
 			assertThat(row.getProcessKey()).isEqualTo(APPLICATION);
 			assertThat(row.getEventType()).isEqualTo(UPDATE.getValue());
-			assertThat(row.getEventSubType()).isEqualTo(MESSAGE_EXTERNAL.getValue());
+			assertThat(row.getEventSubType()).isEqualTo(MESSAGE_CONVERSATION_EXTERNAL.getValue());
 			assertThat(row.getExecutedBy()).isEqualTo(EXECUTED_BY);
 			assertThat(row.getRequestGroupId()).isEqualTo(REQUEST_GROUP_ID);
 			assertThat(row.getSignalName()).isNull();
@@ -904,7 +904,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that no signal goes out for a row that was never written, since there would be nothing for the relay to deliver")
 	void noSignalWithoutARow() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 
 		publisher.publish(errand(), UPDATE, ATTACHMENT, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
@@ -915,7 +915,7 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a publication which cannot be written takes the errand change down with it, whatever the caller does with the exception, and says why in the log")
 	void aFailureWithATransactionMarksItRollbackOnly(final CapturedOutput output) {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 
@@ -924,7 +924,7 @@ class ProcessEventPublisherTest {
 
 		final var status = mock(TransactionStatus.class);
 
-		inTransaction(status, () -> assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false)).isSameAs(failure));
+		inTransaction(status, () -> assertThatThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false)).isSameAs(failure));
 
 		verify(status).setRollbackOnly();
 		verifyNoInteractions(applicationEventPublisherMock);
@@ -937,12 +937,12 @@ class ProcessEventPublisherTest {
 	@DisplayName("Verification that a write with no transaction to roll back is reported rather than allowed to break a call that already saved the errand")
 	void aFailureWithoutATransactionIsNotThrown() {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(APPLICATION, AUTOMATIC);
 		givenNoInstances();
 		when(outboxRepositoryMock.save(any())).thenThrow(new IllegalStateException("the row could not be written"));
 
-		assertThatNoException().isThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false));
+		assertThatNoException().isThrownBy(() -> publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false));
 	}
 
 	@ParameterizedTest
@@ -972,7 +972,7 @@ class ProcessEventPublisherTest {
 		final var status = mock(TransactionStatus.class);
 
 		inTransaction(status, () -> assertThatIllegalArgumentException()
-			.isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false))
+			.isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false))
 			.withMessageContaining(eventType.getValue()));
 
 		verify(status).setRollbackOnly();
@@ -987,18 +987,18 @@ class ProcessEventPublisherTest {
 		when(namespaceConfigServiceMock.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 		final var status = mock(TransactionStatus.class);
 
-		inTransaction(status, () -> assertThatNoException().isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false)));
+		inTransaction(status, () -> assertThatNoException().isThrownBy(() -> publisher.publish(errand(), eventType, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false)));
 
 		verifyNoInteractions(status, outboxRepositoryMock);
 	}
 
 	private boolean startAllowedFor(final List<ErrandProcessEntity> instances, final String labelKey, final ProcessStartMode startMode) {
 		givenNamespaceRunsProcess();
-		givenTriggers(MESSAGE_EXTERNAL);
+		givenTriggers(MESSAGE_CONVERSATION_EXTERNAL);
 		givenLabels(labelKey, startMode);
 		when(processRepositoryMock.findByErrandIdOrderByCreatedDesc(ERRAND_ID)).thenReturn(instances);
 
-		publisher.publish(errand(), UPDATE, MESSAGE_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
+		publisher.publish(errand(), UPDATE, MESSAGE_CONVERSATION_EXTERNAL, EXECUTED_BY, REQUEST_GROUP_ID, null, false);
 
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		return outboxCaptor.getValue().isStartAllowed();
@@ -1017,7 +1017,7 @@ class ProcessEventPublisherTest {
 	 * asked for a command, a deletion or a write that asks not to wake the process.
 	 */
 	private void givenEveryErrandChangeATrigger() {
-		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND, ATTACHMENT, DECISION, MESSAGE_EXTERNAL));
+		lenient().when(namespaceConfigServiceMock.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Set.of(ERRAND, ATTACHMENT, DECISION, MESSAGE_CONVERSATION_EXTERNAL));
 	}
 
 	private void givenLabels(final String processKey, final ProcessStartMode startMode) {

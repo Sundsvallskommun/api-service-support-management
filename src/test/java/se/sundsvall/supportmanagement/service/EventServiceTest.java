@@ -67,8 +67,9 @@ import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EMAIL_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PROCESS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
@@ -534,11 +535,11 @@ class EventServiceTest {
 			.withAssignedUserId("anna01");
 		when(notificationServiceMock.createNotification(same(entity), any())).thenThrow(new RuntimeException("Forbidden"));
 
-		service.createErrandEvent(EventType.UPDATE, "Meddelande skickat", entity, null, null, true, MESSAGE_INTERNAL);
+		service.createErrandEvent(EventType.UPDATE, "Meddelande skickat", entity, null, null, true, MESSAGE_CONVERSATION_INTERNAL);
 
 		verify(notificationServiceMock).createNotification(same(entity), any());
 		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
-		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(MESSAGE_INTERNAL.getValue());
+		assertThat(dispatchCaptor.getValue().getSubType()).isEqualTo(MESSAGE_CONVERSATION_INTERNAL.getValue());
 	}
 
 	@ParameterizedTest
@@ -573,7 +574,7 @@ class EventServiceTest {
 		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("handler");
 
 		// Call
-		service.createErrandEvent(EventType.UPDATE, "Ny händelse för topic", entity, null, null, false, MESSAGE_EXTERNAL, actor);
+		service.createErrandEvent(EventType.UPDATE, "Ny händelse för topic", entity, null, null, false, MESSAGE_CONVERSATION_EXTERNAL, actor);
 
 		// Verify the event log and the dispatch both name the actor, which is what keeps them from being notified of it
 		verify(eventLogClientMock).createEvent(eq("2281"), eq(errandId), eventCaptor.capture());
@@ -713,6 +714,21 @@ class EventServiceTest {
 
 		verify(notificationServiceMock).createNotification(same(entity), notificationCaptor.capture());
 		assertThat(notificationCaptor.getValue().getCreatedBy()).isEqualTo("pw-alkt");
+	}
+
+	@Test
+	void anErrandNotificationKeepsItsOwnTextWhenGivenOne() {
+		// The event is told with its new text, while the assigned user is notified with the text they always were
+		final var entity = ErrandEntity.create().withMunicipalityId("2281").withId(randomUUID().toString()).withAssignedUserId("assignedUserId");
+
+		service.createErrandEvent(EventType.UPDATE, "Meddelande mottaget via e-post", entity, null, MESSAGE_EMAIL_EXTERNAL, new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande"));
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getMessage()).isEqualTo("Meddelande mottaget via e-post");
+		verify(notificationServiceMock).createNotification(same(entity), notificationCaptor.capture());
+		assertThat(notificationCaptor.getValue().getDescription()).isEqualTo("Nytt meddelande");
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getDescription()).isEqualTo("Meddelande mottaget via e-post");
 	}
 
 	@Test

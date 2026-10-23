@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -41,6 +42,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -81,6 +83,16 @@ class SendEmailActionTest {
 
 	@Captor
 	private ArgumentCaptor<EmailRequest> emailRequestCaptor;
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		"Påminnelse till sökande, Meddelande skickat via e-post av schemalagd åtgärd \"Påminnelse till sökande\"",
+		"null, Meddelande skickat via e-post av schemalagd åtgärd",
+		"' ', Meddelande skickat via e-post av schemalagd åtgärd"
+	})
+	void toEventMessage(final String displayValue, final String expected) {
+		assertThat(SendEmailAction.toEventMessage(ActionConfigEntity.create().withDisplayValue(displayValue))).isEqualTo(expected);
+	}
 
 	@Test
 	void getName() {
@@ -472,7 +484,7 @@ class SendEmailActionTest {
 
 		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
-		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture(), startsWith("Meddelande skickat via e-post av schemalagd åtgärd"));
 		var capturedRequest = emailRequestCaptor.getValue();
 		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
 		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);
@@ -498,7 +510,7 @@ class SendEmailActionTest {
 
 		sendEmailAction.executeAction(errand, config);
 
-		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture(), startsWith("Meddelande skickat via e-post av schemalagd åtgärd"));
 		assertThat(emailRequestCaptor.getValue().getSubject()).isEqualTo("50% done %s - " + ERRAND_NUMBER);
 	}
 
@@ -525,7 +537,7 @@ class SendEmailActionTest {
 
 		assertThat(sendEmailAction.executeAction(errand, config)).isFalse();
 
-		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture());
+		verify(communicationService).sendEmail(eq(errand), emailRequestCaptor.capture(), startsWith("Meddelande skickat via e-post av schemalagd åtgärd"));
 		var capturedRequest = emailRequestCaptor.getValue();
 		assertThat(capturedRequest.getRecipient()).isEqualTo(RECIPIENT_ADDRESS);
 		assertThat(capturedRequest.getSender()).isEqualTo(SENDER_ADDRESS);

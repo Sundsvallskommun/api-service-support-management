@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.TeliaAceNotificationRequestedEvent;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
@@ -35,13 +36,15 @@ import static se.sundsvall.supportmanagement.service.scheduler.emailreader.Email
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isNoReplyAddress;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.shouldSuppressConfirmation;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.ErrandNumberParser.parseSubject;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Service
 public class EmailReaderWorker {
 	private static final Logger LOG = LoggerFactory.getLogger(EmailReaderWorker.class);
 
-	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
+	private static final String EVENT_LOG_COMMUNICATION = "Meddelande mottaget via e-post";
+	private static final String ERRAND_NOTIFICATION_COMMUNICATION = "Nytt meddelande";
 	private static final String EMAIL_NEW_SUBJECT_PREFIX = "Bekräftelse ärende ";
 
 	private final EmailReaderClient emailReaderClient;
@@ -130,7 +133,8 @@ public class EmailReaderWorker {
 
 	private void sendEmail(final ErrandEntity errand, final EmailRequest emailRequest) {
 		if (emailRequest != null && !errand.isDraft()) {
-			communicationService.sendEmail(errand, emailRequest);
+			// The confirmation of an email having been received is not logged
+			communicationService.sendEmail(errand, emailRequest, null);
 		}
 	}
 
@@ -180,7 +184,9 @@ public class EmailReaderWorker {
 		}
 		saveEmail(email, errand);
 		try {
-			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, EventSubType.MESSAGE_EXTERNAL);
+			// The assigned user is notified as they always were
+			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, EventSubType.MESSAGE_EMAIL_EXTERNAL,
+				new ErrandEventOptions(true, getExecutingUser(), Set.of(), ERRAND_NOTIFICATION_COMMUNICATION));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
 		}

@@ -32,6 +32,8 @@ import static java.util.stream.Collectors.toCollection;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.withNotify;
 
 @Component
 public class ActionWorker {
@@ -84,8 +86,14 @@ public class ActionWorker {
 			return;
 		}
 
+		// No request says whether to notify anyone, so the config of the action does, for whatever the action logs. What it
+		// logs is grouped together, to reach the subscribers as one notification.
+		inNewRequestGroup(() -> withNotify(configEntity.getNotify(), () -> execute(action, errand, actionEntity)));
+	}
+
+	private void execute(final Action action, final ErrandEntity errand, final ErrandActionEntity actionEntity) {
 		final var previousLabelIds = labelIdsOf(errand);
-		final var changed = action.executeAction(errand, configEntity);
+		final var changed = action.executeAction(errand, actionEntity.getActionConfigEntity());
 		removeAction(errand, actionEntity);
 
 		if (changed) {
@@ -112,8 +120,10 @@ public class ActionWorker {
 	 * Records what a scheduled action did to the errand, the way a write through the API is recorded: a revision, and an
 	 * event for it, through which the process of the errand learns of the change.
 	 * <p>
-	 * Asked only of an action that says it changed the errand. No notification is sent. A failed publication marks the
-	 * transaction for rollback, so the action is rolled back with it and tried again on the next run.
+	 * Asked only of an action that says it changed the errand. The subscribers of the errand are notified unless the config
+	 * of the action says not to, while the assigned user is not, as a scheduled action never notified them. A failed
+	 * publication marks the transaction for rollback, so the action is rolled back with it and tried again on the next
+	 * run.
 	 */
 	private void logChange(final ErrandEntity errand) {
 		final var revision = revisionService.createErrandRevision(errand);
@@ -123,7 +133,7 @@ public class ActionWorker {
 		}
 
 		try {
-			eventService.createErrandEventWithoutNotification(UPDATE, EVENT_LOG_ACTION, errand, revision.latest(), revision.previous(), ERRAND);
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, revision.latest(), revision.previous(), false, ERRAND);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {} after a scheduled action: {}", sanitizeForLogging(errand.getId()), sanitizeForLogging(e.getMessage()));
 		}

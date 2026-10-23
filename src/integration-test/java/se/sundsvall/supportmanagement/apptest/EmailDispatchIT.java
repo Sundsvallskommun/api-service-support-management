@@ -53,7 +53,8 @@ class EmailDispatchIT extends AbstractAppTest {
 	private TransactionTemplate transactionTemplate;
 
 	/**
-	 * Processing an UPDATE/MESSAGE_EXTERNAL dispatch for a subscriber with an EMAIL channel stores the subscriber, the
+	 * Processing an UPDATE/MESSAGE_CONVERSATION_EXTERNAL dispatch for a subscriber with an EMAIL channel stores the
+	 * subscriber, the
 	 * errand and
 	 * the event in the outbox.
 	 */
@@ -132,7 +133,8 @@ class EmailDispatchIT extends AbstractAppTest {
 	}
 
 	/**
-	 * A PATCH creates an UPDATE/ERRAND dispatch entry, which does not match the subscriber's {UPDATE, MESSAGE_EXTERNAL}
+	 * A PATCH creates an UPDATE/ERRAND dispatch entry, which does not match the subscriber's {UPDATE,
+	 * MESSAGE_CONVERSATION_EXTERNAL}
 	 * filter, so
 	 * nothing is put in the outbox.
 	 */

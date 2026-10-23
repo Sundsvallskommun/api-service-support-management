@@ -28,8 +28,9 @@ public class EventFilter {
 	private String type;
 
 	@Size(max = 64)
-	@Schema(description = "Event subtype. If null, all subtypes of the given type match. MESSAGE_INTERNAL and MESSAGE_EXTERNAL match messages " +
-		"in internal conversations and messages from outside respectively. ERRAND matches every change " +
+	@Schema(description = "Event subtype. If null, all subtypes of the given type match. Messages are matched by the channel they went " +
+		"through, received and sent alike: MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL, and MESSAGE_CONVERSATION_EXTERNAL " +
+		"and MESSAGE_CONVERSATION_INTERNAL for messages in conversations with the outside world and within the organisation respectively. ERRAND matches every change " +
 		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively. LABEL matches a label being added to an " +
 		"errand, logged once for every label added - as CREATE/LABEL for the labels an errand is created with and as UPDATE/LABEL for those added later. " +
 		"ERRAND_ACTIVATION matches a draft being made active, logged as UPDATE/ERRAND_ACTIVATION alongside the UPDATE/ERRAND of the update that made it " +

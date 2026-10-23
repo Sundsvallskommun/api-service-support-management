@@ -242,6 +242,31 @@ public class ServiceUtil {
 		NOTIFY.remove();
 	}
 
+	/**
+	 * Runs the work notifying as told, as a request with the {@value #NOTIFY_HEADER} header would, for work done where no
+	 * request says so, such as a scheduled action. Whether the thread notified before is restored afterwards.
+	 *
+	 * @param notify whether what the work does should notify anyone
+	 * @param work   the work to run
+	 */
+	public static void withNotify(final boolean notify, final Runnable work) {
+		final var previousNotify = NOTIFY.get();
+		if (notify) {
+			NOTIFY.remove();
+		} else {
+			NOTIFY.set(Boolean.FALSE);
+		}
+		try {
+			work.run();
+		} finally {
+			if (previousNotify == null) {
+				NOTIFY.remove();
+			} else {
+				NOTIFY.set(previousNotify);
+			}
+		}
+	}
+
 	public static String computeSha256Hex(final InputStream inputStream) {
 		try {
 			final var digest = MessageDigest.getInstance(HASH_ALGORITHM);

@@ -8,10 +8,12 @@ import generated.se.sundsvall.messageexchange.Message;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -33,11 +35,13 @@ import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegr
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -138,7 +142,8 @@ class MessageExchangeSyncServiceTest {
 		// Assert
 		verify(errandsRepositoryMock).getReferenceById(errandId);
 		verify(messageExchangeClientMock).getMessages(municipalityId, MESSAGE_EXCHANGE_NS, messageExchangeId, "sequenceNumber.id >123", Pageable.unpaged());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), eq(null), eq(null), eq(true), eq(EventSubType.MESSAGE_INTERNAL), isNull(se.sundsvall.dept44.support.Identifier.class));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("1 nytt internt meddelande i konversationen \"topic\""), same(errandEntity), isNull(), eq(EventSubType.MESSAGE_CONVERSATION_INTERNAL),
+			eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verify(conversationRepositoryMock).save(conversationEntityCaptor.capture());
 
 		final var savedEntity = conversationEntityCaptor.getValue();
@@ -162,12 +167,12 @@ class MessageExchangeSyncServiceTest {
 		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(errandEntity);
 		when(messageExchangeClientMock.getMessages(eq("municipalityId"), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
 			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type("partyId").value("citizen"))))));
-		doAnswer(_ -> groupIdDuringSync[0] = getRequestGroupId()).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any(EventSubType.class), any());
+		doAnswer(_ -> groupIdDuringSync[0] = getRequestGroupId()).when(eventServiceMock).createErrandEvent(any(), any(), any(), nullable(RevisionResult.class), any(EventSubType.class), any(ErrandEventOptions.class));
 
 		service.syncConversation(entity, conversation);
 
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_EXTERNAL),
-			any(se.sundsvall.dept44.support.Identifier.class));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("1 nytt meddelande i konversationen"), same(errandEntity), isNull(), eq(EventSubType.MESSAGE_CONVERSATION_EXTERNAL),
+			argThat(options -> options.sendNotification() && "Nytt meddelande".equals(options.errandNotificationMessage())));
 		assertThat(groupIdDuringSync[0]).isNotNull();
 		assertThat(getRequestGroupId()).isNull();
 	}
@@ -185,8 +190,8 @@ class MessageExchangeSyncServiceTest {
 
 		service.syncConversation(entity, conversation);
 
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), eq(true), eq(EventSubType.MESSAGE_INTERNAL),
-			any(se.sundsvall.dept44.support.Identifier.class));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("1 nytt internt meddelande i konversationen"), same(errandEntity), isNull(), eq(EventSubType.MESSAGE_CONVERSATION_INTERNAL),
+			argThat(options -> options.sendNotification() && "Nytt meddelande".equals(options.errandNotificationMessage())));
 	}
 
 	@Test
@@ -586,6 +591,33 @@ class MessageExchangeSyncServiceTest {
 			.hasMessageContaining("Failed to retrieve attachment from Message Exchange");
 
 		verifyNoInteractions(conversationRepositoryMock, messageExchangeClientMock);
+	}
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		"1, MESSAGE_CONVERSATION_EXTERNAL, Ansökan, 1 nytt meddelande i konversationen \"Ansökan\"",
+		"3, MESSAGE_CONVERSATION_EXTERNAL, Ansökan, 3 nya meddelanden i konversationen \"Ansökan\"",
+		"1, MESSAGE_CONVERSATION_INTERNAL, Ansökan, 1 nytt internt meddelande i konversationen \"Ansökan\"",
+		"2, MESSAGE_CONVERSATION_INTERNAL, Ansökan, 2 nya interna meddelanden i konversationen \"Ansökan\"",
+		"2, MESSAGE_CONVERSATION_EXTERNAL, null, 2 nya meddelanden i konversationen",
+		"1, MESSAGE_CONVERSATION_INTERNAL, ' ', 1 nytt internt meddelande i konversationen"
+	})
+	void toEventMessage(final int count, final EventSubType subtype, final String topic, final String expected) {
+		assertThat(MessageExchangeSyncService.toEventMessage(count, subtype, topic)).isEqualTo(expected);
+	}
+
+	@Test
+	void syncConversationLogsNothingWhenNoMessageCame() {
+		final var entity = baseConversation("municipalityId", "messageExchangeId").withType("EXTERNAL");
+		final var conversation = new Conversation().latestSequenceNumber(100L);
+
+		when(errandsRepositoryMock.getReferenceById(any())).thenReturn(ErrandEntity.create().withAssignedUserId("handler"));
+		when(messageExchangeClientMock.getMessages(eq("municipalityId"), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of())));
+
+		service.syncConversation(entity, conversation);
+
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	private static ConversationEntity baseConversation(final String municipalityId, final String messageExchangeId) {

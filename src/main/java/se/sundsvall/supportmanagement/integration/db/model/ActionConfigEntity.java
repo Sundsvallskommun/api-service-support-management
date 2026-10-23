@@ -56,6 +56,9 @@ public class ActionConfigEntity {
 	@Column(name = "active", nullable = false)
 	private boolean active;
 
+	@Column(name = "notify", nullable = false, columnDefinition = "bit default 1")
+	private boolean notify = true;
+
 	@Column(name = "display_value")
 	private String displayValue;
 
@@ -153,6 +156,19 @@ public class ActionConfigEntity {
 		return this;
 	}
 
+	public boolean getNotify() {
+		return notify;
+	}
+
+	public void setNotify(final boolean notify) {
+		this.notify = notify;
+	}
+
+	public ActionConfigEntity withNotify(final boolean notify) {
+		this.notify = notify;
+		return this;
+	}
+
 	public String getDisplayValue() {
 		return displayValue;
 	}
@@ -243,7 +259,7 @@ public class ActionConfigEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, municipalityId, namespace, name, active, displayValue, conditions, parameters, operationTypes, created, modified);
+		return Objects.hash(id, municipalityId, namespace, name, active, notify, displayValue, conditions, parameters, operationTypes, created, modified);
 	}
 
 	@Override
@@ -254,7 +270,7 @@ public class ActionConfigEntity {
 		if (!(obj instanceof final ActionConfigEntity other)) {
 			return false;
 		}
-		return active == other.active && Objects.equals(id, other.id) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(name, other.name)
+		return active == other.active && notify == other.notify && Objects.equals(id, other.id) && Objects.equals(municipalityId, other.municipalityId) && Objects.equals(namespace, other.namespace) && Objects.equals(name, other.name)
 			&& Objects.equals(displayValue, other.displayValue) && Objects.equals(conditions, other.conditions) && Objects.equals(parameters, other.parameters)
 			&& Objects.equals(operationTypes, other.operationTypes) && Objects.equals(created, other.created)
 			&& Objects.equals(modified, other.modified);
@@ -268,6 +284,7 @@ public class ActionConfigEntity {
 			", namespace='" + namespace + '\'' +
 			", name='" + name + '\'' +
 			", active=" + active +
+			", notify=" + notify +
 			", displayValue='" + displayValue + '\'' +
 			", conditions=" + conditions +
 			", parameters=" + parameters +

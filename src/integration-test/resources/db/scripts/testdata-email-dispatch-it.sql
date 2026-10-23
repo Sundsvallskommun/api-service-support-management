@@ -33,9 +33,9 @@ VALUES ('11111111-0000-0000-0000-000000000001', 0, 'EMAIL', 'chef@example.com'),
        ('11111111-0000-0000-0000-000000000001', 1, 'INTERNAL', null),
        ('11111111-0000-0000-0000-000000000002', 0, 'INTERNAL', null);
 
--- Event filters: subscribe to UPDATE/MESSAGE_EXTERNAL and CREATE (any subtype)
+-- Event filters: subscribe to UPDATE/MESSAGE_CONVERSATION_EXTERNAL and CREATE (any subtype)
 INSERT INTO subscriber_event_filter(subscriber_id, sort_order, type, subtype)
-VALUES ('11111111-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE_EXTERNAL'),
+VALUES ('11111111-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE_CONVERSATION_EXTERNAL'),
        ('11111111-0000-0000-0000-000000000001', 1, 'CREATE', null);
 
 -- -----------------------------------
@@ -48,9 +48,9 @@ VALUES ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-0000000
 -- -----------------------------------
 -- Notification dispatch entries
 -- -----------------------------------
--- test01/test02: UPDATE/MESSAGE_EXTERNAL event (existing)
+-- test01/test02: UPDATE/MESSAGE_CONVERSATION_EXTERNAL event (existing)
 INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)
-VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-001', 'grp-001', 'UPDATE', 'MESSAGE_EXTERNAL', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));
+VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-001', 'grp-001', 'UPDATE', 'MESSAGE_CONVERSATION_EXTERNAL', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));
 
 -- test03: CREATE/ERRAND event
 INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)

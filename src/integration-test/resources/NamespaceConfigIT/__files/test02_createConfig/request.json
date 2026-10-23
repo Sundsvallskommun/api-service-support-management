@@ -6,7 +6,7 @@
 	"processConsumer": "pw-alkt",
 	"processTriggers": [
 		"ERRAND",
-		"MESSAGE_EXTERNAL",
+		"MESSAGE_CONVERSATION_EXTERNAL",
 		"ATTACHMENT",
 		"DECISION"
 	]
