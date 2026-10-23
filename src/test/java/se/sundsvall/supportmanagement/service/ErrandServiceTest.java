@@ -103,6 +103,7 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
@@ -773,7 +774,9 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
 		// A draft notified no one, so its assignee is told of on being made active as on a new errand
-		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND_ACTIVATION), options(true, Set.of()));
+		// The patch that made it active is an update all the same
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har uppdaterats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
 	}
 

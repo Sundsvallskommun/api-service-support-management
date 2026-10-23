@@ -14,6 +14,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
@@ -36,6 +37,7 @@ class EventSubTypeTest {
 			arguments(ATTACHMENT, false),
 			arguments(DECISION, false),
 			arguments(ERRAND, false),
+			arguments(ERRAND_ACTIVATION, false),
 			arguments(HANDOVER_IN, false),
 			arguments(HANDOVER_OUT, false),
 			arguments(LABEL, false),
@@ -52,7 +54,7 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, HANDOVER_IN, HANDOVER_OUT, LABEL, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PHASE, PROCESS,
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, ERRAND_ACTIVATION, HANDOVER_IN, HANDOVER_OUT, LABEL, MESSAGE_EXTERNAL, MESSAGE_INTERNAL, NOTE, PHASE, PROCESS,
 			SIGNAL, STATUS, SYSTEM, SUSPENSION);
 	}
 
@@ -61,6 +63,7 @@ class EventSubTypeTest {
 		assertThat(ATTACHMENT.getValue()).isEqualTo("ATTACHMENT");
 		assertThat(DECISION.getValue()).isEqualTo("DECISION");
 		assertThat(ERRAND.getValue()).isEqualTo("ERRAND");
+		assertThat(ERRAND_ACTIVATION.getValue()).isEqualTo("ERRAND_ACTIVATION");
 		assertThat(LABEL.getValue()).isEqualTo("LABEL");
 		assertThat(MESSAGE_EXTERNAL.getValue()).isEqualTo("MESSAGE_EXTERNAL");
 		assertThat(MESSAGE_INTERNAL.getValue()).isEqualTo("MESSAGE_INTERNAL");
@@ -105,6 +108,10 @@ class EventSubTypeTest {
 		// A label being added is no change to the errand to a filter on ERRAND, nor the other way around
 		"LABEL, LABEL, true",
 		"ERRAND, LABEL, false",
+		// Nor is a draft being made active, which is told alongside the update that made it active
+		"ERRAND_ACTIVATION, ERRAND_ACTIVATION, true",
+		"ERRAND, ERRAND_ACTIVATION, false",
+		"ERRAND_ACTIVATION, ERRAND, false",
 		"LABEL, ERRAND, false",
 		// Unrelated subtypes do not select one another
 		"ATTACHMENT, MESSAGE_EXTERNAL, false",

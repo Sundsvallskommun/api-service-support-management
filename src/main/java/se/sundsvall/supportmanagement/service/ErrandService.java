@@ -60,6 +60,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLi
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
@@ -293,7 +294,11 @@ public class ErrandService {
 		if (!activates) {
 			addedLabelIds.removeAll(previousLabelIds);
 		}
-		logUpdateEvent(entity, revisionResult, activates ? EVENT_LOG_ACTIVATE_ERRAND : EVENT_LOG_UPDATE_ERRAND, true);
+		// Made active by a patch that is an update all the same, so both are told, the activation as an event of its own
+		if (activates) {
+			logUpdateEvent(entity, revisionResult, EVENT_LOG_ACTIVATE_ERRAND, ERRAND_ACTIVATION, true);
+		}
+		logUpdateEvent(entity, revisionResult, EVENT_LOG_UPDATE_ERRAND, ERRAND, true);
 		logLabelEvents(UPDATE, entity, revisionResult, addedLabelIds);
 		if (isNewAssignment(activates ? null : previousAssignee, entity.getAssignedUserId())) {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, entity, revisionResult, ASSIGNMENT);
@@ -552,7 +557,7 @@ public class ErrandService {
 		}
 
 		final var saved = repository.saveAndFlush(errand);
-		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, false);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_UPDATE_ERRAND, ERRAND, false);
 		return true;
 	}
 
@@ -707,18 +712,19 @@ public class ErrandService {
 	/**
 	 * Logs the errand having been updated, for the revisions that produced one.
 	 *
+	 * @param subtype  the sub type of the event, ERRAND but for the activation of a draft.
 	 * @param notifies whether the event notifies the handler and the subscribers of the errand, or no one.
 	 */
-	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final boolean notifies) {
+	private void logUpdateEvent(final ErrandEntity entity, final RevisionResult revisionResult, final String message, final EventSubType subtype, final boolean notifies) {
 		if (isNull(revisionResult)) {
 			return;
 		}
 
 		try {
 			if (notifies) {
-				eventService.createErrandEvent(UPDATE, message, entity, revisionResult, ERRAND, new ErrandEventOptions(true, getExecutingUser(), Set.of()));
+				eventService.createErrandEvent(UPDATE, message, entity, revisionResult, subtype, new ErrandEventOptions(true, getExecutingUser(), Set.of()));
 			} else {
-				eventService.createErrandEventWithoutNotification(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), ERRAND);
+				eventService.createErrandEventWithoutNotification(UPDATE, message, entity, revisionResult.latest(), revisionResult.previous(), subtype);
 			}
 		} catch (final Exception e) {
 			LOG.warn("Failed to log UPDATE event for errand {}: {}", entity.getId(), e.getMessage());
