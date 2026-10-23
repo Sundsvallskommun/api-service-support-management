@@ -60,6 +60,7 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsIntegration;
@@ -82,7 +83,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -188,6 +191,9 @@ class CommunicationServiceTest {
 
 	@Mock
 	private ChunkedDeleter chunkedDeleterMock;
+
+	@Mock
+	private EventService eventServiceMock;
 
 	@Captor
 	private ArgumentCaptor<generated.se.sundsvall.messaging.MessageRequest> messageRequestCaptor;
@@ -442,7 +448,7 @@ class CommunicationServiceTest {
 
 		final List<ThrowingCallable> sends = List.of(
 			() -> communicationService.sendEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, EmailRequest.create()),
-			() -> communicationService.sendEmail(draft, EmailRequest.create()),
+			() -> communicationService.sendEmail(draft, EmailRequest.create(), null),
 			() -> communicationService.sendBulkEmail(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, BulkEmailRequest.create()),
 			() -> communicationService.sendSms(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, SmsRequest.create()),
 			() -> communicationService.sendWebMessage(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, WebMessageRequest.create().withDispatch(false)),
@@ -501,6 +507,8 @@ class CommunicationServiceTest {
 		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
 
+		verify(eventServiceMock).createErrandEvent(eq(generated.se.sundsvall.eventlog.EventType.UPDATE), eq("Meddelande skickat via e-post"), any(ErrandEntity.class), isNull(), eq(EventSubType.MESSAGE_EMAIL_EXTERNAL),
+			argThat(options -> !options.sendNotification()));
 	}
 
 	@Test
@@ -540,6 +548,8 @@ class CommunicationServiceTest {
 		assertThat(batchRequest.getSubject()).isEqualTo(SUBJECT);
 		assertThat(batchRequest.getSender().getAddress()).isEqualTo(SENDER_EMAIL);
 		assertThat(batchRequest.getSender().getName()).isEqualTo(SENDER_NAME);
+		verify(eventServiceMock).createErrandEvent(eq(generated.se.sundsvall.eventlog.EventType.UPDATE), eq("Meddelande skickat via e-post till 2 mottagare"), any(ErrandEntity.class), isNull(), eq(EventSubType.MESSAGE_EMAIL_EXTERNAL),
+			argThat(options -> !options.sendNotification()));
 	}
 
 	@Test
@@ -574,6 +584,8 @@ class CommunicationServiceTest {
 
 		verifyNoMoreInteractions(communicationRepositoryMock, accessControlServiceMock, messagingClientMock, communicationMapperMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
+		verify(eventServiceMock).createErrandEvent(eq(generated.se.sundsvall.eventlog.EventType.UPDATE), eq("Meddelande skickat via SMS"), any(ErrandEntity.class), isNull(), eq(EventSubType.MESSAGE_SMS_EXTERNAL),
+			argThat(options -> !options.sendNotification()));
 	}
 
 	@Test
@@ -626,6 +638,8 @@ class CommunicationServiceTest {
 		verifyNoMoreInteractions(accessControlServiceMock, messagingClientMock, communicationMapperMock, communicationRepositoryMock, attachmentEntityMock, communicationEntityMock, errandAttachmentServiceMock,
 			attachmentEntitiesMock, portalPersonDataMock, employeeServiceMock);
 		verifyNoInteractions(communicationAttachmentRepositoryMock);
+		verify(eventServiceMock).createErrandEvent(eq(generated.se.sundsvall.eventlog.EventType.UPDATE), eq("Meddelande skickat via e-tjänsten"), any(ErrandEntity.class), isNull(), eq(EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL),
+			argThat(options -> !options.sendNotification()));
 	}
 
 	/**
@@ -654,6 +668,8 @@ class CommunicationServiceTest {
 		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(communicationMapperMock).toAttachments(any());
 		verify(messagingClientMock, never()).sendWebMessage(any(), anyBoolean(), any());
+		// A message kept on the errand without being sent is not logged
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	/**
@@ -684,6 +700,8 @@ class CommunicationServiceTest {
 		verify(communicationEntityMock).withErrandAttachments(same(attachmentEntitiesMock));
 		verify(communicationRepositoryMock).saveAndFlush(any());
 		verify(messagingClientMock, never()).sendWebMessage(any(), anyBoolean(), any());
+		// A message kept on the errand without being sent is not logged
+		verifyNoInteractions(eventServiceMock);
 	}
 
 	private SmsRequest createSmsRequest() {

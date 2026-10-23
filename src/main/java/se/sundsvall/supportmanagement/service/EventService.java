@@ -3,9 +3,13 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import generated.se.sundsvall.notes.Note;
 import java.net.URI;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,15 +22,19 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.event.Event;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
+import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
+import se.sundsvall.supportmanagement.integration.db.StatusRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.eventlog.EventlogClient;
 import se.sundsvall.supportmanagement.service.mapper.EventlogMapper;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -36,11 +44,17 @@ import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SYSTEM;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toEvent;
 import static se.sundsvall.supportmanagement.service.mapper.EventlogMapper.toMetadataMap;
@@ -55,6 +69,12 @@ public class EventService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(EventService.class);
 	private static final RevisionResult NO_REVISION = new RevisionResult(null, null);
+
+	private static final String EVENT_LOG_ADD_LABEL = "Ärendet uppdaterat med etikett \"%s\"";
+	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till \"%s\"";
+
+	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
+	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, ERRAND_ACTIVATION, LABEL, PHASE, STATUS);
 
 	/**
 	 * Who an event about an errand notifies, beyond what a draft or a request asking to notify no one rules out.
@@ -74,20 +94,24 @@ public class EventService {
 	private final NotificationDispatchRepository notificationDispatchRepository;
 	private final AccessControlService accessControlService;
 	private final ProcessEventPublisher processEventPublisher;
+	private final MetadataLabelRepository metadataLabelRepository;
+	private final StatusRepository statusRepository;
 
 	public EventService(final EventlogClient eventLogClient, final NotificationService notificationService, final ApplicationEventPublisher eventPublisher, final NotificationDispatchRepository notificationDispatchRepository,
-		final AccessControlService accessControlService, final ProcessEventPublisher processEventPublisher) {
+		final AccessControlService accessControlService, final ProcessEventPublisher processEventPublisher, final MetadataLabelRepository metadataLabelRepository, final StatusRepository statusRepository) {
 		this.eventLogClient = eventLogClient;
 		this.notificationService = notificationService;
 		this.eventPublisher = eventPublisher;
 		this.notificationDispatchRepository = notificationDispatchRepository;
 		this.accessControlService = accessControlService;
 		this.processEventPublisher = processEventPublisher;
+		this.metadataLabelRepository = metadataLabelRepository;
+		this.statusRepository = statusRepository;
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
 		final EventSubType subtype) {
-		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, sendNotification, subtype, getExecutingUser());
+		createErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, new ErrandEventOptions(sendNotification, getExecutingUser(), Set.of()));
 	}
 
 	/**
@@ -100,12 +124,78 @@ public class EventService {
 	 */
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final boolean sendNotification,
 		final EventSubType subtype, final Identifier actor) {
-		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, actor, sendNotification ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS);
+		createErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, new ErrandEventOptions(sendNotification, actor, Set.of()));
+	}
+
+	/**
+	 * Logs the event on behalf of a given user, and notifies those it is to notify. The labels the event added to the
+	 * errand go along with it, as subscribers may filter on a label being added.
+	 *
+	 * @param revisions the revisions of the errand the event is about, either of which may be null
+	 * @param options   what goes along with the event beyond the event itself
+	 */
+	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype,
+		final ErrandEventOptions options) {
+		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.actor(), options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS,
+			options.addedLabelIds(), options.errandNotificationMessage());
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {
 		createErrandEvent(eventType, message, errandEntity, currentRevision, previousRevision, true, subtype);
+	}
+
+	/**
+	 * Logs the status of the errand having changed to the one it has now, apart from the change it was part of, so that
+	 * subscribers may be notified of it alone. No direct notification is made, as the change itself makes one.
+	 *
+	 * @param currentRevision  the revision of the errand the status changed in, or null
+	 * @param previousRevision the revision before it, or null
+	 */
+	public void createStatusChangeEvent(final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
+		createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(statusNameOf(errandEntity)), errandEntity, currentRevision, previousRevision, false, STATUS);
+	}
+
+	/**
+	 * The name the status of the errand is told by, which is its display name, or the status itself for one without a
+	 * display name or no longer defined in the namespace.
+	 */
+	private String statusNameOf(final ErrandEntity errandEntity) {
+		return statusRepository.findByNamespaceAndMunicipalityIdAndName(errandEntity.getNamespace(), errandEntity.getMunicipalityId(), errandEntity.getStatus())
+			.map(StatusEntity::getDisplayName)
+			.filter(displayName -> !displayName.isBlank())
+			.orElse(errandEntity.getStatus());
+	}
+
+	/**
+	 * Logs the labels having been added to the errand, one event for every label, so that subscribers may be notified of a
+	 * label being added apart from the change it was part of. Each event carries the one label it is about, which is what a
+	 * filter on a label matches. No direct notification is made, as the change that added the labels makes one where there
+	 * is one.
+	 *
+	 * @param revisions the revisions of the errand the labels were added in, either of which may be null
+	 * @param labelIds  the ids of the metadata labels added
+	 * @param actor     the user who added the labels, or null when nobody did
+	 */
+	public void createLabelEvents(final EventType eventType, final ErrandEntity errandEntity, final RevisionResult revisions, final Collection<String> labelIds, final Identifier actor) {
+		if (labelIds == null || labelIds.isEmpty()) {
+			return;
+		}
+
+		final var labelNames = metadataLabelRepository.findAllById(labelIds).stream()
+			.collect(toMap(MetadataLabelEntity::getId, EventService::nameOf));
+
+		labelIds.forEach(labelId -> createErrandEvent(eventType, EVENT_LOG_ADD_LABEL.formatted(labelNames.getOrDefault(labelId, labelId)), errandEntity, revisions, LABEL,
+			new ErrandEventOptions(false, actor, Set.of(labelId))));
+	}
+
+	/**
+	 * The name a label is told by, which is its display name, or its resource path for a label without one.
+	 */
+	private static String nameOf(final MetadataLabelEntity label) {
+		return ofNullable(label.getDisplayName())
+			.or(() -> ofNullable(label.getResourcePath()))
+			.orElse(label.getId());
 	}
 
 	/**
@@ -115,7 +205,7 @@ public class EventService {
 	 */
 	public void createErrandEventWithoutNotification(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision,
 		final EventSubType subtype) {
-		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, getExecutingUser(), Notice.NO_ONE);
+		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, getExecutingUser(), Notice.NO_ONE, Set.of(), null);
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
@@ -135,7 +225,7 @@ public class EventService {
 	 * @param command      what the command carries, or null when nothing is to be handed on to the process.
 	 */
 	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final EventSubType subtype, final ProcessCommand command) {
-		writeErrandEvent(eventType, message, errandEntity, NO_REVISION, subtype, getExecutingUser(), Notice.NO_ONE);
+		writeErrandEvent(eventType, message, errandEntity, NO_REVISION, subtype, getExecutingUser(), Notice.NO_ONE, Set.of(), null);
 
 		if (nonNull(command)) {
 			publishToProcess(errandEntity, eventType, subtype, command, false);
@@ -165,7 +255,7 @@ public class EventService {
 	 * @param concludesDecision whether the change is the one that concludes the decision.
 	 */
 	public void createDecisionEvent(final String message, final ErrandEntity errandEntity, final boolean concludesDecision) {
-		writeErrandEvent(UPDATE, message, errandEntity, NO_REVISION, DECISION, getExecutingUser(), Notice.HANDLER_AND_SUBSCRIBERS);
+		writeErrandEvent(UPDATE, message, errandEntity, NO_REVISION, DECISION, getExecutingUser(), Notice.HANDLER_AND_SUBSCRIBERS, Set.of(), null);
 		publishToProcess(errandEntity, UPDATE, DECISION, null, concludesDecision);
 	}
 
@@ -217,7 +307,7 @@ public class EventService {
 			createNotification(errandEntity, event);
 		}
 		if (notifies(errandEntity)) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), getExecutingUser());
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, NOTE.getValue(), new ErrandEventOptions(true, getExecutingUser(), Set.of()));
 		}
 	}
 
@@ -235,11 +325,13 @@ public class EventService {
 	/**
 	 * Writes the event to the event log, and notifies those it is to notify.
 	 *
-	 * @param revisions the revision the event points at and the one before it, either of them null.
-	 * @param notice    who the event notifies.
+	 * @param revisions                 the revision the event points at and the one before it, either of them null.
+	 * @param notice                    who the event notifies.
+	 * @param addedLabelIds             the metadata labels the event added to the errand.
+	 * @param errandNotificationMessage the text the assigned user is notified with, or null for the text of the event.
 	 */
 	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype, final Identifier actor,
-		final Notice notice) {
+		final Notice notice, final Set<String> addedLabelIds, final String errandNotificationMessage) {
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, revisions.latest(), revisions.previous());
 		final var event = toEvent(eventType, message, extractId(revisions.latest()), Errand.class, metadata, actor, subtype.getValue(), requestGroupId);
@@ -249,17 +341,23 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		if (eventType != EventType.DELETE) {
-			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity));
+		// An assignment, a label being added, a change of status or phase and the activation of a draft are logged alongside
+		// the change to the errand they are part of, which already subscribes the assignee. A label added by a scheduled action
+		// has no such change,
+		// and subscribes no one either.
+		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
+			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 
 		if (notice == Notice.HANDLER_AND_SUBSCRIBERS && notifies(errandEntity)) {
-			createNotification(errandEntity, event);
+			createNotification(errandEntity, ofNullable(errandNotificationMessage)
+				.map(text -> toEvent(eventType, text, extractId(revisions.latest()), Errand.class, metadata, actor, subtype.getValue(), requestGroupId))
+				.orElse(event));
 		}
 
 		// Which subscribers hear of the event is up to their subscriptions
 		if (notice != Notice.NO_ONE && notifies(errandEntity)) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), actor);
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), new ErrandEventOptions(notice == Notice.HANDLER_AND_SUBSCRIBERS, actor, addedLabelIds));
 		}
 	}
 
@@ -284,7 +382,7 @@ public class EventService {
 	}
 
 	private void saveDispatchEntry(final ErrandEntity errandEntity, final EventType eventType, final String requestGroupId, final String eventId, final String description, final String subType,
-		final Identifier executingUser) {
+		final ErrandEventOptions options) {
 		notificationDispatchRepository.save(NotificationDispatchEntity.create()
 			.withEventId(eventId)
 			.withRequestGroupId(requestGroupId)
@@ -294,7 +392,8 @@ public class EventService {
 			.withEventType(eventType.getValue())
 			.withDescription(description)
 			.withSubType(subType)
-			.withExecutingUserId(ofNullable(executingUser).map(Identifier::getValue).orElse(null)));
+			.withAddedLabelIds(new HashSet<>(ofNullable(options.addedLabelIds()).orElse(Set.of())))
+			.withExecutingUserId(ofNullable(options.actor()).map(Identifier::getValue).orElse(null)));
 	}
 
 	private String extractEventId(final ResponseEntity<Void> response) {
@@ -304,10 +403,19 @@ public class EventService {
 			.orElse(null);
 	}
 
+	/**
+	 * Notifies the assigned user of the event. The notification is made on their behalf, not on behalf of the one who
+	 * acted, so it is not held to what the one who acted may do with the notifications of the errand - whoever may act on
+	 * an errand may have its assigned user told of it. A notification that cannot be made is logged and left out, so that
+	 * the subscribers are still notified of the event.
+	 */
 	private void createNotification(final ErrandEntity errandEntity, final generated.se.sundsvall.eventlog.Event event) {
 		Optional.ofNullable(errandEntity.getAssignedUserId()).ifPresent(_ -> {
-			final var notification = toNotification(event, errandEntity, getCallerIdentity());
-			notificationService.createNotification(errandEntity.getMunicipalityId(), errandEntity.getNamespace(), errandEntity.getId(), notification);
+			try {
+				notificationService.createNotification(errandEntity, toNotification(event, errandEntity, getCallerIdentity()));
+			} catch (final Exception e) {
+				LOG.warn("Failed to notify the assigned user of errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
+			}
 		});
 	}
 

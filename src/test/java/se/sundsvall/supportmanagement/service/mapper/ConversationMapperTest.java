@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationRequest;
@@ -16,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 
 import static java.time.OffsetDateTime.now;
@@ -72,6 +75,17 @@ class ConversationMapperTest {
 		assertThat(result.getNamespace()).isEqualTo(NAMESPACE);
 		assertThat(result.getRelationIds()).isEqualTo(RELATION_VALUES_LIST);
 		assertThat(result.getTopic()).isEqualTo(TOPIC);
+	}
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		"EXTERNAL, MESSAGE_CONVERSATION_EXTERNAL",
+		"INTERNAL, MESSAGE_CONVERSATION_INTERNAL",
+		"unknownType, MESSAGE_CONVERSATION_INTERNAL",
+		"null, MESSAGE_CONVERSATION_INTERNAL"
+	})
+	void toMessageSubtype(final String conversationType, final EventSubType expected) {
+		assertThat(ConversationMapper.toMessageSubtype(ConversationEntity.create().withType(conversationType))).isEqualTo(expected);
 	}
 
 	@Test

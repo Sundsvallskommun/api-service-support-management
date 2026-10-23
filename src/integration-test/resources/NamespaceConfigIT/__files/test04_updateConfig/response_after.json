@@ -13,5 +13,10 @@
 	"singleDecisionPerErrand": false,
 	"teliaAceWorkItemEnabled": false,
 	"excludeEventDescriptionsInEmail": false,
-	"baseUrl": "https://draken.example.com"
+	"smsNotificationsEnabled": false,
+	"baseUrl": "https://draken.example.com",
+	"newSubscriberChannels": [
+		"INTERNAL",
+		"EMAIL"
+	]
 }

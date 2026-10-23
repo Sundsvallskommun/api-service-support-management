@@ -10,7 +10,7 @@
 			{
 				"equalToJson": {
 					"type": "UPDATE",
-					"subType": "MESSAGE",
+					"subType": "MESSAGE_EMAIL_EXTERNAL",
 					"owner": "SupportManagement",
 					"metadata": [
 						{
@@ -26,8 +26,9 @@
 							"value": "STATUS-1"
 						}
 					],
-					"message": "Nytt meddelande",
+					"message": "Meddelande mottaget via e-post",
 					"sourceType": "Errand",
+					"requestGroupId": "${json-unit.any-string}",
 					"created": "${json-unit.any-string}"
 				},
 				"ignoreArrayOrder": true

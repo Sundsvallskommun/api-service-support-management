@@ -24,9 +24,12 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,8 +55,13 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.Protecte
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {
 
+	private static final String REPORTER_PROFILE_ID = "123e4567-e89b-12d3-a456-426614174000";
+
 	@Mock
 	private NamespaceConfigRepository configRepositoryMock;
+
+	@Mock
+	private SubscriptionProfileRepository subscriptionProfileRepositoryMock;
 
 	@Mock
 	private NamespaceConfigMapper mapperMock;
@@ -65,7 +73,7 @@ class NamespaceConfigServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		configService = new NamespaceConfigService(configRepositoryMock, mapperMock);
+		configService = new NamespaceConfigService(configRepositoryMock, subscriptionProfileRepositoryMock, mapperMock);
 	}
 
 	@Test
@@ -98,6 +106,92 @@ class NamespaceConfigServiceTest {
 
 		verify(mapperMock).toEntity(same(request), eq(namespace), eq(municipalityId));
 		verify(configRepositoryMock).save(same(entity));
+	}
+
+	@Test
+	void createWithoutReporterProfileLooksUpNoProfile() {
+		// Most namespaces have no reporter profile, and are then not checked for one
+		final var request = NamespaceConfig.create();
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(NamespaceConfigEntity.create());
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verifyNoInteractions(subscriptionProfileRepositoryMock);
+	}
+
+	@Test
+	void createWithExistingReporterProfile() {
+		final var request = NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID);
+		final var entity = NamespaceConfigEntity.create();
+		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId"))
+			.thenReturn(Optional.of(SubscriptionProfileEntity.create().withId(REPORTER_PROFILE_ID)));
+		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
+
+		configService.create(request, "namespace", "municipalityId");
+
+		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId");
+		verify(configRepositoryMock).save(same(entity));
+	}
+
+	@Test
+	void replaceWithUnknownReporterProfile() {
+		final var request = NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID);
+		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(REPORTER_PROFILE_ID, "namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> configService.replace(request, "namespace", "municipalityId"))
+			.isInstanceOf(Problem.class)
+			.hasMessage("Bad Request: Reporter profile '%s' is not a subscription profile in namespace 'namespace' for municipality 'municipalityId'".formatted(REPORTER_PROFILE_ID))
+			.extracting("status").isEqualTo(BAD_REQUEST);
+
+		verify(configRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void findReporterProfileId() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID));
+
+		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).contains(REPORTER_PROFILE_ID);
+		assertThat(configService.isReporterProfile("namespace", "municipalityId", REPORTER_PROFILE_ID)).isTrue();
+		assertThat(configService.isReporterProfile("namespace", "municipalityId", "other-profile")).isFalse();
+	}
+
+	@Test
+	void findReporterProfileIdWithoutOne() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("other-namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).isEmpty();
+		assertThat(configService.findReporterProfileId("other-namespace", "municipalityId")).isEmpty();
+		assertThat(configService.isReporterProfile("other-namespace", "municipalityId", REPORTER_PROFILE_ID)).isFalse();
+	}
+
+	@Test
+	void findNewSubscriberChannels() {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withNewSubscriberChannels(List.of(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL)));
+
+		assertThat(configService.findNewSubscriberChannels("namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
+	}
+
+	@Test
+	void findNewSubscriberChannelsWithoutAny() {
+		final var entity = NamespaceConfigEntity.create();
+		final var emptyEntity = NamespaceConfigEntity.create().withNamespace("empty-namespace");
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create());
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("empty-namespace", "municipalityId")).thenReturn(Optional.of(emptyEntity));
+		when(mapperMock.toNamespaceConfig(emptyEntity)).thenReturn(NamespaceConfig.create().withNewSubscriberChannels(List.of()));
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("other-namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		// Naming no channels, as having no configuration, gives new subscribers the internal channel alone
+		assertThat(configService.findNewSubscriberChannels("namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
+		assertThat(configService.findNewSubscriberChannels("empty-namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
+		assertThat(configService.findNewSubscriberChannels("other-namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL);
 	}
 
 	@Test
@@ -384,7 +478,7 @@ class NamespaceConfigServiceTest {
 	 * A service with the real mapper, for the duplicate checks, which run against the mapped rows.
 	 */
 	private NamespaceConfigService serviceWithRealMapper() {
-		return new NamespaceConfigService(configRepositoryMock, new NamespaceConfigMapper());
+		return new NamespaceConfigService(configRepositoryMock, subscriptionProfileRepositoryMock, new NamespaceConfigMapper());
 	}
 
 	@Test
@@ -502,7 +596,7 @@ class NamespaceConfigServiceTest {
 	void createWithDuplicatedProcessTrigger() {
 		final var request = NamespaceConfig.create()
 			.withProcessConsumer("pw-alkt")
-			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE, EventSubType.ERRAND));
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL, EventSubType.ERRAND));
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
 
@@ -514,7 +608,7 @@ class NamespaceConfigServiceTest {
 	private static Stream<Arguments> incompleteProcessTriggers() {
 		return Stream.of(
 			arguments(List.of(), "ERRAND and DECISION"),
-			arguments(List.of(EventSubType.MESSAGE), "ERRAND and DECISION"),
+			arguments(List.of(EventSubType.MESSAGE_CONVERSATION_EXTERNAL), "ERRAND and DECISION"),
 			arguments(List.of(EventSubType.ERRAND, EventSubType.ATTACHMENT), "DECISION"),
 			arguments(List.of(EventSubType.DECISION), "ERRAND"));
 	}
@@ -552,7 +646,7 @@ class NamespaceConfigServiceTest {
 	void replaceWithProcessConsumerMissingDecision() {
 		final var request = NamespaceConfig.create()
 			.withProcessConsumer("pw-alkt")
-			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL));
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
 
@@ -612,7 +706,7 @@ class NamespaceConfigServiceTest {
 	@Test
 	void createWithProcessTriggersButNoProcessConsumer() {
 		final var request = NamespaceConfig.create()
-			.withProcessTriggers(List.of(EventSubType.MESSAGE));
+			.withProcessTriggers(List.of(EventSubType.MESSAGE_CONVERSATION_EXTERNAL));
 		final var entity = NamespaceConfigEntity.create();
 
 		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
@@ -641,9 +735,9 @@ class NamespaceConfigServiceTest {
 		final var entity = NamespaceConfigEntity.create();
 
 		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
-		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL));
 
-		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).containsExactlyInAnyOrder(EventSubType.ERRAND, EventSubType.MESSAGE);
+		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).containsExactlyInAnyOrder(EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL);
 	}
 
 	@Test

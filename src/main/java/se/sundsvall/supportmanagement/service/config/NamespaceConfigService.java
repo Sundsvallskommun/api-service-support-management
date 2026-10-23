@@ -21,7 +21,9 @@ import se.sundsvall.supportmanagement.api.model.config.LimitedReadAccess;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
@@ -70,11 +72,17 @@ public class NamespaceConfigService {
 	 */
 	private static final Set<EventSubType> UNPUBLISHED_PROCESS_TRIGGERS = EnumSet.of(EventSubType.NOTE, EventSubType.SYSTEM);
 
+	private static final List<NotificationChannelType> DEFAULT_NEW_SUBSCRIBER_CHANNELS = List.of(NotificationChannelType.INTERNAL);
+
+	private static final String REPORTER_PROFILE_NOT_FOUND = "Reporter profile '%s' is not a subscription profile in namespace '%s' for municipality '%s'";
+
 	private final NamespaceConfigRepository configRepository;
+	private final SubscriptionProfileRepository subscriptionProfileRepository;
 	private final NamespaceConfigMapper mapper;
 
-	public NamespaceConfigService(NamespaceConfigRepository configRepository, NamespaceConfigMapper mapper) {
+	public NamespaceConfigService(NamespaceConfigRepository configRepository, SubscriptionProfileRepository subscriptionProfileRepository, NamespaceConfigMapper mapper) {
 		this.configRepository = configRepository;
+		this.subscriptionProfileRepository = subscriptionProfileRepository;
 		this.mapper = mapper;
 	}
 
@@ -93,6 +101,7 @@ public class NamespaceConfigService {
 		validateAccessConfiguration(request);
 		validateProcessConfiguration(request);
 		validateTeliaAceWorkItemConfig(request);
+		validateReporterProfile(request, namespace, municipalityId);
 		final var config = mapper.toEntity(request, namespace, municipalityId);
 		validateNoDuplicateGrants(config);
 		configRepository.save(config);
@@ -105,6 +114,49 @@ public class NamespaceConfigService {
 		if (request.isTeliaAceWorkItemEnabled() && StringUtils.isBlank(request.getTeliaAceWorkItemBaseUrl())) {
 			throw Problem.valueOf(BAD_REQUEST, TELIA_ACE_BASE_URL_REQUIRED);
 		}
+	}
+
+	/**
+	 * Verifies that the reporter profile, when one is named, is a subscription profile of the namespace itself, since
+	 * reporters are subscribed with it as their errands are created.
+	 */
+	private void validateReporterProfile(NamespaceConfig request, String namespace, String municipalityId) {
+		ofNullable(request.getReporterProfileId())
+			.filter(profileId -> subscriptionProfileRepository.findByIdAndNamespaceAndMunicipalityId(profileId, namespace, municipalityId).isEmpty())
+			.ifPresent(profileId -> {
+				throw Problem.valueOf(BAD_REQUEST, REPORTER_PROFILE_NOT_FOUND.formatted(profileId, namespace, municipalityId));
+			});
+	}
+
+	/**
+	 * The profile the namespace subscribes reporters with as their errands are created, if any. Most namespaces have
+	 * none, and a namespace without configuration has none either.
+	 */
+	public Optional<String> findReporterProfileId(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::getReporterProfileId);
+	}
+
+	/**
+	 * The channels a subscriber is given when the service creates one in the namespace. A namespace naming none, or
+	 * without configuration, gives the INTERNAL channel alone.
+	 */
+	public List<NotificationChannelType> findNewSubscriberChannels(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::getNewSubscriberChannels)
+			.filter(channels -> !channels.isEmpty())
+			.orElse(DEFAULT_NEW_SUBSCRIBER_CHANNELS);
+	}
+
+	/**
+	 * Signals whether the namespace subscribes reporters with the given profile.
+	 */
+	public boolean isReporterProfile(String namespace, String municipalityId, String profileId) {
+		return findReporterProfileId(namespace, municipalityId)
+			.filter(profileId::equals)
+			.isPresent();
 	}
 
 	/**
@@ -251,6 +303,7 @@ public class NamespaceConfigService {
 		validateAccessConfiguration(request);
 		validateProcessConfiguration(request);
 		validateTeliaAceWorkItemConfig(request);
+		validateReporterProfile(request, namespace, municipalityId);
 		final var entity = configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId)));
 

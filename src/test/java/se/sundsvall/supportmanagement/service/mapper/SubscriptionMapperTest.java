@@ -13,6 +13,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilte
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType.ERRAND;
@@ -29,7 +30,7 @@ class SubscriptionMapperTest {
 			.withEventFilters(List.of(EventFilter.create().withType("UPDATE")))
 			.withExpiresAt(OffsetDateTime.parse("2026-12-31T23:59:59+02:00"));
 
-		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, dto);
+		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, errand, null, dto);
 
 		assertThat(entity.getSubscriber()).isSameAs(subscriber);
 		assertThat(entity.getErrand()).isSameAs(errand);
@@ -44,15 +45,41 @@ class SubscriptionMapperTest {
 		final var dto = Subscription.create()
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE));
 
-		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, null, dto);
+		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, null, null, dto);
 
 		assertThat(entity.getErrand()).isNull();
 		assertThat(entity.getTargetType()).isEqualTo(NAMESPACE);
 	}
 
 	@Test
+	void toSubscriptionEntityWithProfile() {
+		final var subscriber = SubscriberEntity.create().withId("sub-1");
+		final var profile = SubscriptionProfileEntity.create().withId("profile-1");
+		final var dto = Subscription.create()
+			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.NAMESPACE))
+			.withProfileId("profile-1");
+
+		final var entity = SubscriptionMapper.toSubscriptionEntity(subscriber, null, profile, dto);
+
+		assertThat(entity.getProfile()).isSameAs(profile);
+		assertThat(entity.getTargetType()).isEqualTo(NAMESPACE);
+	}
+
+	@Test
+	void toSubscriptionMapsProfileId() {
+		final var entity = SubscriptionEntity.create()
+			.withId("sub-3")
+			.withTargetType(NAMESPACE)
+			.withProfile(SubscriptionProfileEntity.create().withId("profile-1"));
+
+		final var dto = SubscriptionMapper.toSubscription(entity);
+
+		assertThat(dto.getProfileId()).isEqualTo("profile-1");
+	}
+
+	@Test
 	void toSubscriptionEntityReturnsNullForNull() {
-		assertThat(SubscriptionMapper.toSubscriptionEntity(null, null, null)).isNull();
+		assertThat(SubscriptionMapper.toSubscriptionEntity(null, null, null, null)).isNull();
 	}
 
 	@Test

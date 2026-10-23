@@ -378,7 +378,7 @@ class ProcessStartModeIT extends AbstractAppTest {
 				assertThat(row.getProcessService()).isEqualTo("pw-alkt");
 				assertThat(row.getProcessKey()).isEqualTo(APPLICATION);
 				assertThat(row.getEventType()).isEqualTo("UPDATE");
-				assertThat(row.getEventSubType()).isEqualTo("MESSAGE");
+				assertThat(row.getEventSubType()).isEqualTo("MESSAGE_EMAIL_EXTERNAL");
 				assertThat(row.getCreated()).isNotNull();
 				assertThat(row.getDeliveredAt()).isNull();
 			});

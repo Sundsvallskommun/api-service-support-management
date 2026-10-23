@@ -24,6 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.fromString;
+import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.Strings.CI;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -196,6 +197,23 @@ public class ServiceUtil {
 	}
 
 	/**
+	 * Runs the work in a request group of its own, so that whatever events it logs are grouped together and reach the
+	 * subscribers as one notification. For work done where no request groups the events, such as a scheduled job. The
+	 * group the thread was in before, if any, is restored afterwards.
+	 *
+	 * @param work the work to run
+	 */
+	public static void inNewRequestGroup(final Runnable work) {
+		final var previousRequestGroupId = getRequestGroupId();
+		setRequestGroupId(randomUUID().toString());
+		try {
+			work.run();
+		} finally {
+			setRequestGroupId(previousRequestGroupId);
+		}
+	}
+
+	/**
 	 * Holds whether what the request does should notify anyone, as the caller said in the {@value #NOTIFY_HEADER}
 	 * header. Only an explicit "false" (in any case) turns notifications off. Anything else, including a missing or
 	 * unreadable value, leaves them on, since a caller that meant to stay quiet has to say so.
@@ -222,6 +240,31 @@ public class ServiceUtil {
 
 	public static void clearNotify() {
 		NOTIFY.remove();
+	}
+
+	/**
+	 * Runs the work notifying as told, as a request with the {@value #NOTIFY_HEADER} header would, for work done where no
+	 * request says so, such as a scheduled action. Whether the thread notified before is restored afterwards.
+	 *
+	 * @param notify whether what the work does should notify anyone
+	 * @param work   the work to run
+	 */
+	public static void withNotify(final boolean notify, final Runnable work) {
+		final var previousNotify = NOTIFY.get();
+		if (notify) {
+			NOTIFY.remove();
+		} else {
+			NOTIFY.set(Boolean.FALSE);
+		}
+		try {
+			work.run();
+		} finally {
+			if (previousNotify == null) {
+				NOTIFY.remove();
+			} else {
+				NOTIFY.set(previousNotify);
+			}
+		}
 	}
 
 	public static String computeSha256Hex(final InputStream inputStream) {

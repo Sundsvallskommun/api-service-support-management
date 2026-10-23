@@ -11,7 +11,7 @@
 			{
 				"equalToJson": {
 					"type": "UPDATE",
-					"subType": "ERRAND",
+					"subType": "ERRAND_ACTIVATION",
 					"owner": "SupportManagement",
 					"message": "Ärendet har aktiverats.",
 					"sourceType": "Errand",

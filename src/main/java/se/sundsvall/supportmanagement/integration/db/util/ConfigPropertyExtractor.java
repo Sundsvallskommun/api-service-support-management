@@ -26,7 +26,10 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED = "TELIA_ACE_WORK_ITEM_ENABLED";
 	public static final String PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL = "TELIA_ACE_WORK_ITEM_BASE_URL";
 	public static final String PROPERTY_EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL = "EXCLUDE_EVENT_DESCRIPTIONS_IN_EMAIL";
+	public static final String PROPERTY_SMS_NOTIFICATIONS_ENABLED = "SMS_NOTIFICATIONS_ENABLED";
 	public static final String PROPERTY_BASE_URL = "BASE_URL";
+	public static final String PROPERTY_REPORTER_PROFILE_ID = "REPORTER_PROFILE_ID";
+	public static final String PROPERTY_NEW_SUBSCRIBER_CHANNELS = "NEW_SUBSCRIBER_CHANNELS";
 
 	/**
 	 * Get the value for provided key as the type that is defined for the key/value-pair or null if no property matching

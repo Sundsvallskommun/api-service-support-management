@@ -43,6 +43,8 @@ scheduler:
     email:
       sender-address: noreply@sundsvall.se
       sender-name: Sundsvalls kommun
+    sms:
+      sender: Sundsvall
   search-reindex:
     name: search_reindex
     enabled: true
@@ -169,6 +171,7 @@ logbook:
 logging:
   level:
     root: INFO
+    se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker: DEBUG
 openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}

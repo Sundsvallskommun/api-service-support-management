@@ -39,6 +39,7 @@
 							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
+							"requestGroupId": "${json-unit.any-string}",
 							"created": "${json-unit.any-string}"
 						},
 						"ignoreArrayOrder": true
@@ -95,6 +96,7 @@
 							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
+							"requestGroupId": "${json-unit.any-string}",
 							"created": "${json-unit.any-string}"
 						},
 						"ignoreArrayOrder": true
@@ -152,6 +154,7 @@
 							"message": "Ärendet har skapats.",
 							"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 							"sourceType": "Errand",
+							"requestGroupId": "${json-unit.any-string}",
 							"created": "${json-unit.any-string}"
 						},
 						"ignoreArrayOrder": true

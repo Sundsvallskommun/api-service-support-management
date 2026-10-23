@@ -27,13 +27,16 @@ class EventFilterTest {
 	void testBuilderMethods() {
 		final var type = "UPDATE";
 		final var subtype = "ATTACHMENT";
+		final var labelId = "f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b";
 
 		final var filter = EventFilter.create()
 			.withType(type)
-			.withSubtype(subtype);
+			.withSubtype(subtype)
+			.withLabelId(labelId);
 
 		assertThat(filter.getType()).isEqualTo(type);
 		assertThat(filter.getSubtype()).isEqualTo(subtype);
+		assertThat(filter.getLabelId()).isEqualTo(labelId);
 	}
 
 	@Test

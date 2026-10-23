@@ -13,7 +13,8 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"namespace": "CONTACTCENTER",
@@ -28,7 +29,9 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false,
+		"reporterProfileId": "ccddeeff-0000-0000-0000-000000000099"
 	},
 	{
 		"namespace": "NAMESPACE-3",
@@ -44,6 +47,7 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false,
 		"teliaAceWorkItemEnabled": false
 	},
 	{
@@ -59,7 +63,8 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"namespace": "NAMESPACE-2506",
@@ -110,6 +115,7 @@
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false,
 		"reporterAccess": {
 			"resources": [
 				{
@@ -194,7 +200,8 @@
 		"resourceAccessControl": false,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"namespace": "NAMESPACE-2507",
@@ -209,7 +216,8 @@
 		"resourceAccessControl": true,
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
-		"excludeEventDescriptionsInEmail": false
+		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false
 	},
 	{
 		"namespace": "PROCESS-NAMESPACE",
@@ -225,6 +233,7 @@
 		"singleDecisionPerErrand": false,
 		"teliaAceWorkItemEnabled": false,
 		"excludeEventDescriptionsInEmail": false,
+		"smsNotificationsEnabled": false,
 		"processConsumer": "pw-alkt"
 	}
 ]

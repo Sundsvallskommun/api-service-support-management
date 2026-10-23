@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Subscription profile with name:'Notis om meddelanden' already exists in namespace:'NAMESPACE-1' for municipality with id:'2281'"
+}
