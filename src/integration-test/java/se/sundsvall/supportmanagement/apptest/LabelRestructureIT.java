@@ -42,14 +42,11 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
  * cannot leave, then reads the label tree and the errands under it straight from the database.
  * <p>
  * Unlike {@link LabelMoveIT}/{@link LabelMergeIT}, this suite does not address the shared fixture's own
- * {@code CATEGORY-1}/{@code TYPE-2}/... tree by path: those resourceNames carry hyphens, which is exactly what the
- * fixture rows have always been able to get away with (they are inserted straight into the database, bypassing the
- * create/update API's {@code [A-Z0-9_]+} resourceName validation entirely) - but a restructure step's {@code path}
- * segments are validated against that same charset, since addressing a label by path reuses the identical field a
- * client would otherwise submit to create one. So {@link #SEED_LABELS} plants a small, dedicated, validly-named tree
- * of its own under NAMESPACE-1/2281 instead, and {@link #SEED_ERRAND_LABELS}/{@link #SEED_ERRAND_ACCESS_LABELS} wire
- * two of the shared fixture's existing errands onto leaves in it - reusing those two errand rows (with their JSON
- * history, notes etc. already seeded) without needing to reference any of the shared tree's own hyphenated labels.
+ * {@code CATEGORY-1}/{@code TYPE-2}/... tree by path. {@link #SEED_LABELS} plants a small, dedicated tree of its own
+ * under NAMESPACE-1/2281 instead, and {@link #SEED_ERRAND_LABELS}/{@link #SEED_ERRAND_ACCESS_LABELS} wire two of the
+ * shared fixture's
+ * existing errands onto leaves in it - reusing those two errand rows (with their JSON history, notes etc. already
+ * seeded) without touching any of the shared tree's own labels.
  * <p>
  * The main scenario (test01/test02) deliberately chains an ADD and a MOVE together: the MOVE's
  * {@code destinationParentPath} names the label the ADD step just created, by path, so it also proves a step can

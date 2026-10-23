@@ -39,7 +39,7 @@ public class Label {
 
 	@Schema(description = "Resource name", examples = "keycard")
 	@NotBlank
-	@Pattern(regexp = "[A-Z0-9_]+", message = "can only contain A-Z, 0-9 and _")
+	@Pattern(regexp = "[A-Z0-9_-]+", message = "can only contain A-Z, 0-9, - and _")
 	private String resourceName;
 
 	@Schema(description = "Indicates if the label is deprecated", defaultValue = "false", examples = "true")
