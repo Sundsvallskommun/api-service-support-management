@@ -28,8 +28,8 @@ public class LabelRestructureStep {
 	 * {@code /}, which {@link LabelTreeSnapshot#join(List)} would otherwise fold into the joined path indistinguishably
 	 * from a genuine extra segment.
 	 */
-	private static final String SEGMENT_PATTERN = "[A-Z0-9_]+";
-	private static final String SEGMENT_PATTERN_MESSAGE = "can only contain A-Z, 0-9 and _";
+	private static final String SEGMENT_PATTERN = "[A-Z0-9_-]+";
+	private static final String SEGMENT_PATTERN_MESSAGE = "can only contain A-Z, 0-9, - and _";
 
 	@NotNull
 	@Schema(description = "The kind of change this step makes", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -24164,7 +24164,7 @@ components:
           examples:
           - keycard
           minLength: 1
-          pattern: "[A-Z0-9_]+"
+          pattern: "[A-Z0-9_-]+"
         deprecated:
           type: boolean
           default: false
@@ -25684,7 +25684,7 @@ components:
           items:
             type: string
             minLength: 1
-            pattern: "[A-Z0-9_]+"
+            pattern: "[A-Z0-9_-]+"
           minItems: 1
         destinationParentPath:
           type: array
@@ -25693,7 +25693,7 @@ components:
           items:
             type: string
             minLength: 1
-            pattern: "[A-Z0-9_]+"
+            pattern: "[A-Z0-9_-]+"
         sourcePaths:
           type: array
           description: "MERGE only: paths of the source labels merged into path"
@@ -25715,7 +25715,7 @@ components:
           type: string
           description: "MOVE only: an optional new resourceName to set at the same\
             \ time (used for a combined move+rename)"
-          pattern: "[A-Z0-9_]+"
+          pattern: "[A-Z0-9_-]+"
       required:
       - path
       - type

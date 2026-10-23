@@ -162,7 +162,7 @@ class MetadataLabelResourceFailureTest {
 				createLabel("class", "child")))),
 				tuples(
 					tuple(method + ".labels[0].labels[0].classification", "must not be blank"),
-					tuple(method + ".labels[0].labels[1].resourceName", "can only contain A-Z, 0-9 and _"))),
+					tuple(method + ".labels[0].labels[1].resourceName", "can only contain A-Z, 0-9, - and _"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("class", "RESOURCE_NAME_1"), createLabel("class", "RESOURCE_NAME_1")),
 				tuples(
 					tuple(method + ".labels", "each entry must have unique resourceName compared to its siblings"))),
@@ -183,18 +183,18 @@ class MetadataLabelResourceFailureTest {
 					tuple(method + ".labels[0].resourceName", "must not be blank"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "")),
 				tuples(
-					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"),
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9, - and _"),
 					tuple(method + ".labels[0].resourceName", "must not be blank"))),
-			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "RESOURCE-NAME")),
+			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "RESOURCE.NAME")),
 				tuples(
-					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))),
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9, - and _"))),
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "RESOURCE_NAME/RESOURCE_1")),
 				tuples(
-					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))),
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9, - and _"))),
 
 			Arguments.of("MY_NAMESPACE", "2281", List.of(createLabel("classification", "resourceName")),
 				tuples(
-					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9 and _"))));
+					tuple(method + ".labels[0].resourceName", "can only contain A-Z, 0-9, - and _"))));
 
 	}
 
