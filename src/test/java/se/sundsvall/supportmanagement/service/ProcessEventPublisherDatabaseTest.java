@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
 
 /**
  * Verifies what publication actually writes, read back from a real row of the outbox: the key of a label that has not
@@ -105,6 +105,6 @@ class ProcessEventPublisherDatabaseTest {
 	 */
 	private void publishAMessageEvent() {
 		new TransactionTemplate(transactionManager).executeWithoutResult(_ -> eventService.createErrandEvent(
-			EventType.UPDATE, "Nytt meddelande", errandsRepository.findById(ERRAND_ID).orElseThrow(), null, null, false, MESSAGE));
+			EventType.UPDATE, "Nytt meddelande", errandsRepository.findById(ERRAND_ID).orElseThrow(), null, null, false, MESSAGE_EXTERNAL));
 	}
 }

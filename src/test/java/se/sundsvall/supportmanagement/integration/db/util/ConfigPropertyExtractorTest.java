@@ -75,14 +75,14 @@ class ConfigPropertyExtractorTest {
 			.withValues(List.of(
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("ERRAND").withType(STRING),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withValue("NS1").withType(STRING),
-				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("MESSAGE").withType(STRING),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("MESSAGE_EXTERNAL").withType(STRING),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_PROCESS_TRIGGER).withValue("DECISION").withType(STRING)));
 
 		final var result = ConfigPropertyExtractor.<String>getValues(namespaceConfig, PROPERTY_PROCESS_TRIGGER);
 
 		// The single valued reader takes the first row and drops the rest, which is what this method exists to avoid
 		assertThat((String) ConfigPropertyExtractor.getNullableValue(namespaceConfig, PROPERTY_PROCESS_TRIGGER)).isEqualTo("ERRAND");
-		assertThat(result).containsExactly("ERRAND", "MESSAGE", "DECISION");
+		assertThat(result).containsExactly("ERRAND", "MESSAGE_EXTERNAL", "DECISION");
 	}
 
 	@Test

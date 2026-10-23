@@ -41,7 +41,7 @@ class NotificationChannelDispatcherTest {
 		.withId("dispatch-id-2")
 		.withEventType("UPDATE")
 		.withDescription("Nytt meddelande")
-		.withSubType("MESSAGE");
+		.withSubType("MESSAGE_EXTERNAL");
 
 	private static final SubscriberEntity SUBSCRIBER = SubscriberEntity.create().withId("subscriber-id");
 

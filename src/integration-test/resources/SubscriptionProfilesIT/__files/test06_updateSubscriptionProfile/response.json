@@ -9,7 +9,7 @@
 		},
 		{
 			"type": "UPDATE",
-			"subtype": "MESSAGE"
+			"subtype": "MESSAGE_EXTERNAL"
 		}
 	],
 	"channels": [

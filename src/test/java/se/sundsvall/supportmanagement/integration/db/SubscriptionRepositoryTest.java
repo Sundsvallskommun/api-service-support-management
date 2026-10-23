@@ -271,7 +271,7 @@ class SubscriptionRepositoryTest {
 			.withMunicipalityId("2281")
 			.withNamespace("namespace-profile-test")
 			.withName("profile-test")
-			.withEventFilters(new ArrayList<>(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE"))))
+			.withEventFilters(new ArrayList<>(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE_EXTERNAL"))))
 			.withChannels(new ArrayList<>(List.of(NotificationChannelType.EMAIL))));
 
 		final var subscriber = subscriberRepository.saveAndFlush(SubscriberEntity.create()

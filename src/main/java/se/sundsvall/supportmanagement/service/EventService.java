@@ -137,10 +137,7 @@ public class EventService {
 		final ErrandEventOptions options) {
 		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.actor(), options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS,
 			options.addedLabelIds());
-		// The process is told of the change to the errand itself, of which these are only a part
-		if (!LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
-			publishToProcess(errandEntity, eventType, subtype, null, false);
-		}
+		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final EventSubType subtype) {

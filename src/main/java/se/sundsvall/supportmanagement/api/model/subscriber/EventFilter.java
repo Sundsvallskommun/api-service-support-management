@@ -28,8 +28,8 @@ public class EventFilter {
 	private String type;
 
 	@Size(max = 64)
-	@Schema(description = "Event subtype. If null, all subtypes of the given type match. MESSAGE matches every message, while MESSAGE_INTERNAL " +
-		"and MESSAGE_EXTERNAL match only messages in internal conversations and messages from outside respectively. Likewise ERRAND matches every change " +
+	@Schema(description = "Event subtype. If null, all subtypes of the given type match. MESSAGE_INTERNAL and MESSAGE_EXTERNAL match messages " +
+		"in internal conversations and messages from outside respectively. ERRAND matches every change " +
 		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively. LABEL matches a label being added to an " +
 		"errand, logged once for every label added - as CREATE/LABEL for the labels an errand is created with and as UPDATE/LABEL for those added later.",
 		examples = "ATTACHMENT")

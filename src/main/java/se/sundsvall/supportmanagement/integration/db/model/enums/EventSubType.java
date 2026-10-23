@@ -12,9 +12,8 @@ public enum EventSubType {
 	HANDOVER_IN,
 	HANDOVER_OUT,
 	LABEL,
-	MESSAGE,
-	MESSAGE_EXTERNAL(MESSAGE),
-	MESSAGE_INTERNAL(MESSAGE),
+	MESSAGE_EXTERNAL,
+	MESSAGE_INTERNAL,
 	NOTE,
 	PHASE(ERRAND),
 	PROCESS,
@@ -53,8 +52,8 @@ public enum EventSubType {
 
 	/**
 	 * Signals whether a filter on the given subtype selects an event of the given subtype. A filter on a subtype selects
-	 * the events of that subtype and of every subtype refining it, as MESSAGE selects both internal and external
-	 * messages, while a filter on a refined subtype selects only that one.
+	 * the events of that subtype and of every subtype refining it, as ERRAND selects changes of status and of
+	 * phase, while a filter on a refined subtype selects only that one.
 	 *
 	 * @param  filterSubtype the subtype the filter declares
 	 * @param  eventSubtype  the subtype of the event
@@ -66,16 +65,6 @@ public enum EventSubType {
 			.findFirst()
 			.map(subtype -> subtype.isSelectedBy(filterSubtype))
 			.orElseGet(() -> Objects.equals(filterSubtype, eventSubtype));
-	}
-
-	/**
-	 * The subtype this one is a refinement of at the root, or itself for a subtype refining none, as MESSAGE for
-	 * MESSAGE_INTERNAL. For a consumer that knows only the subtypes refining none.
-	 *
-	 * @return the subtype at the root of the refinements
-	 */
-	public EventSubType general() {
-		return refines == null ? this : refines.general();
 	}
 
 	private boolean isSelectedBy(final String filterSubtype) {

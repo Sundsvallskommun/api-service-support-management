@@ -353,22 +353,6 @@ class NotificationDispatchWorkerTest {
 	}
 
 	@Test
-	void processGroupLetsMessageFilterSelectRefinedMessages() {
-
-		// Arrange — the filter on MESSAGE predates the internal and external messages, and still selects both
-		final var internal = buildEntry("other-user").withSubType("MESSAGE_INTERNAL");
-		final var external = buildEntry("other-user").withSubType("MESSAGE_EXTERNAL");
-		final var subscriber = buildSubscriber("joe01doe", List.of(filter(EVENT_TYPE, "MESSAGE")));
-		mockDispatchOf(buildSubscription(subscriber, null));
-
-		// Act
-		worker.processGroup(List.of(internal, external));
-
-		// Assert
-		verify(channelDispatcherMock).send(ERRAND_ID, ERRAND_NUMBER, subscriber, internal(List.of(internal, external)));
-	}
-
-	@Test
 	void processGroupLetsFilterOnRefinedMessageSkipTheOtherMessages() {
 
 		// Arrange — a reporter, say, is told of messages from outside alone, not of those in internal conversations
@@ -494,11 +478,11 @@ class NotificationDispatchWorkerTest {
 
 		// Arrange — a message reaches the subscriber through two profiles; email only through one of them for the attachment
 		final var attachment = buildEntry("other-user").withId("entry-1").withEventType("UPDATE").withSubType("ATTACHMENT");
-		final var message = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("MESSAGE");
+		final var message = buildEntry("other-user").withId("entry-2").withEventType("UPDATE").withSubType("MESSAGE_EXTERNAL");
 		final var subscriber = buildSubscriber("joe01doe", null);
 		mockDispatchOf(
-			buildProfileSubscription(subscriber, "notice", List.of(filter("UPDATE", "MESSAGE")), List.of(INTERNAL)),
-			buildProfileSubscription(subscriber, "mail", List.of(filter("UPDATE", "MESSAGE"), filter("UPDATE", "ATTACHMENT")), List.of(EMAIL)));
+			buildProfileSubscription(subscriber, "notice", List.of(filter("UPDATE", "MESSAGE_EXTERNAL")), List.of(INTERNAL)),
+			buildProfileSubscription(subscriber, "mail", List.of(filter("UPDATE", "MESSAGE_EXTERNAL"), filter("UPDATE", "ATTACHMENT")), List.of(EMAIL)));
 
 		// Act
 		worker.processGroup(List.of(attachment, message));

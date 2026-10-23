@@ -45,8 +45,8 @@ VALUES ('11111111-0000-0000-0000-000000000001', 0, 'SMS', '+46701234567'),
 
 -- Only interested in messages, so the profile alone texts about new errands
 INSERT INTO subscriber_event_filter(subscriber_id, sort_order, type, subtype)
-VALUES ('11111111-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE'),
-       ('11111111-0000-0000-0000-000000000002', 0, 'UPDATE', 'MESSAGE');
+VALUES ('11111111-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE_EXTERNAL'),
+       ('11111111-0000-0000-0000-000000000002', 0, 'UPDATE', 'MESSAGE_EXTERNAL');
 
 INSERT INTO subscription(id, subscriber_id, target_type, errand_id, expires_at, created, created_by_type, created_by_value)
 VALUES ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000001', 'NAMESPACE', null, null, '2024-01-10 12:00:00.000', 'adAccount', 'adm01adm'),
@@ -76,9 +76,9 @@ VALUES ('22222222-0000-0000-0000-000000000003', '11111111-0000-0000-0000-0000000
 -- -----------------------------------
 -- Notification dispatch entries
 -- -----------------------------------
--- An UPDATE/MESSAGE event on each errand, which the profile does not route
+-- An UPDATE/MESSAGE_EXTERNAL event on each errand, which the profile does not route
 INSERT INTO notification_dispatch(id, errand_id, municipality_id, namespace, event_id, request_group_id, event_type, sub_type, description, executing_user_id, created)
-VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-001', 'grp-001', 'UPDATE', 'MESSAGE', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE)),
-       ('33333333-0000-0000-0000-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0002', '2281', 'NAMESPACE-2', 'evt-002', 'grp-002', 'UPDATE', 'MESSAGE', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE)),
+VALUES ('33333333-0000-0000-0000-000000000001', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-001', 'grp-001', 'UPDATE', 'MESSAGE_EXTERNAL', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE)),
+       ('33333333-0000-0000-0000-000000000002', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0002', '2281', 'NAMESPACE-2', 'evt-002', 'grp-002', 'UPDATE', 'MESSAGE_EXTERNAL', 'Nytt meddelande', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE)),
 -- A CREATE/ERRAND event, which the profile routes to sms
        ('33333333-0000-0000-0000-000000000003', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001', '2281', 'NAMESPACE-1', 'evt-003', 'grp-003', 'CREATE', 'ERRAND', 'Nytt arende', 'other01usr', DATE_SUB(NOW(), INTERVAL 1 MINUTE));

@@ -81,7 +81,7 @@ class SubscriptionProfileMapperTest {
 					.withNamespace(NAMESPACE)
 					.withName("Notis")
 					.withDescription("Notis om meddelanden")
-					.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE")))
+					.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE_EXTERNAL")))
 					.withChannels(List.of(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL))
 					.withCreated(CREATED)
 					.withModified(MODIFIED),
@@ -89,7 +89,7 @@ class SubscriptionProfileMapperTest {
 					.withId("profile-1")
 					.withName("Notis")
 					.withDescription("Notis om meddelanden")
-					.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("MESSAGE")))
+					.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("MESSAGE_EXTERNAL")))
 					.withChannels(List.of(NotificationChannelType.INTERNAL))
 					.withCreated(CREATED)
 					.withModified(MODIFIED)));
@@ -139,11 +139,11 @@ class SubscriptionProfileMapperTest {
 
 		SubscriptionProfileMapper.updateEntity(entity, SubscriptionProfile.create()
 			.withDescription("Ny beskrivning")
-			.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("MESSAGE"))));
+			.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("MESSAGE_EXTERNAL"))));
 
 		assertThat(entity.getName()).isEqualTo("Namn");
 		assertThat(entity.getDescription()).isEqualTo("Ny beskrivning");
-		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE"));
+		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE_EXTERNAL"));
 	}
 
 	@Test

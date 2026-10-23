@@ -596,7 +596,7 @@ class NamespaceConfigServiceTest {
 	void createWithDuplicatedProcessTrigger() {
 		final var request = NamespaceConfig.create()
 			.withProcessConsumer("pw-alkt")
-			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE, EventSubType.ERRAND));
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL, EventSubType.ERRAND));
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> configService.create(request, "namespace", "municipalityId"));
 
@@ -608,7 +608,7 @@ class NamespaceConfigServiceTest {
 	private static Stream<Arguments> incompleteProcessTriggers() {
 		return Stream.of(
 			arguments(List.of(), "ERRAND and DECISION"),
-			arguments(List.of(EventSubType.MESSAGE), "ERRAND and DECISION"),
+			arguments(List.of(EventSubType.MESSAGE_EXTERNAL), "ERRAND and DECISION"),
 			arguments(List.of(EventSubType.ERRAND, EventSubType.ATTACHMENT), "DECISION"),
 			arguments(List.of(EventSubType.DECISION), "ERRAND"));
 	}
@@ -646,7 +646,7 @@ class NamespaceConfigServiceTest {
 	void replaceWithProcessConsumerMissingDecision() {
 		final var request = NamespaceConfig.create()
 			.withProcessConsumer("pw-alkt")
-			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL));
 
 		final var exception = assertThrows(ThrowableProblem.class, () -> configService.replace(request, "namespace", "municipalityId"));
 
@@ -681,7 +681,7 @@ class NamespaceConfigServiceTest {
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"NOTE", "SYSTEM", "ASSIGNMENT", "LABEL", "PHASE", "STATUS"
+		"NOTE", "SYSTEM"
 	})
 	void createAndReplaceWithAnUnpublishedSubTypeAmongTheProcessTriggers(final EventSubType subType) {
 		final var withoutConsumer = NamespaceConfig.create()
@@ -706,7 +706,7 @@ class NamespaceConfigServiceTest {
 	@Test
 	void createWithProcessTriggersButNoProcessConsumer() {
 		final var request = NamespaceConfig.create()
-			.withProcessTriggers(List.of(EventSubType.MESSAGE));
+			.withProcessTriggers(List.of(EventSubType.MESSAGE_EXTERNAL));
 		final var entity = NamespaceConfigEntity.create();
 
 		when(mapperMock.toEntity(any(), any(), any())).thenReturn(entity);
@@ -735,9 +735,9 @@ class NamespaceConfigServiceTest {
 		final var entity = NamespaceConfigEntity.create();
 
 		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
-		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(List.of(EventSubType.ERRAND, EventSubType.MESSAGE));
+		when(mapperMock.toProcessTriggers(same(entity))).thenReturn(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL));
 
-		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).containsExactlyInAnyOrder(EventSubType.ERRAND, EventSubType.MESSAGE);
+		assertThat(configService.getProcessTriggers("namespace", "municipalityId")).containsExactlyInAnyOrder(EventSubType.ERRAND, EventSubType.MESSAGE_EXTERNAL);
 	}
 
 	@Test

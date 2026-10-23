@@ -217,8 +217,7 @@ public class ProcessEventPublisher {
 			.withProcessService(processService)
 			.withProcessKey(processKey)
 			.withEventType(processEventType)
-			// The process knows the general sub types only, so an external message reaches it as a MESSAGE
-			.withEventSubType(eventSubType.general().getValue())
+			.withEventSubType(eventSubType.getValue())
 			.withStartAllowed(isStartAllowed(errand.getId(), eventSubType, processKey, instances, selection))
 			// Never cut: a shortened name would correlate another gate, so one that does not fit fails the command loudly.
 			.withSignalName(ofNullable(command).map(ProcessCommand::signalName).orElse(null))
@@ -250,9 +249,7 @@ public class ProcessEventPublisher {
 			return true;
 		}
 
-		// A trigger selects the sub types refining it as well, as MESSAGE selects internal and external messages
-		return namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).stream()
-			.noneMatch(trigger -> EventSubType.selects(trigger.getValue(), eventSubType.getValue()));
+		return !namespaceConfigService.getProcessTriggers(errand.getNamespace(), errand.getMunicipalityId()).contains(eventSubType);
 	}
 
 	/**
