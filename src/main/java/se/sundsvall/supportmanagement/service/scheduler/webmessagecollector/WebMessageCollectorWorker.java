@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.scheduler.webmessagecollector;
 
 import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,12 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Component
@@ -27,7 +30,8 @@ public class WebMessageCollectorWorker {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WebMessageCollectorWorker.class);
 
-	private static final String EVENT_LOG_COMMUNICATION = "Nytt meddelande";
+	private static final String EVENT_LOG_COMMUNICATION = "Meddelande mottaget via e-tjänsten";
+	private static final String ERRAND_NOTIFICATION_COMMUNICATION = "Nytt meddelande";
 
 	private final WebMessageCollectorClient webMessageCollectorClient;
 	private final ErrandsRepository errandsRepository;
@@ -86,7 +90,8 @@ public class WebMessageCollectorWorker {
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
 		try {
-			eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, null, MESSAGE_EXTERNAL);
+			// The assigned user is notified as they always were
+			eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, MESSAGE_WEB_MESSAGE_EXTERNAL, new ErrandEventOptions(true, getExecutingUser(), Set.of(), ERRAND_NOTIFICATION_COMMUNICATION));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());
 		}

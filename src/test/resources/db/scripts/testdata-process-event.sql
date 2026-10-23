@@ -7,10 +7,11 @@
 -- configuration tests read back.
 -- -----------------------------------------------------------------------------------------------
 
--- The namespace delivers to a process engine, and an incoming message is one of the things that wakes it
+-- The namespace delivers to a process engine, and a message, in a conversation or by email, is one of the things that wakes it
 INSERT INTO namespace_config_value(namespace_config_id, `key`, `value`, `type`)
 VALUES (1, 'PROCESS_CONSUMER', 'pw-alkt', 'STRING'),
-       (1, 'PROCESS_TRIGGER', 'MESSAGE_EXTERNAL', 'STRING'),
+       (1, 'PROCESS_TRIGGER', 'MESSAGE_CONVERSATION_EXTERNAL', 'STRING'),
+       (1, 'PROCESS_TRIGGER', 'MESSAGE_EMAIL_EXTERNAL', 'STRING'),
        (1, 'PROCESS_TRIGGER', 'ERRAND', 'STRING');
 
 -- The label that says which process the errand belongs to, and the errand wearing it

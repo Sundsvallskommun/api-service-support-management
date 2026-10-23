@@ -23,6 +23,12 @@ public class Config {
 	@Schema(description = "If set to true, action will be active", defaultValue = "false", examples = "true")
 	private boolean active = false;
 
+	@Schema(
+		description = "If set to false, what the action does when it runs as scheduled notifies no one, neither the handler of the errand nor its subscribers, as a request sent with X-notify: false. The process of the errand is told either way. An action run at once, as part of the request that creates or updates the errand, notifies as that request does",
+		defaultValue = "true",
+		examples = "false")
+	private boolean notify = true;
+
 	@Schema(description = "Conditions for when the action should be added to errand. Parameters must match action definition.")
 	@NotEmpty
 	private List<Parameter> conditions;
@@ -79,6 +85,19 @@ public class Config {
 
 	public Config withActive(final boolean active) {
 		this.active = active;
+		return this;
+	}
+
+	public boolean getNotify() {
+		return notify;
+	}
+
+	public void setNotify(boolean notify) {
+		this.notify = notify;
+	}
+
+	public Config withNotify(final boolean notify) {
+		this.notify = notify;
 		return this;
 	}
 
@@ -139,13 +158,14 @@ public class Config {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		Config config = (Config) o;
-		return Objects.equals(id, config.id) && Objects.equals(name, config.name) && Objects.equals(active, config.active) && Objects.equals(conditions, config.conditions) && Objects.equals(parameters, config.parameters) && Objects.equals(displayValue,
-			config.displayValue) && Objects.equals(operationTypes, config.operationTypes);
+		return Objects.equals(id, config.id) && Objects.equals(name, config.name) && Objects.equals(active, config.active) && notify == config.notify && Objects.equals(conditions, config.conditions) && Objects.equals(parameters, config.parameters)
+			&& Objects.equals(displayValue,
+				config.displayValue) && Objects.equals(operationTypes, config.operationTypes);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, active, conditions, parameters, displayValue, operationTypes);
+		return Objects.hash(id, name, active, notify, conditions, parameters, displayValue, operationTypes);
 	}
 
 	@Override
@@ -154,6 +174,7 @@ public class Config {
 			"id='" + id + '\'' +
 			", name='" + name + '\'' +
 			", active=" + active +
+			", notify=" + notify +
 			", conditions=" + conditions +
 			", parameters=" + parameters +
 			", displayValue='" + displayValue + '\'' +

@@ -25,8 +25,8 @@ import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EXTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_INTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
 
 public final class ConversationMapper {
 
@@ -151,8 +151,8 @@ public final class ConversationMapper {
 	public static EventSubType toMessageSubtype(final ConversationEntity conversationEntity) {
 		return ofNullable(conversationEntity.getType())
 			.filter(EXTERNAL.name()::equals)
-			.map(_ -> MESSAGE_EXTERNAL)
-			.orElse(MESSAGE_INTERNAL);
+			.map(_ -> MESSAGE_CONVERSATION_EXTERNAL)
+			.orElse(MESSAGE_CONVERSATION_INTERNAL);
 	}
 
 	public static generated.se.sundsvall.messageexchange.Message toMessageRequest(final MessageRequest messageRequest) {

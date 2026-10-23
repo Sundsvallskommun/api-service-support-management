@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
@@ -163,6 +164,27 @@ class ServiceUtilTest {
 		ServiceUtil.clearNotify();
 
 		assertThat(ServiceUtil.shouldNotify()).isTrue();
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"true, true, true",
+		"true, false, false",
+		"false, true, true",
+		"false, false, false"
+	})
+	void withNotifyRunsTheWorkNotifyingAsToldAndRestoresTheThread(final boolean notifiedBefore, final boolean notify, final boolean expectedDuringWork) {
+		ServiceUtil.setNotify(notifiedBefore ? null : "false");
+		final var notifiedDuringWork = new Boolean[1];
+
+		assertThatThrownBy(() -> ServiceUtil.withNotify(notify, () -> {
+			notifiedDuringWork[0] = ServiceUtil.shouldNotify();
+			throw new IllegalStateException("boom");
+		})).isInstanceOf(IllegalStateException.class);
+
+		assertThat(notifiedDuringWork[0]).isEqualTo(expectedDuringWork);
+		assertThat(ServiceUtil.shouldNotify()).isEqualTo(notifiedBefore);
+		ServiceUtil.clearNotify();
 	}
 
 	@ParameterizedTest

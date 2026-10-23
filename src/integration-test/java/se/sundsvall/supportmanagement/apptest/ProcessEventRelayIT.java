@@ -121,7 +121,7 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	@DisplayName("Verification that pw-alkt receives each row as it stands, the start permission and the signal name included, and that the rows are acknowledged")
 	void test01_theEventIsTheRowAsItStands() {
 		givenRow("row-signal", ERRAND_ID, Duration.ofMinutes(2), "SIGNAL", true, "granskning-godkand");
-		givenRow("row-message", OTHER_ERRAND_ID, Duration.ofMinutes(1), "MESSAGE_EXTERNAL", false, null);
+		givenRow("row-message", OTHER_ERRAND_ID, Duration.ofMinutes(1), "MESSAGE_CONVERSATION_EXTERNAL", false, null);
 		setupCall();
 
 		processEventScheduler.relay();
@@ -456,7 +456,7 @@ class ProcessEventRelayIT extends AbstractAppTest {
 	}
 
 	private void givenRow(final String id, final String errandId, final Duration age) {
-		givenRow(id, errandId, age, "MESSAGE_EXTERNAL", false, null);
+		givenRow(id, errandId, age, "MESSAGE_CONVERSATION_EXTERNAL", false, null);
 	}
 
 	private void givenRow(final String id, final String errandId, final Duration age, final String eventSubType, final boolean startAllowed, final String signalName) {

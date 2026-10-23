@@ -671,9 +671,9 @@ VALUES ('ccddeeff-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'Notis om
        ('ccddeeff-0000-0000-0000-000000000002', '2281', 'NAMESPACE-1', 'Mejl om nya arenden', null, '2024-01-11 12:00:00.000', null);
 
 INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype)
-VALUES ('ccddeeff-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE_EXTERNAL'),
+VALUES ('ccddeeff-0000-0000-0000-000000000001', 0, 'UPDATE', 'MESSAGE_CONVERSATION_EXTERNAL'),
        ('ccddeeff-0000-0000-0000-000000000002', 0, 'CREATE', 'ERRAND'),
-       ('ccddeeff-0000-0000-0000-000000000002', 1, 'UPDATE', 'MESSAGE_EXTERNAL');
+       ('ccddeeff-0000-0000-0000-000000000002', 1, 'UPDATE', 'MESSAGE_CONVERSATION_EXTERNAL');
 
 INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
 VALUES ('ccddeeff-0000-0000-0000-000000000001', 0, 'INTERNAL'),
@@ -926,7 +926,7 @@ INSERT INTO subscription_profile(id, municipality_id, namespace, name, descripti
 VALUES ('ccddeeff-0000-0000-0000-000000000099', '2281', 'CONTACTCENTER', 'Notis om meddelanden till rapportor', null, '2024-01-10 12:00:00.000', null);
 
 INSERT INTO subscription_profile_event_filter(profile_id, sort_order, type, subtype, label_id)
-VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'UPDATE', 'MESSAGE_EXTERNAL', null);
+VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'UPDATE', 'MESSAGE_CONVERSATION_EXTERNAL', null);
 
 INSERT INTO subscription_profile_channel(profile_id, sort_order, type)
 VALUES ('ccddeeff-0000-0000-0000-000000000099', 0, 'INTERNAL');

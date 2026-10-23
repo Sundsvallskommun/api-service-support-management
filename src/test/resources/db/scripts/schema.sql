@@ -1,6 +1,7 @@
 
     create table action_config (
         active bit not null,
+        notify bit default 1 not null,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
