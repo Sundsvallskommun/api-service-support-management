@@ -543,7 +543,7 @@ class EventServiceTest {
 
 	@ParameterizedTest
 	@EnumSource(value = EventSubType.class, names = {
-		"ASSIGNMENT", "LABEL", "PHASE", "STATUS"
+		"ASSIGNMENT", "ERRAND_ACTIVATION", "LABEL", "PHASE", "STATUS"
 	})
 	void createEventLoggedAlongsideErrandChangeLeavesSubscribingToTheChangeItIsPartOf(final EventSubType subtype) {
 		// The errand event logged alongside already subscribes the assignee, so this event does not, while the process is

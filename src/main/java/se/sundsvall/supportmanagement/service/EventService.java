@@ -50,6 +50,7 @@ import static se.sundsvall.supportmanagement.Constants.EXTERNAL_TAG_KEY_CASE_ID;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
@@ -73,7 +74,7 @@ public class EventService {
 	private static final String EVENT_LOG_CHANGE_STATUS = "Status har ändrats till \"%s\"";
 
 	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
-	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, LABEL, PHASE, STATUS);
+	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, ERRAND_ACTIVATION, LABEL, PHASE, STATUS);
 
 	/**
 	 * Who an event about an errand notifies, beyond what a draft or a request asking to notify no one rules out.
@@ -339,8 +340,9 @@ public class EventService {
 		} catch (final Exception e) {
 			LOG.warn("Failed to create event log entry for errand {}: {}", sanitizeForLogging(errandEntity.getId()), sanitizeForLogging(e.getMessage()));
 		}
-		// An assignment, a label being added and a change of status or phase are logged alongside the change to the errand
-		// they are part of, which already subscribes the assignee. A label added by a scheduled action has no such change,
+		// An assignment, a label being added, a change of status or phase and the activation of a draft are logged alongside
+		// the change to the errand they are part of, which already subscribes the assignee. A label added by a scheduled action
+		// has no such change,
 		// and subscribes no one either.
 		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));

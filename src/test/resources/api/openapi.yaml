@@ -23865,10 +23865,10 @@ components:
             \ changes, are never filtered by this list and may not be listed. Nor\
             \ may NOTE and SYSTEM, as no event of theirs is ever published to a process.\
             \ A change of status or phase is told as STATUS or PHASE apart from the\
-            \ ERRAND event of the change it is part of, as are an assignment (ASSIGNMENT)\
-            \ and every label added (LABEL). Messages are listed as MESSAGE_EXTERNAL\
-            \ and MESSAGE_INTERNAL, for messages from outside and in internal conversations\
-            \ respectively"
+            \ ERRAND event of the change it is part of, as are an assignment (ASSIGNMENT),\
+            \ every label added (LABEL) and a draft being made active (ERRAND_ACTIVATION).\
+            \ Messages are listed as MESSAGE_EXTERNAL and MESSAGE_INTERNAL, for messages\
+            \ from outside and in internal conversations respectively"
           items:
             type: string
             enum:
@@ -23876,6 +23876,7 @@ components:
             - ATTACHMENT
             - DECISION
             - ERRAND
+            - ERRAND_ACTIVATION
             - HANDOVER_IN
             - HANDOVER_OUT
             - LABEL
@@ -24248,6 +24249,18 @@ components:
           type: boolean
         float:
           type: boolean
+        nodeType:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
         string:
           type: boolean
         integralNumber:
@@ -24279,18 +24292,6 @@ components:
           type: boolean
         missingNode:
           type: boolean
-        nodeType:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
         container:
           type: boolean
         number:
@@ -24851,7 +24852,9 @@ components:
             \ and of its phase respectively. LABEL matches a label being added to\
             \ an errand, logged once for every label added - as CREATE/LABEL for the\
             \ labels an errand is created with and as UPDATE/LABEL for those added\
-            \ later."
+            \ later. ERRAND_ACTIVATION matches a draft being made active, logged as\
+            \ UPDATE/ERRAND_ACTIVATION alongside the UPDATE/ERRAND of the update that\
+            \ made it active, and is not matched by ERRAND."
           examples:
           - ATTACHMENT
           maxLength: 64
