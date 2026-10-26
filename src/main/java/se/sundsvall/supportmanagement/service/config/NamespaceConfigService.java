@@ -151,11 +151,12 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Signals whether the namespace subscribes reporters with the given profile.
+	 * Signals whether the namespace subscribes reporters with the given profile. Ids are compared regardless of case, as
+	 * the database finds a profile by its id.
 	 */
 	public boolean isReporterProfile(String namespace, String municipalityId, String profileId) {
 		return findReporterProfileId(namespace, municipalityId)
-			.filter(profileId::equals)
+			.filter(profileId::equalsIgnoreCase)
 			.isPresent();
 	}
 
