@@ -161,8 +161,6 @@ scheduler:
     cron: "-"
   action:
     cron: "-"
-  attachment-hash:
-    cron: "-"
   process-event:
     cron: "-"
   process-cleanup:
