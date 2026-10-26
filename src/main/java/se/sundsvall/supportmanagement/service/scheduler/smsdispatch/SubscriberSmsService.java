@@ -26,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.EmployeeService;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.time.OffsetDateTime.now;
@@ -54,6 +55,7 @@ public class SubscriberSmsService {
 	private final NotificationDispatchOutboxRepository outboxRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
 	private final NamespaceConfigMapper namespaceConfigMapper;
+	private final NamespaceConfigService namespaceConfigService;
 	private final MessagingClient messagingClient;
 	private final EmployeeService employeeService;
 	private final String sender;
@@ -63,6 +65,7 @@ public class SubscriberSmsService {
 		final NotificationDispatchOutboxRepository outboxRepository,
 		final NamespaceConfigRepository namespaceConfigRepository,
 		final NamespaceConfigMapper namespaceConfigMapper,
+		final NamespaceConfigService namespaceConfigService,
 		final MessagingClient messagingClient,
 		final EmployeeService employeeService,
 		@Value("${scheduler.notification-dispatch.sms.sender}") final String sender,
@@ -70,6 +73,7 @@ public class SubscriberSmsService {
 		this.outboxRepository = outboxRepository;
 		this.namespaceConfigRepository = namespaceConfigRepository;
 		this.namespaceConfigMapper = namespaceConfigMapper;
+		this.namespaceConfigService = namespaceConfigService;
 		this.messagingClient = messagingClient;
 		this.employeeService = employeeService;
 		this.sender = sender;
@@ -82,7 +86,7 @@ public class SubscriberSmsService {
 	 * that has not enabled sms, since sms is a cost the namespace has to opt in to.
 	 */
 	public void enqueue(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
-		if (!isSmsEnabled(subscriber)) {
+		if (!namespaceConfigService.isSmsNotificationsEnabled(subscriber.getNamespace(), subscriber.getMunicipalityId())) {
 			LOG.debug("Sms is not enabled in namespace {}, skipping sms delivery for errand: {} subscriber: {}", subscriber.getNamespace(), errandId, subscriber.getId());
 			return;
 		}
@@ -231,12 +235,6 @@ public class SubscriberSmsService {
 			return SWEDISH_COUNTRY_CODE + mobileNumber.substring(1);
 		}
 		return mobileNumber;
-	}
-
-	private boolean isSmsEnabled(final SubscriberEntity subscriber) {
-		return findNamespaceConfig(subscriber)
-			.map(NamespaceConfig::isSmsNotificationsEnabled)
-			.orElse(false);
 	}
 
 	private Optional<NamespaceConfig> findNamespaceConfig(final SubscriberEntity subscriber) {

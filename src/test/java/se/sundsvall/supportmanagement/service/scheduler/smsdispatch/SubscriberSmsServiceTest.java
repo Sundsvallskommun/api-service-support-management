@@ -30,6 +30,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
 import se.sundsvall.supportmanagement.service.EmployeeService;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,6 +70,9 @@ class SubscriberSmsServiceTest {
 	private NamespaceConfigMapper namespaceConfigMapperMock;
 
 	@Mock
+	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
 	private MessagingClient messagingClientMock;
 
 	@Mock
@@ -86,12 +90,12 @@ class SubscriberSmsServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		service = new SubscriberSmsService(outboxRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, messagingClientMock, employeeServiceMock, SENDER, MAX_AGE);
+		service = new SubscriberSmsService(outboxRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, namespaceConfigServiceMock, messagingClientMock, employeeServiceMock, SENDER, MAX_AGE);
 	}
 
 	@AfterEach
 	void verifyNoMoreMockInteractions() {
-		verifyNoMoreInteractions(outboxRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, messagingClientMock, employeeServiceMock);
+		verifyNoMoreInteractions(outboxRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, namespaceConfigServiceMock, messagingClientMock, employeeServiceMock);
 	}
 
 	@Test
@@ -100,11 +104,11 @@ class SubscriberSmsServiceTest {
 		final var events = List.of(
 			NotificationDispatchEntity.create().withEventId("event-1").withEventType("UPDATE").withDescription("Ärendet har uppdaterats."),
 			NotificationDispatchEntity.create().withEventId("event-2").withEventType("UPDATE").withDescription("En anteckning har skapats."));
-		mockNamespaceConfig(namespaceConfig(true, null));
+		when(namespaceConfigServiceMock.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		service.enqueue(ERRAND_ID_1, "ABC123", subscriber, events);
 
-		verifyNamespaceConfig();
+		verify(namespaceConfigServiceMock).isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID);
 		verify(outboxRepositoryMock).save(outboxCaptor.capture());
 		final var saved = outboxCaptor.getValue();
 		assertThat(saved.getSubscriber()).isSameAs(subscriber);
@@ -119,22 +123,11 @@ class SubscriberSmsServiceTest {
 	@Test
 	void enqueueWhenSmsIsNotEnabledInNamespace() {
 		final var subscriber = createSubscriber(smsChannel(MOBILE_NUMBER));
-		mockNamespaceConfig(namespaceConfig(false, null));
+		when(namespaceConfigServiceMock.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 
 		service.enqueue(ERRAND_ID_1, "ABC123", subscriber, List.of(NotificationDispatchEntity.create().withEventId("event-1")));
 
-		verifyNamespaceConfig();
-		verify(outboxRepositoryMock, never()).save(any());
-	}
-
-	@Test
-	void enqueueWithoutNamespaceConfig() {
-		final var subscriber = createSubscriber(smsChannel(MOBILE_NUMBER));
-		when(namespaceConfigRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
-
-		service.enqueue(ERRAND_ID_1, "ABC123", subscriber, List.of(NotificationDispatchEntity.create().withEventId("event-1")));
-
-		verify(namespaceConfigRepositoryMock).findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
+		verify(namespaceConfigServiceMock).isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID);
 		verify(outboxRepositoryMock, never()).save(any());
 	}
 

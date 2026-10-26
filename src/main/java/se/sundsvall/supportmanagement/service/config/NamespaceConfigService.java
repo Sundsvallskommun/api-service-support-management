@@ -92,7 +92,10 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
 	})
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
@@ -132,6 +135,7 @@ public class NamespaceConfigService {
 	 * The profile the namespace subscribes reporters with as their errands are created, if any. Most namespaces have
 	 * none, and a namespace without configuration has none either.
 	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public Optional<String> findReporterProfileId(String namespace, String municipalityId) {
 		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(mapper::toNamespaceConfig)
@@ -142,12 +146,25 @@ public class NamespaceConfigService {
 	 * The channels a subscriber is given when the service creates one in the namespace. A namespace naming none, or
 	 * without configuration, gives the INTERNAL channel alone.
 	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
 	public List<NotificationChannelType> findNewSubscriberChannels(String namespace, String municipalityId) {
 		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
 			.map(mapper::toNamespaceConfig)
 			.map(NamespaceConfig::getNewSubscriberChannels)
 			.filter(channels -> !channels.isEmpty())
+			.map(List::copyOf)
 			.orElse(DEFAULT_NEW_SUBSCRIBER_CHANNELS);
+	}
+
+	/**
+	 * Signals whether subscribers in the namespace may be notified by sms. A namespace without configuration sends none.
+	 */
+	@Cacheable(value = CACHE_NAME, key = "{#root.methodName, #namespace, #municipalityId}")
+	public boolean isSmsNotificationsEnabled(String namespace, String municipalityId) {
+		return configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId)
+			.map(mapper::toNamespaceConfig)
+			.map(NamespaceConfig::isSmsNotificationsEnabled)
+			.orElse(false);
 	}
 
 	/**
@@ -298,7 +315,10 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
 	})
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
@@ -405,7 +425,10 @@ public class NamespaceConfigService {
 		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
 		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}")
+		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
+		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
 	})
 	public void delete(String namespace, String municipalityId) {
 		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {

@@ -179,6 +179,25 @@ class NamespaceConfigServiceTest {
 		assertThat(configService.findNewSubscriberChannels("namespace", "municipalityId")).containsExactly(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
 	}
 
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	void isSmsNotificationsEnabled(final boolean enabled) {
+		final var entity = NamespaceConfigEntity.create();
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.of(entity));
+		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withSmsNotificationsEnabled(enabled));
+
+		assertThat(configService.isSmsNotificationsEnabled("namespace", "municipalityId")).isEqualTo(enabled);
+	}
+
+	@Test
+	void isSmsNotificationsEnabledWithoutConfiguration() {
+		when(configRepositoryMock.findByNamespaceAndMunicipalityId("namespace", "municipalityId")).thenReturn(Optional.empty());
+
+		assertThat(configService.isSmsNotificationsEnabled("namespace", "municipalityId")).isFalse();
+	}
+
 	@Test
 	void findNewSubscriberChannelsWithoutAny() {
 		final var entity = NamespaceConfigEntity.create();
