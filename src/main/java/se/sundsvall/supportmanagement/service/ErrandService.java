@@ -262,11 +262,12 @@ public class ErrandService {
 
 		entityManager.lock(errandEntityToUpdate, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
-		// Copied before patching, since the patch changes the errand in place and its events tell what changed
-		final var previousAssignee = errandEntityToUpdate.getAssignedUserId();
-		final var previousLabelIds = labelIdsOf(errandEntityToUpdate);
-		final var previousStatus = errandEntityToUpdate.getStatus();
-		final var previousPhaseId = activePhaseOf(errandEntityToUpdate).map(PhaseEntity::getId).orElse(null);
+		// Copied before patching, since the patch changes the errand in place and its events tell what changed. A draft told
+		// no one anything, so the draft made active is held against nothing: everything on it is told of as new.
+		final var previousAssignee = activates ? null : errandEntityToUpdate.getAssignedUserId();
+		final var previousLabelIds = activates ? Set.<String>of() : labelIdsOf(errandEntityToUpdate);
+		final var previousStatus = activates ? null : errandEntityToUpdate.getStatus();
+		final var previousPhaseId = activates ? null : activePhaseOf(errandEntityToUpdate).map(PhaseEntity::getId).orElse(null);
 
 		final var errandEntity = updateEntity(errandEntityToUpdate, errand, keyAccess.writableKey());
 		ofNullable(contactReason).ifPresent(errandEntity::withContactReason);
@@ -288,19 +289,16 @@ public class ErrandService {
 		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
-		// A draft notified no one, so the draft made active tells of every label set on it and of its assignee as a new
-		// errand would
-		final var addedLabelIds = labelIdsSet(entity, requestedLabelIds, expandedLabelIds);
-		if (!activates) {
-			addedLabelIds.removeAll(previousLabelIds);
-		}
+		// The draft made active tells of every label on it, the ancestors its labels were expanded with included
+		final var addedLabelIds = activates ? labelIdsOf(entity) : labelIdsSet(entity, requestedLabelIds, expandedLabelIds);
+		addedLabelIds.removeAll(previousLabelIds);
 		// Made active by a patch that is an update all the same, so both are told, the activation as an event of its own
 		if (activates) {
 			logUpdateEvent(entity, revisionResult, EVENT_LOG_ACTIVATE_ERRAND, ERRAND_ACTIVATION, true);
 		}
 		logUpdateEvent(entity, revisionResult, EVENT_LOG_UPDATE_ERRAND, ERRAND, true);
 		logLabelEvents(UPDATE, entity, revisionResult, addedLabelIds);
-		if (isNewAssignment(activates ? null : previousAssignee, entity.getAssignedUserId())) {
+		if (isNewAssignment(previousAssignee, entity.getAssignedUserId())) {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, entity, revisionResult, ASSIGNMENT);
 		}
 		if (nonNull(entity.getStatus()) && !Objects.equals(previousStatus, entity.getStatus())) {

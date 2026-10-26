@@ -73,6 +73,7 @@ import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -778,6 +779,52 @@ class ErrandServiceTest {
 		// The patch that made it active is an update all the same
 		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har uppdaterats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
+		// as is its status, which a draft never told of either
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("updateErrandActivatingADraftLogsEveryLabelOnItArguments")
+	@DisplayName("Verification that a draft made active tells of every label on it, the ancestors its labels were expanded with included")
+	void updateErrandActivatingADraftLogsEveryLabelOnIt(final List<String> patchedLabelIds) {
+		// Stored as a draft is, with the parent its label was expanded with
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT).withLabels(new ArrayList<>(List.of(
+			ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1),
+			ErrandLabelEmbeddable.create().withMetadataLabelId(PARENT_LABEL_ID))));
+		final var patch = Errand.create().withLifecycle("ACTIVE")
+			.withLabels(ofNullable(patchedLabelIds).map(ids -> ids.stream().map(id -> ErrandLabel.create().withId(id)).toList()).orElse(null));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		if (patchedLabelIds != null) {
+			// The label is expanded with its parent
+			doAnswer(_ -> addLabel(entity, PARENT_LABEL_ID)).when(errandLabelServiceMock).settleAccessLabels(entity);
+		}
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock, times(patchedLabelIds == null ? 0 : 1)).settleAccessLabels(entity);
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), any(RevisionResult.class), eq(ERRAND_ACTIVATION), any());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), any(RevisionResult.class), eq(ERRAND), any());
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), any(), eq(Set.of(LABEL_ID_1, PARENT_LABEL_ID)), any());
+	}
+
+	private static Stream<Arguments> updateErrandActivatingADraftLogsEveryLabelOnItArguments() {
+		return Stream.of(
+			// Made active alone, telling of the labels it was stored with
+			Arguments.of((List<String>) null),
+			// Made active along with its label being set again, which its parent comes along with
+			Arguments.of(List.of(LABEL_ID_1)));
 	}
 
 	@Test
