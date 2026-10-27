@@ -199,23 +199,30 @@ public class HandoverService {
 			}
 		}
 
-		if (isNull(mapping.getClassification())) {
-			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'classification' is missing");
-		}
-		final var category = mapping.getClassification().getCategory();
-		final var type = mapping.getClassification().getType();
-		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CATEGORY)) {
-			final var validCategory = metadataService.findCategories(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
-				.anyMatch(c -> c.getName().equals(category));
-			if (!validCategory) {
-				throw Problem.valueOf(BAD_REQUEST, "Classification category '%s' does not exist in target namespace '%s'".formatted(category, targetNamespace));
+		final var classification = mapping.getClassification();
+		final var categoryValidated = metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CATEGORY);
+		final var typeValidated = metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.TYPE);
+
+		if (isNull(classification)) {
+			if (categoryValidated || typeValidated) {
+				throw Problem.valueOf(BAD_REQUEST, "Required mapping 'classification' is missing (target namespace '%s' validates classification)".formatted(targetNamespace));
 			}
-		}
-		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.TYPE)) {
-			final var validType = metadataService.findTypes(targetNamespace, targetMunicipalityId, category).stream()
-				.anyMatch(t -> t.getName().equals(type));
-			if (!validType) {
-				throw Problem.valueOf(BAD_REQUEST, "Classification type '%s' does not exist under category '%s' in target namespace '%s'".formatted(type, category, targetNamespace));
+		} else {
+			final var category = classification.getCategory();
+			final var type = classification.getType();
+			if (categoryValidated) {
+				final var validCategory = metadataService.findCategories(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+					.anyMatch(c -> c.getName().equals(category));
+				if (!validCategory) {
+					throw Problem.valueOf(BAD_REQUEST, "Classification category '%s' does not exist in target namespace '%s'".formatted(category, targetNamespace));
+				}
+			}
+			if (typeValidated) {
+				final var validType = metadataService.findTypes(targetNamespace, targetMunicipalityId, category).stream()
+					.anyMatch(t -> t.getName().equals(type));
+				if (!validType) {
+					throw Problem.valueOf(BAD_REQUEST, "Classification type '%s' does not exist under category '%s' in target namespace '%s'".formatted(type, category, targetNamespace));
+				}
 			}
 		}
 
