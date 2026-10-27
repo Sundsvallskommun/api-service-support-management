@@ -136,8 +136,7 @@ public class EventService {
 	 */
 	public void createErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype,
 		final ErrandEventOptions options) {
-		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.actor(), options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS,
-			options.addedLabelIds(), options.errandNotificationMessage());
+		writeErrandEvent(eventType, message, errandEntity, ofNullable(revisions).orElse(NO_REVISION), subtype, options.sendNotification() ? Notice.HANDLER_AND_SUBSCRIBERS : Notice.SUBSCRIBERS, options);
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
@@ -205,7 +204,7 @@ public class EventService {
 	 */
 	public void createErrandEventWithoutNotification(final EventType eventType, final String message, final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision,
 		final EventSubType subtype) {
-		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, getExecutingUser(), Notice.NO_ONE, Set.of(), null);
+		writeErrandEvent(eventType, message, errandEntity, new RevisionResult(previousRevision, currentRevision), subtype, Notice.NO_ONE, new ErrandEventOptions(false, getExecutingUser(), Set.of()));
 		publishToProcess(errandEntity, eventType, subtype, null, false);
 	}
 
@@ -225,7 +224,7 @@ public class EventService {
 	 * @param command      what the command carries, or null when nothing is to be handed on to the process.
 	 */
 	public void createProcessCommandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final EventSubType subtype, final ProcessCommand command) {
-		writeErrandEvent(eventType, message, errandEntity, NO_REVISION, subtype, getExecutingUser(), Notice.NO_ONE, Set.of(), null);
+		writeErrandEvent(eventType, message, errandEntity, NO_REVISION, subtype, Notice.NO_ONE, new ErrandEventOptions(false, getExecutingUser(), Set.of()));
 
 		if (nonNull(command)) {
 			publishToProcess(errandEntity, eventType, subtype, command, false);
@@ -255,7 +254,7 @@ public class EventService {
 	 * @param concludesDecision whether the change is the one that concludes the decision.
 	 */
 	public void createDecisionEvent(final String message, final ErrandEntity errandEntity, final boolean concludesDecision) {
-		writeErrandEvent(UPDATE, message, errandEntity, NO_REVISION, DECISION, getExecutingUser(), Notice.HANDLER_AND_SUBSCRIBERS, Set.of(), null);
+		writeErrandEvent(UPDATE, message, errandEntity, NO_REVISION, DECISION, Notice.HANDLER_AND_SUBSCRIBERS, new ErrandEventOptions(true, getExecutingUser(), Set.of()));
 		publishToProcess(errandEntity, UPDATE, DECISION, null, concludesDecision);
 	}
 
@@ -325,13 +324,14 @@ public class EventService {
 	/**
 	 * Writes the event to the event log, and notifies those it is to notify.
 	 *
-	 * @param revisions                 the revision the event points at and the one before it, either of them null.
-	 * @param notice                    who the event notifies.
-	 * @param addedLabelIds             the metadata labels the event added to the errand.
-	 * @param errandNotificationMessage the text the assigned user is notified with, or null for the text of the event.
+	 * @param revisions the revision the event points at and the one before it, either of them null.
+	 * @param notice    who the event notifies, which is what decides it rather than whether the options send a
+	 *                  notification.
+	 * @param options   the one who acted, the labels the event added and the text the assigned user is notified with.
 	 */
-	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype, final Identifier actor,
-		final Notice notice, final Set<String> addedLabelIds, final String errandNotificationMessage) {
+	private void writeErrandEvent(final EventType eventType, final String message, final ErrandEntity errandEntity, final RevisionResult revisions, final EventSubType subtype, final Notice notice,
+		final ErrandEventOptions options) {
+		final var actor = options.actor();
 		final var requestGroupId = getRequestGroupId();
 		final var metadata = toMetadataMap(errandEntity, revisions.latest(), revisions.previous());
 		final var event = toEvent(eventType, message, extractId(revisions.latest()), Errand.class, metadata, actor, subtype.getValue(), requestGroupId);
@@ -350,14 +350,14 @@ public class EventService {
 		}
 
 		if (notice == Notice.HANDLER_AND_SUBSCRIBERS && notifies(errandEntity)) {
-			createNotification(errandEntity, ofNullable(errandNotificationMessage)
+			createNotification(errandEntity, ofNullable(options.errandNotificationMessage())
 				.map(text -> toEvent(eventType, text, extractId(revisions.latest()), Errand.class, metadata, actor, subtype.getValue(), requestGroupId))
 				.orElse(event));
 		}
 
 		// Which subscribers hear of the event is up to their subscriptions
 		if (notice != Notice.NO_ONE && notifies(errandEntity)) {
-			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), new ErrandEventOptions(notice == Notice.HANDLER_AND_SUBSCRIBERS, actor, addedLabelIds));
+			saveDispatchEntry(errandEntity, eventType, requestGroupId, eventId, message, subtype.getValue(), new ErrandEventOptions(notice == Notice.HANDLER_AND_SUBSCRIBERS, actor, options.addedLabelIds()));
 		}
 	}
 

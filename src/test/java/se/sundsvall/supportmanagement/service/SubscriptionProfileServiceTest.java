@@ -167,11 +167,12 @@ class SubscriptionProfileServiceTest {
 	void deleteSubscriptionProfile() {
 		final var entity = SubscriptionProfileEntity.create().withId(PROFILE_ID);
 		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of("other-profile"));
 
 		service.deleteSubscriptionProfile(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID);
 
 		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(namespaceConfigServiceMock).isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID);
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionProfileRepositoryMock).delete(entity);
 	}
 
@@ -179,14 +180,14 @@ class SubscriptionProfileServiceTest {
 	void deleteSubscriptionProfileThatIsTheReporterProfile() {
 		final var entity = SubscriptionProfileEntity.create().withId(PROFILE_ID);
 		when(subscriptionProfileRepositoryMock.findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
-		when(namespaceConfigServiceMock.isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID)).thenReturn(true);
+		when(namespaceConfigServiceMock.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(PROFILE_ID.toUpperCase()));
 
 		assertThatThrownBy(() -> service.deleteSubscriptionProfile(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID))
 			.isInstanceOf(Problem.class)
 			.extracting("status").isEqualTo(CONFLICT);
 
 		verify(subscriptionProfileRepositoryMock).findByIdAndNamespaceAndMunicipalityId(PROFILE_ID, NAMESPACE, MUNICIPALITY_ID);
-		verify(namespaceConfigServiceMock).isReporterProfile(NAMESPACE, MUNICIPALITY_ID, PROFILE_ID);
+		verify(namespaceConfigServiceMock).findReporterProfileId(NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@Test

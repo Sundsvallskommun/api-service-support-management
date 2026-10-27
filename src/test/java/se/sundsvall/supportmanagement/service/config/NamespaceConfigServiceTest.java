@@ -153,9 +153,6 @@ class NamespaceConfigServiceTest {
 		when(mapperMock.toNamespaceConfig(entity)).thenReturn(NamespaceConfig.create().withReporterProfileId(REPORTER_PROFILE_ID));
 
 		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).contains(REPORTER_PROFILE_ID);
-		assertThat(configService.isReporterProfile("namespace", "municipalityId", REPORTER_PROFILE_ID)).isTrue();
-		assertThat(configService.isReporterProfile("namespace", "municipalityId", REPORTER_PROFILE_ID.toUpperCase())).isTrue();
-		assertThat(configService.isReporterProfile("namespace", "municipalityId", "other-profile")).isFalse();
 	}
 
 	@Test
@@ -167,7 +164,6 @@ class NamespaceConfigServiceTest {
 
 		assertThat(configService.findReporterProfileId("namespace", "municipalityId")).isEmpty();
 		assertThat(configService.findReporterProfileId("other-namespace", "municipalityId")).isEmpty();
-		assertThat(configService.isReporterProfile("other-namespace", "municipalityId", REPORTER_PROFILE_ID)).isFalse();
 	}
 
 	@Test

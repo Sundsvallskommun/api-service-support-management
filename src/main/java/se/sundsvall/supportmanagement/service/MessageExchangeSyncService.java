@@ -121,9 +121,9 @@ public class MessageExchangeSyncService {
 	 */
 	static String toEventMessage(final int count, final EventSubType subtype, final String topic) {
 		final var internal = subtype == MESSAGE_CONVERSATION_INTERNAL;
-		final var text = count == 1
-			? (internal ? EVENT_LOG_ONE_INTERNAL_MESSAGE : EVENT_LOG_ONE_MESSAGE)
-			: (internal ? EVENT_LOG_INTERNAL_MESSAGES : EVENT_LOG_MESSAGES).formatted(count);
+		final var oneMessage = internal ? EVENT_LOG_ONE_INTERNAL_MESSAGE : EVENT_LOG_ONE_MESSAGE;
+		final var messages = internal ? EVENT_LOG_INTERNAL_MESSAGES : EVENT_LOG_MESSAGES;
+		final var text = count == 1 ? oneMessage : messages.formatted(count);
 		return ofNullable(topic)
 			.filter(not(String::isBlank))
 			.map(value -> "%s \"%s\"".formatted(text, value))

@@ -80,8 +80,9 @@ public class SubscriptionProfileService {
 	@Transactional
 	public void deleteSubscriptionProfile(final String municipalityId, final String namespace, final String profileId) {
 		final var entity = loadEntity(municipalityId, namespace, profileId);
-		// Reporters would quietly stop being subscribed, so the namespace has to be pointed elsewhere first
-		if (namespaceConfigService.isReporterProfile(namespace, municipalityId, profileId)) {
+		// Reporters would quietly stop being subscribed, so the namespace has to be pointed elsewhere first. Ids are compared
+		// regardless of case, as the database finds a profile by its id
+		if (namespaceConfigService.findReporterProfileId(namespace, municipalityId).filter(profileId::equalsIgnoreCase).isPresent()) {
 			throw Problem.valueOf(CONFLICT, PROFILE_IS_REPORTER_PROFILE.formatted(profileId, namespace, municipalityId));
 		}
 		subscriptionProfileRepository.delete(entity);

@@ -168,16 +168,6 @@ public class NamespaceConfigService {
 	}
 
 	/**
-	 * Signals whether the namespace subscribes reporters with the given profile. Ids are compared regardless of case, as
-	 * the database finds a profile by its id.
-	 */
-	public boolean isReporterProfile(String namespace, String municipalityId, String profileId) {
-		return findReporterProfileId(namespace, municipalityId)
-			.filter(profileId::equalsIgnoreCase)
-			.isPresent();
-	}
-
-	/**
 	 * Verifies the access configuration. Keys only make sense for fields holding a keyed collection, a role may only
 	 * appear once, and a role may not be named after one of the scopes this service resolves itself.
 	 */
