@@ -774,6 +774,17 @@ VALUES ('fa000000-0000-0000-0000-000000000001', 0, 'Skatteverket'),
        ('fa000000-0000-0000-0000-000000000001', 1, 'Kronofogden'),
        ('fa000000-0000-0000-0000-000000000002', 0, 'low');
 
+INSERT INTO investigation_section_parameter(id, investigation_section_id, parameters_key, display_name, parameter_group)
+VALUES ('fb000000-0000-0000-0000-000000000001', 'f3000000-0000-0000-0000-000000000002', 'checklist', 'Checklista', 'lokal'),
+       ('fb000000-0000-0000-0000-000000000002', 'f3000000-0000-0000-0000-000000000002', 'area', null, null),
+       ('fb000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000001', 'creditCheck', null, null);
+
+INSERT INTO investigation_section_parameter_values(investigation_section_parameter_id, value_order, value)
+VALUES ('fb000000-0000-0000-0000-000000000001', 0, 'ventilation'),
+       ('fb000000-0000-0000-0000-000000000001', 1, 'brandskydd'),
+       ('fb000000-0000-0000-0000-000000000002', 0, '120'),
+       ('fb000000-0000-0000-0000-000000000003', 0, 'UC');
+
 -- -----------------------------------
 -- Decision (beslut) and its terms
 -- -----------------------------------

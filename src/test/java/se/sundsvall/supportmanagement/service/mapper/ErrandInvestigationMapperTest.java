@@ -11,6 +11,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
@@ -213,6 +214,147 @@ class ErrandInvestigationMapperTest {
 	@Test
 	void testToInvestigationSectionWithNull() {
 		assertThat(toInvestigationSection(null)).isNull();
+	}
+
+	@Test
+	void testToInvestigationSectionEntityWithParameters() {
+
+		// Arrange
+		final var section = InvestigationSection.create().withParameters(List.of(
+			Parameter.create().withKey("checklist").withDisplayName("Checklista").withGroup("premises").withValues(List.of("ventilation")),
+			Parameter.create().withKey("Area").withValues(List.of("120")),
+			Parameter.create().withKey(" checklist ").withDisplayName("ignored").withValues(List.of("fire")),
+			Parameter.create().withKey("floor")));
+
+		// Act
+		final var result = toInvestigationSectionEntity(section, InvestigationEntity.create());
+
+		// Assert
+		assertThat(result.getParameters())
+			.extracting(InvestigationSectionParameterEntity::getKey, InvestigationSectionParameterEntity::getDisplayName, InvestigationSectionParameterEntity::getParameterGroup,
+				InvestigationSectionParameterEntity::getValues)
+			.containsExactly(
+				tuple("Area", null, null, List.of("120")),
+				tuple("checklist", "Checklista", "premises", List.of("ventilation", "fire")),
+				tuple("floor", null, null, List.of()));
+		assertThat(result.getParameters()).allSatisfy(parameter -> assertThat(parameter.getInvestigationSectionEntity()).isSameAs(result));
+		assertThat(section.getParameters().get(2).getKey()).as("the request is left as it was").isEqualTo(" checklist ");
+	}
+
+	@Test
+	void testToInvestigationSectionEntityWithoutParameters() {
+		assertThat(toInvestigationSectionEntity(InvestigationSection.create(), InvestigationEntity.create()).getParameters()).isEmpty();
+	}
+
+	@Test
+	void testUpdateInvestigationSectionEntityReplacesParameters() {
+
+		// Arrange
+		final var entity = InvestigationSectionEntity.create();
+		final var stored = new ArrayList<>(List.of(
+			InvestigationSectionParameterEntity.create().withId("old").withInvestigationSectionEntity(entity).withKey("checklist").withValues(List.of("ventilation"))));
+		entity.setParameters(stored);
+
+		// Act
+		updateInvestigationSectionEntity(entity, InvestigationSection.create().withParameters(List.of(
+			Parameter.create().withKey("checklist").withValues(List.of("fire")),
+			Parameter.create().withKey("area").withGroup("size").withValues(List.of("120")))));
+
+		// Assert
+		assertThat(entity.getParameters()).isSameAs(stored);
+		assertThat(entity.getParameters())
+			.extracting(InvestigationSectionParameterEntity::getId, InvestigationSectionParameterEntity::getKey, InvestigationSectionParameterEntity::getParameterGroup,
+				InvestigationSectionParameterEntity::getValues)
+			.containsExactly(
+				tuple(null, "area", "size", List.of("120")),
+				tuple(null, "checklist", null, List.of("fire")));
+		assertThat(entity.getParameters()).allSatisfy(parameter -> assertThat(parameter.getInvestigationSectionEntity()).isSameAs(entity));
+	}
+
+	@Test
+	void testUpdateInvestigationSectionEntityLeavesUnchangedParametersAlone() {
+
+		// Arrange
+		final var entity = InvestigationSectionEntity.create();
+		final var parameter = InvestigationSectionParameterEntity.create().withId("id").withInvestigationSectionEntity(entity).withKey("checklist").withDisplayName("Checklista")
+			.withValues(List.of("ventilation", "fire"));
+		entity.setParameters(new ArrayList<>(List.of(parameter)));
+
+		// Act
+		updateInvestigationSectionEntity(entity, InvestigationSection.create().withParameters(List.of(
+			Parameter.create().withKey("checklist").withDisplayName("Checklista").withValues(List.of("ventilation")),
+			Parameter.create().withKey("checklist").withValues(List.of("fire")))));
+
+		// Assert
+		assertThat(entity.getParameters()).singleElement().isSameAs(parameter);
+	}
+
+	@Test
+	void testUpdateInvestigationSectionEntityWithEmptyParametersRemovesThemAll() {
+
+		// Arrange
+		final var entity = InvestigationSectionEntity.create();
+		entity.setParameters(new ArrayList<>(List.of(InvestigationSectionParameterEntity.create().withKey("checklist").withValues(List.of("ventilation")))));
+
+		// Act
+		updateInvestigationSectionEntity(entity, InvestigationSection.create().withParameters(List.of()));
+
+		// Assert
+		assertThat(entity.getParameters()).isEmpty();
+	}
+
+	@Test
+	void testUpdateInvestigationSectionEntityWithParametersOnSectionWithoutAny() {
+
+		// Arrange
+		final var entity = InvestigationSectionEntity.create();
+
+		// Act
+		updateInvestigationSectionEntity(entity, InvestigationSection.create().withParameters(List.of(Parameter.create().withKey("checklist").withValues(List.of("ventilation")))));
+
+		// Assert
+		assertThat(entity.getParameters()).singleElement().satisfies(parameter -> {
+			assertThat(parameter.getKey()).isEqualTo("checklist");
+			assertThat(parameter.getValues()).containsExactly("ventilation");
+			assertThat(parameter.getInvestigationSectionEntity()).isSameAs(entity);
+		});
+	}
+
+	@Test
+	void testUpdateInvestigationSectionEntityWithoutParametersLeavesThemAlone() {
+
+		// Arrange
+		final var parameter = InvestigationSectionParameterEntity.create().withKey("checklist").withValues(List.of("ventilation"));
+		final var entity = InvestigationSectionEntity.create().withParameters(new ArrayList<>(List.of(parameter)));
+
+		// Act
+		updateInvestigationSectionEntity(entity, InvestigationSection.create().withAssessment("APPROVED"));
+
+		// Assert
+		assertThat(entity.getParameters()).singleElement().isSameAs(parameter);
+	}
+
+	@Test
+	void testToInvestigationSectionWithParameters() {
+
+		// Arrange
+		final var entity = InvestigationSectionEntity.create().withParameters(List.of(
+			InvestigationSectionParameterEntity.create().withId("2").withKey("floor").withValues(List.of("2")),
+			InvestigationSectionParameterEntity.create().withId("1").withKey("checklist").withDisplayName("Checklista").withParameterGroup("premises")
+				.withValues(List.of("ventilation", "fire"))));
+
+		// Act
+		final var result = toInvestigationSection(entity);
+
+		// Assert
+		assertThat(result.getParameters()).containsExactly(
+			Parameter.create().withKey("checklist").withDisplayName("Checklista").withGroup("premises").withValues(List.of("ventilation", "fire")),
+			Parameter.create().withKey("floor").withValues(List.of("2")));
+	}
+
+	@Test
+	void testToInvestigationSectionWithoutParameters() {
+		assertThat(toInvestigationSection(InvestigationSectionEntity.create()).getParameters()).isEmpty();
 	}
 
 	@Test

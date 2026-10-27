@@ -33,7 +33,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
  * Errand Investigations IT tests, including the sections an investigation is assessed in, the attachments linked to it,
- * the JSON parameters it and its sections own and the parameters it carries.
+ * the JSON parameters it and its sections own and the parameters they carry.
  */
 @WireMockAppTestSuite(files = "classpath:/ErrandInvestigationsIT/", classes = Application.class)
 @Sql({
@@ -58,6 +58,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	private static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String GET_RESPONSE_FILE = "get-response.json";
 	private static final String AD_ACCOUNT = "joe01doe; type=adAccount";
 
 	@Autowired
@@ -133,16 +134,26 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The location names the section that was created, by the id of the section.
+	 * The location names the section that was created, by the id of the section. The parameters sent for the same trimmed
+	 * key are held under one, with their values in the order sent.
 	 */
 	@Test
 	void test05_createInvestigationSection() {
-		setupCall()
+		final var headers = setupCall()
 			.withServicePath(INVESTIGATION_PATH + "/sections")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(INVESTIGATION_PATH + "/sections/" + UUID_PATTERN))
+			.sendRequest()
+			.getResponseHeaders();
+
+		setupCall()
+			.withServicePath(headers.getLocation().getPath())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withJsonAssertOptions(null)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
 		assertThat(sectionsWithKey("personal")).isOne();
@@ -178,13 +189,20 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/sections")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
 		assertThat(assessmentOf(SECTION_ID)).isEqualTo(SectionAssessment.DEFICIENCY.name());
 		assertThat(investigationRepository.findById(INVESTIGATION_ID)).get()
 			.extracting(InvestigationEntity::getVersion).as("the section is part of the investigation, so its version moved").isEqualTo(1L);
 	}
 
 	/**
-	 * A section takes the JSON parameters it owns with it.
+	 * A section takes the JSON parameters it owns with it, and the other section keeps its parameters.
 	 */
 	@Test
 	void test09_deleteInvestigationSection() {
@@ -194,9 +212,16 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/sections")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
 		assertThat(sections(SECTION_ID)).isZero();
-		assertThat(sectionParametersWithKey("sectionForm")).as("the parameter of the section went with it").isZero();
-		assertThat(investigationParametersWithKey("investigationForm")).as("the one of the investigation stayed").isOne();
+		assertThat(sectionJsonParametersWithKey("sectionForm")).as("the parameter of the section went with it").isZero();
+		assertThat(investigationJsonParametersWithKey("investigationForm")).as("the one of the investigation stayed").isOne();
 	}
 
 	/**
@@ -225,8 +250,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).isFalse();
-		assertThat(investigationParametersWithKey("investigationForm")).isZero();
-		assertThat(sectionParametersWithKey("sectionForm")).isZero();
+		assertThat(investigationJsonParametersWithKey("investigationForm")).isZero();
+		assertThat(sectionJsonParametersWithKey("sectionForm")).isZero();
 		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter where investigation_id = ?", Integer.class, INVESTIGATION_ID))
 			.as("its parameters went with it").isZero();
 		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter_values", Integer.class)).as("with their values").isZero();
@@ -316,7 +341,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(investigationParametersWithKey("dispatchLog")).isOne();
+		assertThat(investigationJsonParametersWithKey("dispatchLog")).isOne();
 	}
 
 	@Test
@@ -327,7 +352,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(investigationParametersWithKey("investigationForm")).isZero();
+		assertThat(investigationJsonParametersWithKey("investigationForm")).isZero();
 		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).as("the investigation stayed").isTrue();
 	}
 
@@ -362,7 +387,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(sectionParametersWithKey("dispatchLog")).isOne();
+		assertThat(sectionJsonParametersWithKey("dispatchLog")).isOne();
 	}
 
 	@Test
@@ -373,7 +398,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(sectionParametersWithKey("sectionForm")).isZero();
+		assertThat(sectionJsonParametersWithKey("sectionForm")).isZero();
 		assertThat(sections(SECTION_ID)).as("the section stayed").isOne();
 	}
 
@@ -504,6 +529,51 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.containsExactly("fa000000-0000-0000-0000-000000000011", "fa000000-0000-0000-0000-000000000012", "fa000000-0000-0000-0000-000000000013");
 	}
 
+	/**
+	 * An empty list removes the parameters of the section, and the other section keeps its own.
+	 */
+	@Test
+	void test31_anEmptyListRemovesTheSectionParameters() {
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/sections")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * Parameters sent out of the order of their keys, with a padded key and with the values of a key split, are held
+	 * trimmed and merged, and answered in the order of their keys.
+	 */
+	@Test
+	void test32_sectionParametersAreTrimmedMergedAndOrderedOnUpdate() {
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withJsonAssertOptions(null)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withJsonAssertOptions(null)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 	/** The parameter values of the investigation as key=value, in the order of the keys and then of the values. */
 	private List<String> parameterValues() {
 		return jdbcTemplate.queryForList("""
@@ -526,11 +596,11 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 		return jdbcTemplate.queryForObject("select assessment from investigation_section where id = ?", String.class, sectionId);
 	}
 
-	private int investigationParametersWithKey(final String key) {
+	private int investigationJsonParametersWithKey(final String key) {
 		return jdbcTemplate.queryForObject("select count(*) from investigation_json_parameter where parameter_key = ?", Integer.class, key);
 	}
 
-	private int sectionParametersWithKey(final String key) {
+	private int sectionJsonParametersWithKey(final String key) {
 		return jdbcTemplate.queryForObject("select count(*) from investigation_section_json_parameter where parameter_key = ?", Integer.class, key);
 	}
 

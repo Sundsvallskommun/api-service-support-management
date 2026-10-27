@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,6 +47,7 @@ class InvestigationSectionTest {
 		final var text = "text";
 		final var completedBy = "completedBy";
 		final var completedAt = now().plusDays(1);
+		final var parameters = List.of(Parameter.create());
 
 		// Act
 		final var result = InvestigationSection.create()
@@ -56,7 +58,8 @@ class InvestigationSectionTest {
 			.withAssessment(assessment)
 			.withText(text)
 			.withCompletedBy(completedBy)
-			.withCompletedAt(completedAt);
+			.withCompletedAt(completedAt)
+			.withParameters(parameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -68,6 +71,7 @@ class InvestigationSectionTest {
 		assertThat(result.getText()).isEqualTo(text);
 		assertThat(result.getCompletedBy()).isEqualTo(completedBy);
 		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
+		assertThat(result.getParameters()).isEqualTo(parameters);
 	}
 
 	@Test

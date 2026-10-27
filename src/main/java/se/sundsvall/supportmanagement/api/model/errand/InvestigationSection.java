@@ -1,12 +1,15 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.ConvertGroup;
 import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
@@ -15,12 +18,13 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static se.sundsvall.supportmanagement.api.model.errand.Parameter.ARTEFACT_PARAMETERS_DESCRIPTION;
 
 /**
  * One assessed area of an investigation.
  * <p>
- * The assessment is the only structured value here. Whatever needs more structure than free text goes in a JSON
- * parameter on the section.
+ * The assessment is the only structured value here. Unstructured metadata goes in the parameters of the section, and
+ * whatever needs more structure than that goes in a JSON parameter on the section.
  */
 @Schema(description = "Investigation section model")
 public class InvestigationSection {
@@ -72,6 +76,11 @@ public class InvestigationSection {
 	@Schema(description = "Timestamp when the section was completed", examples = "2021-09-28T12:00:00Z")
 	@DateTimeFormat(iso = ISO.DATE_TIME)
 	private OffsetDateTime completedAt;
+
+	@Schema(description = "Parameters of the section, " + ARTEFACT_PARAMETERS_DESCRIPTION)
+	private List<@NotNull(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;
 
 	public static InvestigationSection create() {
 		return new InvestigationSection();
@@ -181,9 +190,22 @@ public class InvestigationSection {
 		return this;
 	}
 
+	public List<Parameter> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+	}
+
+	public InvestigationSection withParameters(final List<Parameter> parameters) {
+		this.parameters = parameters;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, sectionKey, heading, sortOrder, assessment, text, completedBy, completedAt);
+		return Objects.hash(id, sectionKey, heading, sortOrder, assessment, text, completedBy, completedAt, parameters);
 	}
 
 	@Override
@@ -201,7 +223,8 @@ public class InvestigationSection {
 			&& Objects.equals(assessment, other.assessment)
 			&& Objects.equals(text, other.text)
 			&& Objects.equals(completedBy, other.completedBy)
-			&& Objects.equals(completedAt, other.completedAt);
+			&& Objects.equals(completedAt, other.completedAt)
+			&& Objects.equals(parameters, other.parameters);
 	}
 
 	@Override
@@ -215,6 +238,7 @@ public class InvestigationSection {
 			", text='" + text + '\'' +
 			", completedBy='" + completedBy + '\'' +
 			", completedAt=" + completedAt +
+			", parameters=" + parameters +
 			'}';
 	}
 }
