@@ -276,17 +276,21 @@ class ErrandInvestigationMapperTest {
 
 		// Arrange
 		final var entity = InvestigationSectionEntity.create();
-		final var parameter = InvestigationSectionParameterEntity.create().withId("id").withInvestigationSectionEntity(entity).withKey("checklist").withDisplayName("Checklista")
-			.withValues(List.of("ventilation", "fire"));
-		entity.setParameters(new ArrayList<>(List.of(parameter)));
+		final var checklist = InvestigationSectionParameterEntity.create().withId("checklist-id").withInvestigationSectionEntity(entity).withKey("checklist")
+			.withDisplayName("Checklista").withValues(List.of("ventilation", "fire"));
+		final var area = InvestigationSectionParameterEntity.create().withId("area-id").withInvestigationSectionEntity(entity).withKey("area").withValues(List.of("120"));
+		entity.setParameters(new ArrayList<>(List.of(checklist, area)));
 
 		// Act
 		updateInvestigationSectionEntity(entity, InvestigationSection.create().withParameters(List.of(
+			Parameter.create().withKey("area").withValues(List.of("120")),
 			Parameter.create().withKey("checklist").withDisplayName("Checklista").withValues(List.of("ventilation")),
 			Parameter.create().withKey("checklist").withValues(List.of("fire")))));
 
 		// Assert
-		assertThat(entity.getParameters()).singleElement().isSameAs(parameter);
+		assertThat(entity.getParameters()).satisfiesExactly(
+			first -> assertThat(first).isSameAs(checklist),
+			second -> assertThat(second).isSameAs(area));
 	}
 
 	@Test

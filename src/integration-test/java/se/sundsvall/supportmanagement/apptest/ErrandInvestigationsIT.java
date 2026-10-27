@@ -574,6 +574,27 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * An update of a section that leaves out the parameters keeps the ones it has.
+	 */
+	@Test
+	void test33_anOmittedListLeavesTheSectionParametersAsTheyAre() {
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 	/** The parameter values of the investigation as key=value, in the order of the keys and then of the values. */
 	private List<String> parameterValues() {
 		return jdbcTemplate.queryForList("""
