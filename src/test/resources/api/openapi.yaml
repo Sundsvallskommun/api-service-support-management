@@ -26945,6 +26945,8 @@ components:
           example: NEW_CASE
         classification:
           $ref: "#/components/schemas/Classification"
+          description: Category/type to set on the new errand. Required when the
+            target namespace validates CATEGORY or TYPE, otherwise optional
         labels:
           type: array
           description: Label UUIDs to apply on the new errand
