@@ -295,6 +295,7 @@ public class HandoverService {
 						.withReceived(sourceAttachment.getReceived())
 						.withSequenceNumber(attachmentSequenceNumberGenerator.nextSequenceNumber(target))
 						.withFileSize(sourceAttachment.getFileSize())
+						.withHash(sourceAttachment.getHash())
 						.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
 					attachmentRepository.saveAndFlush(newAttachment);
 					target.getAttachments().add(newAttachment);

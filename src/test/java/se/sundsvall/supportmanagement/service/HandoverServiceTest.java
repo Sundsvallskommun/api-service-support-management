@@ -571,6 +571,7 @@ class HandoverServiceTest {
 			.withFileSize(1024)
 			.withSequenceNumber(7)
 			.withReceived(received)
+			.withHash("abc123")
 			.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
 		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(sourceAttachment)));
 		final var target = targetEntity();
@@ -606,6 +607,7 @@ class HandoverServiceTest {
 			assertThat(captor.getValue().getReceived()).isEqualTo(received);
 			assertThat(captor.getValue().getSequenceNumber()).isEqualTo(1);
 			assertThat(captor.getValue().getFileSize()).isEqualTo(1024);
+			assertThat(captor.getValue().getHash()).isEqualTo("abc123");
 			assertThat(captor.getValue().getNamespace()).isEqualTo(TARGET_NAMESPACE);
 			assertThat(captor.getValue().getMunicipalityId()).isEqualTo(TARGET_MUNICIPALITY_ID);
 			assertThat(captor.getValue().getAttachmentData().getFile()).isEqualTo(newBlobMock);
