@@ -143,12 +143,13 @@ public class MessageExchangeSyncService {
 		response.getBody().forEach(message -> message.getAttachments().forEach(attachment -> syncAttachment(conversationEntity, message, attachment)));
 
 		final var hasIncomingFromOther = containsMessageFromOtherThan(response.getBody(), errandEntity.getAssignedUserId());
+		final var author = soleAuthor(response.getBody());
 
 		if (hasIncomingFromOther) {
-			applyStatusChange(errandEntity);
+			applyStatusChange(errandEntity, author);
 		}
 
-		return new SyncedMessages(hasIncomingFromOther, soleAuthor(response.getBody()), response.getBody().getNumberOfElements());
+		return new SyncedMessages(hasIncomingFromOther, author, response.getBody().getNumberOfElements());
 	}
 
 	private static Identifier soleAuthor(final Iterable<Message> messages) {
@@ -178,23 +179,24 @@ public class MessageExchangeSyncService {
 		return false;
 	}
 
-	void applyStatusChange(final ErrandEntity errandEntity) {
+	void applyStatusChange(final ErrandEntity errandEntity, final Identifier author) {
 		messageExchangeIntegrationConfigRepository.getByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.filter(config -> shouldTriggerStatusChange(config, errandEntity))
 			.ifPresent(config -> {
 				errandEntity.setStatus(config.getStatusChangeTo());
 				errandsRepository.save(errandEntity);
-				logStatusChange(errandEntity);
+				logStatusChange(errandEntity, author);
 			});
 	}
 
 	/**
 	 * Logs that the messages changed the status of the errand, so that subscribers may be notified of it along with the
-	 * messages. No direct notification is made, as the messages themselves make one.
+	 * messages. No direct notification is made, as the messages themselves make one. The author of the messages caused
+	 * the change, and is no more notified of it than of the messages.
 	 */
-	private void logStatusChange(final ErrandEntity errandEntity) {
+	private void logStatusChange(final ErrandEntity errandEntity, final Identifier author) {
 		try {
-			eventService.createStatusChangeEvent(errandEntity, null, null);
+			eventService.createStatusChangeEvent(errandEntity, null, null, author);
 		} catch (final Exception e) {
 			LOG.warn("Failed to log status change event for errand {}: {}", errandEntity.getId(), e.getMessage());
 		}

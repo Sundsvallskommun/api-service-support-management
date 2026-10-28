@@ -351,7 +351,7 @@ class MessageExchangeSyncServiceTest {
 		final var config = MessageExchangeIntegrationConfigEntity.create().withTriggerStatusChangeOn("SOLVED").withStatusChangeTo("OPEN");
 
 		when(messageExchangeClientMock.getMessages(eq(municipalityId), eq(MESSAGE_EXCHANGE_NS), any(), any(), any()))
-			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().value("someoneElse"))))));
+			.thenReturn(ResponseEntity.ok(new PageImpl<>(List.of(new Message().createdBy(new Identifier().type("adAccount").value("someoneElse"))))));
 		when(messageExchangeIntegrationConfigRepositoryMock.getByNamespaceAndMunicipalityId(namespace, municipalityId))
 			.thenReturn(Optional.of(config));
 
@@ -362,8 +362,9 @@ class MessageExchangeSyncServiceTest {
 		assertThat(shouldNotify.fromOthers()).isTrue();
 		assertThat(errand.getStatus()).isEqualTo("OPEN");
 		verify(errandsRepositoryMock).save(errand);
-		// The change of status is logged by itself, for the subscribers alone
-		verify(eventServiceMock).createStatusChangeEvent(errand, null, null);
+		// The change of status is logged by itself, for the subscribers alone, and caused by the author of the message
+		verify(eventServiceMock).createStatusChangeEvent(errand, null, null, shouldNotify.author());
+		assertThat(shouldNotify.author().getValue()).isEqualTo("someoneElse");
 	}
 
 	@Test

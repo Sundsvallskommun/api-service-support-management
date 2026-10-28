@@ -516,6 +516,27 @@ class EventServiceTest {
 	}
 
 	@Test
+	void createStatusChangeEventOnBehalfOfAUserRecordsThemAsTheOneWhoActed() {
+		final var entity = ErrandEntity.create()
+			.withMunicipalityId("2281")
+			.withNamespace("MY_NAMESPACE")
+			.withId(randomUUID().toString())
+			.withStatus("ONGOING");
+		final var actor = Identifier.create().withType(AD_ACCOUNT).withValue("bert02");
+		when(statusRepositoryMock.findByNamespaceAndMunicipalityIdAndName("MY_NAMESPACE", "2281", "ONGOING")).thenReturn(Optional.empty());
+
+		service.createStatusChangeEvent(entity, null, null, actor);
+
+		verify(eventLogClientMock).createEvent(eq("2281"), eq(entity.getId()), eventCaptor.capture());
+		assertThat(eventCaptor.getValue().getSubType()).isEqualTo(STATUS.getValue());
+		assertThat(eventCaptor.getValue().getMetadata()).extracting(Metadata::getKey, Metadata::getValue)
+			.contains(tuple("ExecutedBy", "bert02"));
+		verify(notificationDispatchRepositoryMock).save(dispatchCaptor.capture());
+		assertThat(dispatchCaptor.getValue().getExecutingUserId()).isEqualTo("bert02");
+		verifyNoInteractions(notificationServiceMock);
+	}
+
+	@Test
 	void createLabelEventsWithoutLabelsLogsNothing() {
 		final var entity = ErrandEntity.create().withId(randomUUID().toString());
 

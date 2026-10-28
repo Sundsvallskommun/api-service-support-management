@@ -152,7 +152,17 @@ public class EventService {
 	 * @param previousRevision the revision before it, or null
 	 */
 	public void createStatusChangeEvent(final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision) {
-		createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(statusNameOf(errandEntity)), errandEntity, currentRevision, previousRevision, false, STATUS);
+		createStatusChangeEvent(errandEntity, currentRevision, previousRevision, getExecutingUser());
+	}
+
+	/**
+	 * Logs the status of the errand having changed, as {@link #createStatusChangeEvent(ErrandEntity, Revision, Revision)}
+	 * does, for a change no request says who made, such as one a scheduled job makes for what a user did elsewhere.
+	 *
+	 * @param actor the user who caused the change, who is not notified of it as a subscriber, or null when nobody did
+	 */
+	public void createStatusChangeEvent(final ErrandEntity errandEntity, final Revision currentRevision, final Revision previousRevision, final Identifier actor) {
+		createErrandEvent(EventType.UPDATE, EVENT_LOG_CHANGE_STATUS.formatted(statusNameOf(errandEntity)), errandEntity, currentRevision, previousRevision, false, STATUS, actor);
 	}
 
 	/**
