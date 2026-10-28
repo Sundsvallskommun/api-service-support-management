@@ -25,6 +25,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.RevisionService;
 import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.ActionExecutor;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
@@ -69,7 +70,8 @@ class ActionWorkerTest {
 	@BeforeEach
 	void setUp() {
 		when(actionMock.getName()).thenReturn("testAction");
-		actionWorker = new ActionWorker(errandActionRepositoryMock, List.of(actionMock), errandsRepositoryMock, revisionServiceMock, eventServiceMock);
+		// The real executor, so that what the worker records is verified through the services it records with
+		actionWorker = new ActionWorker(errandActionRepositoryMock, List.of(actionMock), errandsRepositoryMock, new ActionExecutor(revisionServiceMock, eventServiceMock));
 	}
 
 	@Test
@@ -224,10 +226,11 @@ class ActionWorkerTest {
 		actionWorker.processAction(actionEntity);
 
 		final var inOrder = inOrder(actionMock, errandActionRepositoryMock, revisionServiceMock, eventServiceMock);
-		inOrder.verify(actionMock).executeAction(errand, config);
+		// Taken off the errand first, so the revision recording what it did no longer lists it
 		inOrder.verify(errandActionRepositoryMock).delete(actionEntity);
+		inOrder.verify(actionMock).executeAction(errand, config);
 		inOrder.verify(revisionServiceMock).createErrandRevision(errand);
-		inOrder.verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, latest, previous, false, ERRAND);
+		inOrder.verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, latest, previous, false, ERRAND, null);
 	}
 
 	@Test
@@ -276,7 +279,7 @@ class ActionWorkerTest {
 		when(actionMock.conditionsFulfilled(errand, config)).thenReturn(true);
 		when(actionMock.executeAction(errand, config)).thenReturn(true);
 		when(revisionServiceMock.createErrandRevision(errand)).thenReturn(new RevisionResult(null, latest));
-		doThrow(new IllegalStateException("event log unavailable")).when(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, latest, null, false, ERRAND);
+		doThrow(new IllegalStateException("event log unavailable")).when(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ACTION, errand, latest, null, false, ERRAND, null);
 
 		assertThatNoException().isThrownBy(() -> actionWorker.processAction(actionEntity));
 

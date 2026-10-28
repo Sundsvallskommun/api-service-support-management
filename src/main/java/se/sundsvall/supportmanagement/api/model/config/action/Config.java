@@ -24,7 +24,7 @@ public class Config {
 	private boolean active = false;
 
 	@Schema(
-		description = "If set to false, what the action does when it runs as scheduled notifies no one, neither the handler of the errand nor its subscribers, as a request sent with X-notify: false. The process of the errand is told either way. An action run at once, as part of the request that creates or updates the errand, notifies as that request does",
+		description = "If set to false, what the action does notifies no one, as a request sent with X-notify: false. The handler of the errand is not notified of what an action does either way, and the process of the errand is told either way. An action run at once, as part of the request that creates or updates the errand, notifies only if that request does too",
 		defaultValue = "true",
 		examples = "false")
 	private boolean notify = true;

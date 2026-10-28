@@ -47,6 +47,7 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
@@ -63,6 +64,8 @@ import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumb
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.DueAction;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -90,6 +93,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -524,13 +528,15 @@ class ErrandServiceTest {
 	void createErrandLogsOnlyTheLabelsSetOnIt() {
 		final var errand = buildErrand().withLabels(List.of(ErrandLabel.create().withId(LABEL_ID_1)));
 
-		// The label is expanded with its parent, and an action adds a label of its own
+		// The label is expanded with its parent, and an action due at once adds a label of its own
 		doAnswer(invocation -> addLabel(invocation.getArgument(0), PARENT_LABEL_ID)).when(errandLabelServiceMock).settleAccessLabels(any());
+		final var dueActions = List.of(new DueAction(mock(Action.class), ActionConfigEntity.create()));
 		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
-		doAnswer(invocation -> addLabel(invocation.getArgument(0), ACTION_LABEL_ID)).when(errandActionServiceMock).processErrandActions(any(), eq(OperationType.CREATE));
+		when(errandActionServiceMock.processErrandActions(any(), eq(OperationType.CREATE))).thenReturn(dueActions);
+		doAnswer(invocation -> addLabel(invocation.getArgument(0), ACTION_LABEL_ID)).when(errandActionServiceMock).executeDueActions(any(), eq(dueActions));
 
 		service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
 
@@ -538,11 +544,14 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
-		verify(revisionServiceMock).createErrandRevision(any());
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(), any(RevisionResult.class), eq(ERRAND), options(false, Set.of()));
-		// The parent came along with the label set, and is no label set itself
-		verify(eventServiceMock).createLabelEvents(eq(CREATE), any(), any(), eq(Set.of(LABEL_ID_1, ACTION_LABEL_ID)), any());
-		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_ASSIGN_ERRAND), any(), any(), any(), eq(false), eq(ASSIGNMENT));
+		// The parent came along with the label set, and is no label set itself. The label the action adds is the action's to
+		// tell of, after the errand has been told of as created.
+		final var inOrder = inOrder(revisionServiceMock, eventServiceMock, errandActionServiceMock);
+		inOrder.verify(revisionServiceMock).createErrandRevision(any());
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(), any(RevisionResult.class), eq(ERRAND), options(false, Set.of()));
+		inOrder.verify(eventServiceMock).createLabelEvents(eq(CREATE), any(), any(), eq(Set.of(LABEL_ID_1)), any());
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_ASSIGN_ERRAND), any(), any(), any(), eq(false), eq(ASSIGNMENT));
+		inOrder.verify(errandActionServiceMock).executeDueActions(any(), eq(dueActions));
 	}
 
 	@ParameterizedTest
@@ -764,6 +773,8 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
 		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		final var dueActions = List.of(new DueAction(mock(Action.class), ActionConfigEntity.create()));
+		when(errandActionServiceMock.processErrandActions(entity, OperationType.CREATE)).thenReturn(dueActions);
 
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withLifecycle("ACTIVE"));
 
@@ -781,6 +792,10 @@ class ErrandServiceTest {
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
 		// as is its status, which a draft never told of either
 		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		// The actions due at once are carried out once the activation has been told of
+		final var inOrder = inOrder(eventServiceMock, errandActionServiceMock);
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), any(RevisionResult.class), eq(ERRAND_ACTIVATION), any(ErrandEventOptions.class));
+		inOrder.verify(errandActionServiceMock).executeDueActions(entity, dueActions);
 	}
 
 	@ParameterizedTest

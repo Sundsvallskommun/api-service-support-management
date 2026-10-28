@@ -179,7 +179,7 @@ public class ErrandService {
 		final var persistedEntity = repository.save(errandEntity);
 		final var expandedLabelIds = labelIdsOf(persistedEntity);
 		attachmentSequenceNumberGenerator.startSequence(persistedEntity);
-		errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
+		final var dueActions = errandActionService.processErrandActions(persistedEntity, OperationType.CREATE);
 		final var revision = revisionService.createErrandRevision(persistedEntity);
 
 		logCreateEvent(persistedEntity, revision);
@@ -188,6 +188,8 @@ public class ErrandService {
 		if (nonNull(persistedEntity.getAssignedUserId())) {
 			logChangeEvent(EVENT_LOG_ASSIGN_ERRAND, persistedEntity, revision, ASSIGNMENT);
 		}
+		// Carried out once the errand has been told of as created, each as a change of its own
+		errandActionService.executeDueActions(persistedEntity, dueActions);
 
 		if (isNotBlank(referredFrom)) {
 			final var relation = ErrandMapper.toReferredFromRelation(namespace, expandRelation(referredFrom), persistedEntity.getId());
@@ -286,7 +288,7 @@ public class ErrandService {
 
 		final var entity = repository.saveAndFlush(errandEntity);
 		final var expandedLabelIds = labelIdsOf(entity);
-		errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
+		final var dueActions = errandActionService.processErrandActions(entity, activates ? OperationType.CREATE : OperationType.UPDATE);
 		final var revisionResult = revisionService.createErrandRevision(entity);
 
 		// The draft made active tells of every label on it, the ancestors its labels were expanded with included
@@ -307,6 +309,8 @@ public class ErrandService {
 		activePhaseOf(entity)
 			.filter(phase -> !Objects.equals(previousPhaseId, phase.getId()))
 			.ifPresent(phase -> logChangeEvent(EVENT_LOG_CHANGE_PHASE.formatted(nameOf(phase)), entity, revisionResult, PHASE));
+		// Carried out once the update has been told of, each as a change of its own
+		errandActionService.executeDueActions(entity, dueActions);
 
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
