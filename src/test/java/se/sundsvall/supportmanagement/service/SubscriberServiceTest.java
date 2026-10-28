@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
@@ -28,11 +29,13 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscripti
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -61,6 +64,9 @@ class SubscriberServiceTest {
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
+	private AccessControlService accessControlServiceMock;
 
 	@InjectMocks
 	private SubscriberService service;
@@ -398,7 +404,8 @@ class SubscriberServiceTest {
 		verify(subscriberRepositoryMock).findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriberRepositoryMock).delete(entity);
 		verifyNoMoreInteractions(subscriberRepositoryMock);
-		verifyNoInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock);
+		// Their own subscriber is theirs to remove, whatever access they have in the namespace
+		verifyNoInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock, accessControlServiceMock);
 	}
 
 	@Test
@@ -522,11 +529,12 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void updatingAnotherUsersSubscriberIsRefused() {
+	void updatingAnotherUsersSubscriberIsRefusedWithoutWriteAccess() {
 		final var id = randomUUID().toString();
-		final var entity = SubscriberEntity.create().withId(id)
+		final var entity = SubscriberEntity.create().withId(id).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
 		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		doThrow(Problem.valueOf(FORBIDDEN, "no access")).when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIBER, RW);
 
 		assertThatThrownBy(() -> service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, Subscriber.create().withName("hijacked")))
 			.isInstanceOf(Problem.class)
@@ -536,16 +544,44 @@ class SubscriberServiceTest {
 	}
 
 	@Test
-	void deletingAnotherUsersSubscriberIsRefused() {
+	void deletingAnotherUsersSubscriberIsRefusedWithoutWriteAccess() {
 		final var id = randomUUID().toString();
-		final var entity = SubscriberEntity.create().withId(id)
+		final var entity = SubscriberEntity.create().withId(id).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
 		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		doThrow(Problem.valueOf(FORBIDDEN, "no access")).when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIBER, RW);
 
 		assertThatThrownBy(() -> service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id))
 			.isInstanceOf(Problem.class)
 			.extracting("status").isEqualTo(FORBIDDEN);
 
 		verify(subscriberRepositoryMock, never()).delete(any(SubscriberEntity.class));
+	}
+
+	@Test
+	void deletingAnotherUsersSubscriberWithWriteAccess() {
+		final var id = randomUUID().toString();
+		final var entity = SubscriberEntity.create().withId(id).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+
+		service.deleteSubscriber(MUNICIPALITY_ID, NAMESPACE, id);
+
+		verify(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIBER, RW);
+		verify(subscriberRepositoryMock).delete(entity);
+	}
+
+	@Test
+	void updatingAnotherUsersSubscriberWithWriteAccess() {
+		final var id = randomUUID().toString();
+		final var entity = SubscriberEntity.create().withId(id).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("someone-else"));
+		when(subscriberRepositoryMock.findByIdAndNamespaceAndMunicipalityId(id, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(entity));
+		when(subscriberRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+
+		final var result = service.updateSubscriber(MUNICIPALITY_ID, NAMESPACE, id, Subscriber.create().withName("renamed"));
+
+		verify(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIBER, RW);
+		assertThat(result.getName()).isEqualTo("renamed");
 	}
 }

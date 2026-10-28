@@ -20,6 +20,7 @@ import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetT
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
@@ -27,10 +28,12 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscripti
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -71,6 +74,9 @@ class SubscriptionServiceTest {
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
+	private AccessControlService accessControlServiceMock;
 
 	@InjectMocks
 	private SubscriptionService service;
@@ -426,7 +432,8 @@ class SubscriptionServiceTest {
 		// Whether leaving it means leaving a profile is for the opt-out service to tell
 		verify(subscriptionOptOutServiceMock).recordOptOut(entity);
 		verifyNoMoreInteractions(subscriptionRepositoryMock, subscriptionOptOutServiceMock);
-		verifyNoInteractions(errandsRepositoryMock);
+		// Their own subscription is theirs to remove, whatever access they have in the namespace
+		verifyNoInteractions(errandsRepositoryMock, accessControlServiceMock);
 	}
 
 	@Test
@@ -638,10 +645,26 @@ class SubscriptionServiceTest {
 	}
 
 	@Test
-	void deletingAnotherSubscribersSubscriptionIsRefused() {
-		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID)
+	void deletingAnotherSubscribersSubscriptionWithWriteAccess() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
+			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("someone-else"));
+		final var entity = SubscriptionEntity.create().withId("sub-1");
+		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		when(subscriptionRepositoryMock.findByIdAndSubscriberIdAndSubscriberNamespaceAndSubscriberMunicipalityId("sub-1", SUBSCRIBER_ID, NAMESPACE, MUNICIPALITY_ID))
+			.thenReturn(Optional.of(entity));
+
+		service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "sub-1");
+
+		verify(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIPTION, RW);
+		verify(subscriptionRepositoryMock).delete(entity);
+	}
+
+	@Test
+	void deletingAnotherSubscribersSubscriptionIsRefusedWithoutWriteAccess() {
+		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)
 			.withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue("someone-else"));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
+		doThrow(Problem.valueOf(FORBIDDEN, "no access")).when(accessControlServiceMock).verifyNamespaceAuthorization(NAMESPACE, MUNICIPALITY_ID, ProtectedResource.SUBSCRIPTION, RW);
 
 		assertThatThrownBy(() -> service.deleteSubscription(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID, "subscription-1"))
 			.isInstanceOf(Problem.class)

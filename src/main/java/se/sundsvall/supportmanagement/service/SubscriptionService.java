@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetT
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
@@ -24,7 +25,9 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -53,6 +56,7 @@ public class SubscriptionService {
 	private final SubscriptionOptOutService subscriptionOptOutService;
 	private final ErrandsRepository errandsRepository;
 	private final NamespaceConfigService namespaceConfigService;
+	private final AccessControlService accessControlService;
 
 	public SubscriptionService(
 		final SubscriberService subscriberService,
@@ -60,13 +64,15 @@ public class SubscriptionService {
 		final SubscriptionRepository subscriptionRepository,
 		final SubscriptionOptOutService subscriptionOptOutService,
 		final ErrandsRepository errandsRepository,
-		final NamespaceConfigService namespaceConfigService) {
+		final NamespaceConfigService namespaceConfigService,
+		final AccessControlService accessControlService) {
 		this.subscriberService = subscriberService;
 		this.subscriptionProfileService = subscriptionProfileService;
 		this.subscriptionRepository = subscriptionRepository;
 		this.subscriptionOptOutService = subscriptionOptOutService;
 		this.errandsRepository = errandsRepository;
 		this.namespaceConfigService = namespaceConfigService;
+		this.accessControlService = accessControlService;
 	}
 
 	@Transactional(readOnly = true)
@@ -116,7 +122,7 @@ public class SubscriptionService {
 
 	@Transactional
 	public void deleteSubscription(final String municipalityId, final String namespace, final String subscriberId, final String subscriptionId) {
-		verifyOwnedByRequestingUser(subscriberService.findEntity(municipalityId, namespace, subscriberId));
+		verifyOwnedOrWritable(subscriberService.findEntity(municipalityId, namespace, subscriberId));
 		final var entity = loadSubscriptionOrThrow(municipalityId, namespace, subscriberId, subscriptionId);
 
 		// Leaving a profile is remembered, or the members sync would subscribe the subscriber to it again
@@ -180,8 +186,8 @@ public class SubscriptionService {
 	}
 
 	/**
-	 * Refuses with 403 unless the subscriber is the requesting user. A subscriber's subscriptions are their own to list
-	 * and remove, while anyone may create one.
+	 * Refuses with 403 unless the subscriber is the requesting user. A subscriber's subscriptions are their own to list,
+	 * while anyone may create one and {@link #verifyOwnedOrWritable} says who may remove one.
 	 * <p>
 	 * The stored identifier type is the wire form ("adAccount"), which is what {@link Identifier#getTypeString()}
 	 * returns. A request without an identifier owns nothing and is refused.
@@ -191,6 +197,18 @@ public class SubscriptionService {
 		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {
 			throw Problem.valueOf(FORBIDDEN, SUBSCRIPTION_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
 		}
+	}
+
+	/**
+	 * Lets the user the subscriber notifies remove a subscription without an access group of the namespace, so that one
+	 * subscribed on their behalf may always opt out, while anyone else needs RW on SUBSCRIPTION.
+	 */
+	private void verifyOwnedOrWritable(final SubscriberEntity subscriber) {
+		final var owner = subscriber.getIdentifier();
+		if (nonNull(owner) && isRequestingUser(owner.getType(), owner.getValue())) {
+			return;
+		}
+		accessControlService.verifyNamespaceAuthorization(subscriber.getNamespace(), subscriber.getMunicipalityId(), ProtectedResource.SUBSCRIPTION, RW);
 	}
 
 	private ErrandEntity resolveErrand(final SubscriptionTarget target, final String namespace, final String municipalityId) {

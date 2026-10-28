@@ -127,8 +127,6 @@ class SubscribersResource {
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Valid @NotNull @RequestBody final Subscriber subscriber) {
 
-		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER, RW);
-
 		return ok(service.updateSubscriber(municipalityId, namespace, subscriberId, subscriber));
 	}
 
@@ -141,8 +139,6 @@ class SubscribersResource {
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality ID", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId) {
-
-		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIBER, RW);
 
 		service.deleteSubscriber(municipalityId, namespace, subscriberId);
 		return noContent()
