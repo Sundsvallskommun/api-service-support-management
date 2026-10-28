@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
@@ -104,6 +106,32 @@ class ServiceUtilTest {
 	}
 
 	@Test
+	void inNewRequestGroupRunsTheWorkInAGroupOfItsOwn() {
+		final var groupIds = new ArrayList<String>();
+
+		ServiceUtil.inNewRequestGroup(() -> groupIds.add(ServiceUtil.getRequestGroupId()));
+		ServiceUtil.inNewRequestGroup(() -> groupIds.add(ServiceUtil.getRequestGroupId()));
+
+		assertThat(groupIds).hasSize(2).doesNotContainNull().doesNotHaveDuplicates();
+		assertThat(ServiceUtil.getRequestGroupId()).isNull();
+	}
+
+	@Test
+	void inNewRequestGroupRestoresTheGroupTheThreadWasIn() {
+		final var requestGroupId = UUID.randomUUID().toString();
+		final var groupIdDuringWork = new String[1];
+		ServiceUtil.setRequestGroupId(requestGroupId);
+
+		assertThatThrownBy(() -> ServiceUtil.inNewRequestGroup(() -> {
+			groupIdDuringWork[0] = ServiceUtil.getRequestGroupId();
+			throw new IllegalStateException("boom");
+		})).isInstanceOf(IllegalStateException.class);
+
+		assertThat(groupIdDuringWork[0]).isNotNull().isNotEqualTo(requestGroupId);
+		assertThat(ServiceUtil.getRequestGroupId()).isEqualTo(requestGroupId);
+	}
+
+	@Test
 	void shouldNotifyWhenNotSet() {
 		assertThat(ServiceUtil.shouldNotify()).isTrue();
 	}
@@ -136,6 +164,27 @@ class ServiceUtilTest {
 		ServiceUtil.clearNotify();
 
 		assertThat(ServiceUtil.shouldNotify()).isTrue();
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"true, true, true",
+		"true, false, false",
+		"false, true, true",
+		"false, false, false"
+	})
+	void withNotifyRunsTheWorkNotifyingAsToldAndRestoresTheThread(final boolean notifiedBefore, final boolean notify, final boolean expectedDuringWork) {
+		ServiceUtil.setNotify(notifiedBefore ? null : "false");
+		final var notifiedDuringWork = new Boolean[1];
+
+		assertThatThrownBy(() -> ServiceUtil.withNotify(notify, () -> {
+			notifiedDuringWork[0] = ServiceUtil.shouldNotify();
+			throw new IllegalStateException("boom");
+		})).isInstanceOf(IllegalStateException.class);
+
+		assertThat(notifiedDuringWork[0]).isEqualTo(expectedDuringWork);
+		assertThat(ServiceUtil.shouldNotify()).isEqualTo(notifiedBefore);
+		ServiceUtil.clearNotify();
 	}
 
 	@ParameterizedTest

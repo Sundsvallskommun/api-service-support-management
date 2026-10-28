@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
@@ -76,7 +78,7 @@ public class NamespaceConfig {
 	private String processConsumer;
 
 	@Schema(
-		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace with a process consumer must list ERRAND, for its processes to start, and DECISION, for a process waiting for its decision to learn that it has been made. Commands sent to the process (PROCESS, SIGNAL) are not errand changes, are never filtered by this list and may not be listed. Nor may NOTE and SYSTEM, as no event of theirs is ever published to a process")
+		description = "The errand changes worth telling the process about. An event whose sub type is not listed here is not published, so a namespace with a process consumer must list ERRAND, for its processes to start, and DECISION, for a process waiting for its decision to learn that it has been made. Commands sent to the process (PROCESS, SIGNAL) are not errand changes, are never filtered by this list and may not be listed. Nor may NOTE and SYSTEM, as no event of theirs is ever published to a process. A change of status or phase is told as STATUS or PHASE apart from the ERRAND event of the change it is part of, as are an assignment (ASSIGNMENT), every label added (LABEL) and a draft being made active (ERRAND_ACTIVATION). Messages are logged by the channel they went through, received and sent alike: MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL, and MESSAGE_CONVERSATION_EXTERNAL and MESSAGE_CONVERSATION_INTERNAL for messages in conversations with the outside world and within the organisation respectively")
 	private List<@NotNull EventSubType> processTriggers;
 
 	@Schema(
@@ -84,11 +86,28 @@ public class NamespaceConfig {
 		examples = "true")
 	private boolean excludeEventDescriptionsInEmail;
 
+	@Schema(
+		description = "If set to true subscribers may be notified by sms, which only names the errands that were updated and links to them. Events routed to sms in a namespace where it is not enabled are not delivered by sms. If no value is set it defaults to false.",
+		examples = "true")
+	private boolean smsNotificationsEnabled;
+
 	@Pattern(regexp = "^https?://\\S+$", message = "must be a valid http or https url")
 	@Schema(
-		description = "Base url of the web application handling errands in this namespace. Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>. Leaving it out means emails carry no links to errands.",
-		examples = "https://draken.sundsvall.se")
+		description = "Address of an errand in the web application handling errands in this namespace, short of the errand number. Links to errands are made as <baseUrl>/<errandNumber>, a trailing slash on the base url being ignored. Leaving it out means emails carry no links to errands.",
+		examples = "https://draken.sundsvall.se/VOF/arende")
 	private String baseUrl;
+
+	@ValidUuid(nullable = true)
+	@Schema(
+		description = "Id of a subscription profile in this namespace. When set, the reporter of an errand is subscribed to the errand with this profile as the errand is created. Leaving it out subscribes no reporter.",
+		examples = "123e4567-e89b-12d3-a456-426614174000")
+	private String reporterProfileId;
+
+	@Size(min = 1)
+	@Schema(
+		description = "The channels a subscriber is given when the service creates one for a user, as when a user is assigned an errand without being a subscriber in the namespace. Leaving it out gives such a subscriber the INTERNAL channel alone. Subscribers already present keep their own channels.",
+		examples = "[\"INTERNAL\", \"EMAIL\"]")
+	private List<@NotNull NotificationChannelType> newSubscriberChannels;
 
 	@Valid
 	@Schema(
@@ -302,6 +321,19 @@ public class NamespaceConfig {
 		return this;
 	}
 
+	public boolean isSmsNotificationsEnabled() {
+		return smsNotificationsEnabled;
+	}
+
+	public void setSmsNotificationsEnabled(final boolean smsNotificationsEnabled) {
+		this.smsNotificationsEnabled = smsNotificationsEnabled;
+	}
+
+	public NamespaceConfig withSmsNotificationsEnabled(final boolean smsNotificationsEnabled) {
+		this.smsNotificationsEnabled = smsNotificationsEnabled;
+		return this;
+	}
+
 	public String getBaseUrl() {
 		return baseUrl;
 	}
@@ -338,6 +370,32 @@ public class NamespaceConfig {
 
 	public NamespaceConfig withTeliaAceWorkItemBaseUrl(final String teliaAceWorkItemBaseUrl) {
 		this.teliaAceWorkItemBaseUrl = teliaAceWorkItemBaseUrl;
+		return this;
+	}
+
+	public String getReporterProfileId() {
+		return reporterProfileId;
+	}
+
+	public void setReporterProfileId(final String reporterProfileId) {
+		this.reporterProfileId = reporterProfileId;
+	}
+
+	public NamespaceConfig withReporterProfileId(final String reporterProfileId) {
+		this.reporterProfileId = reporterProfileId;
+		return this;
+	}
+
+	public List<NotificationChannelType> getNewSubscriberChannels() {
+		return newSubscriberChannels;
+	}
+
+	public void setNewSubscriberChannels(final List<NotificationChannelType> newSubscriberChannels) {
+		this.newSubscriberChannels = newSubscriberChannels;
+	}
+
+	public NamespaceConfig withNewSubscriberChannels(final List<NotificationChannelType> newSubscriberChannels) {
+		this.newSubscriberChannels = newSubscriberChannels;
 		return this;
 	}
 
@@ -383,8 +441,9 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail, baseUrl,
-			roleFieldRestrictions, roleBasedMapping,
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail,
+			smsNotificationsEnabled, baseUrl,
+			reporterProfileId, newSubscriberChannels, roleFieldRestrictions, roleBasedMapping,
 			shortCode,
 			teliaAceWorkItemEnabled, teliaAceWorkItemBaseUrl);
 	}
@@ -396,9 +455,10 @@ public class NamespaceConfig {
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
 			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
 				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail && Objects.equals(
-						baseUrl, other.baseUrl) && Objects.equals(roleFieldRestrictions,
-							other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
+					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail
+			&& smsNotificationsEnabled == other.smsNotificationsEnabled && Objects.equals(
+				baseUrl, other.baseUrl) && Objects.equals(reporterProfileId, other.reporterProfileId) && Objects.equals(newSubscriberChannels, other.newSubscriberChannels) && Objects.equals(roleFieldRestrictions,
+					other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
 			&& Objects.equals(shortCode, other.shortCode) && teliaAceWorkItemEnabled == other.teliaAceWorkItemEnabled && Objects.equals(teliaAceWorkItemBaseUrl, other.teliaAceWorkItemBaseUrl);
 	}
 
@@ -408,7 +468,9 @@ public class NamespaceConfig {
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
 			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
 				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
-			.append(", baseUrl=").append(baseUrl).append(", processConsumer=").append(processConsumer).append(", processTriggers=")
+			.append(", smsNotificationsEnabled=").append(smsNotificationsEnabled).append(", baseUrl=").append(baseUrl).append(", reporterProfileId=").append(reporterProfileId).append(", newSubscriberChannels=").append(newSubscriberChannels).append(
+				", processConsumer=").append(processConsumer).append(
+					", processTriggers=")
 			.append(
 				processTriggers).append(", limitedReadAccess=").append(limitedReadAccess).append(", reporterAccess=").append(reporterAccess).append(", roleFieldRestrictions=").append(
 					roleFieldRestrictions)

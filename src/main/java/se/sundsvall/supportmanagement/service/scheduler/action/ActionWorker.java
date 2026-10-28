@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.ErrandActionRepository;
@@ -16,37 +14,28 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.service.EventService;
-import se.sundsvall.supportmanagement.service.RevisionService;
 import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.ActionExecutor;
 
-import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.time.OffsetDateTime.now;
-import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
-import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Component
 public class ActionWorker {
 
 	static final String EVENT_LOG_ACTION = "Ärendet har uppdaterats av en schemalagd åtgärd.";
 
-	private static final Logger LOG = LoggerFactory.getLogger(ActionWorker.class);
-
 	private final ErrandActionRepository errandActionRepository;
 	private final ErrandsRepository errandsRepository;
-	private final RevisionService revisionService;
-	private final EventService eventService;
+	private final ActionExecutor actionExecutor;
 	private final Map<String, Action> actions;
 
-	public ActionWorker(final ErrandActionRepository errandActionRepository, final List<Action> actionList, final ErrandsRepository errandsRepository, final RevisionService revisionService,
-		final EventService eventService) {
+	public ActionWorker(final ErrandActionRepository errandActionRepository, final List<Action> actionList, final ErrandsRepository errandsRepository, final ActionExecutor actionExecutor) {
 		this.errandActionRepository = errandActionRepository;
 		this.errandsRepository = errandsRepository;
-		this.revisionService = revisionService;
-		this.eventService = eventService;
+		this.actionExecutor = actionExecutor;
 		this.actions = new HashMap<>();
 		actionList.forEach(action -> this.actions.put(action.getName(), action));
 	}
@@ -79,12 +68,12 @@ public class ActionWorker {
 			return;
 		}
 
-		final var changed = action.executeAction(errand, configEntity);
-		removeAction(errand, actionEntity);
-
-		if (changed) {
-			logChange(errand);
-		}
+		// What the action logs is grouped together, to reach the subscribers as one notification. The action is taken off
+		// the errand first, so the revision recording what it did no longer lists it.
+		inNewRequestGroup(() -> {
+			removeAction(errand, actionEntity);
+			actionExecutor.executeAndRecord(errand, action, configEntity, EVENT_LOG_ACTION);
+		});
 	}
 
 	/**
@@ -94,27 +83,6 @@ public class ActionWorker {
 		// The actions cascade: one deleted while the errand still lists it is written back at flush, and runs again.
 		ofNullable(errand.getActions()).ifPresent(errandActions -> errandActions.removeIf(listed -> Objects.equals(listed.getId(), actionEntity.getId())));
 		errandActionRepository.delete(actionEntity);
-	}
-
-	/**
-	 * Records what a scheduled action did to the errand, the way a write through the API is recorded: a revision, and an
-	 * event for it, through which the process of the errand learns of the change.
-	 * <p>
-	 * Asked only of an action that says it changed the errand. No notification is sent. A failed publication marks the
-	 * transaction for rollback, so the action is rolled back with it and tried again on the next run.
-	 */
-	private void logChange(final ErrandEntity errand) {
-		final var revision = revisionService.createErrandRevision(errand);
-
-		if (isNull(revision)) {
-			return;
-		}
-
-		try {
-			eventService.createErrandEventWithoutNotification(UPDATE, EVENT_LOG_ACTION, errand, revision.latest(), revision.previous(), ERRAND);
-		} catch (final Exception e) {
-			LOG.warn("Failed to log UPDATE event for errand {} after a scheduled action: {}", sanitizeForLogging(errand.getId()), sanitizeForLogging(e.getMessage()));
-		}
 	}
 
 	private Map<String, List<String>> toParameterMap(final ActionConfigEntity configEntity) {

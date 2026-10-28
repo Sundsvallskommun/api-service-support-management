@@ -4,6 +4,7 @@ import generated.se.sundsvall.messageexchange.Attachment;
 import generated.se.sundsvall.messageexchange.Message;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,21 +20,30 @@ import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegrationConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
+import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageSubtype;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 
 @Service
 public class MessageExchangeSyncService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(MessageExchangeSyncService.class);
 
-	private static final String EVENT_LOG_CONVERSATION = "Ny händelse för %s";
+	private static final String ERRAND_NOTIFICATION_NEW_MESSAGE = "Nytt meddelande";
+	private static final String EVENT_LOG_ONE_MESSAGE = "1 nytt meddelande i konversationen";
+	private static final String EVENT_LOG_MESSAGES = "%d nya meddelanden i konversationen";
+	private static final String EVENT_LOG_ONE_INTERNAL_MESSAGE = "1 nytt internt meddelande i konversationen";
+	private static final String EVENT_LOG_INTERNAL_MESSAGES = "%d nya interna meddelanden i konversationen";
 
 	private final MessageExchangeClient messageExchangeClient;
 	private final ErrandAttachmentService attachmentService;
@@ -56,20 +66,42 @@ public class MessageExchangeSyncService {
 		this.messageExchangeIntegrationConfigRepository = messageExchangeIntegrationConfigRepository;
 	}
 
+	/**
+	 * Syncs the conversation in a request group of its own, so that the messages it brings, their attachments and the
+	 * change of status they may cause reach the subscribers as one notification.
+	 */
 	public void syncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
+		inNewRequestGroup(() -> doSyncConversation(conversationEntity, conversation));
+	}
+
+	private void doSyncConversation(final ConversationEntity conversationEntity, final generated.se.sundsvall.messageexchange.Conversation conversation) {
 		if (ofNullable(conversationEntity.getLatestSyncedSequenceNumber()).orElse(0L) < ofNullable(conversation.getLatestSequenceNumber()).orElse(0L)) {
 			final var errandEntity = errandsRepository.getReferenceById(conversationEntity.getErrandId());
 			final var synced = syncMessages(conversationEntity, errandEntity);
-			try {
-				eventService.createErrandEvent(UPDATE, EVENT_LOG_CONVERSATION.formatted(conversation.getTopic()), errandEntity, null, null, synced.fromOthers(), MESSAGE,
-					synced.author());
-			} catch (final Exception e) {
-				LOG.warn("Failed to log conversation event for errand {}: {}", errandEntity.getId(), e.getMessage());
-			}
+			logMessages(errandEntity, synced, conversationEntity);
 		}
 
 		final var updatedConversationEntity = mergeIntoConversationEntity(conversationEntity, conversation);
 		conversationRepository.save(updatedConversationEntity);
+	}
+
+	/**
+	 * Logs the messages the sync brought, whichever channel they were written through, telling how many they were and in
+	 * which conversation. The assigned user is notified of messages from others. A sync that brought no message logs
+	 * nothing, and a log that cannot be written is not worth failing the sync over.
+	 */
+	private void logMessages(final ErrandEntity errandEntity, final SyncedMessages synced, final ConversationEntity conversationEntity) {
+		if (synced.count() == 0) {
+			return;
+		}
+
+		final var subtype = toMessageSubtype(conversationEntity);
+		try {
+			eventService.createErrandEvent(UPDATE, toEventMessage(synced.count(), subtype, conversationEntity.getTopic()), errandEntity, null, subtype,
+				new ErrandEventOptions(synced.fromOthers(), synced.author(), Set.of(), ERRAND_NOTIFICATION_NEW_MESSAGE));
+		} catch (final Exception e) {
+			LOG.warn("Failed to log conversation event for errand {}: {}", errandEntity.getId(), e.getMessage());
+		}
 	}
 
 	/**
@@ -79,8 +111,24 @@ public class MessageExchangeSyncService {
 	 *                   is notified of
 	 * @param author     the one who wrote every message the sync brought, who is the one who acted and so is not notified
 	 *                   of it as a subscriber. Null where the messages have more than one author, or one that is not known
+	 * @param count      how many messages the sync brought
 	 */
-	record SyncedMessages(boolean fromOthers, Identifier author) {}
+	record SyncedMessages(boolean fromOthers, Identifier author, int count) {}
+
+	/**
+	 * The text the messages are logged with: how many they were, whether they were internal, and the topic of the
+	 * conversation, left out when the conversation has none.
+	 */
+	static String toEventMessage(final int count, final EventSubType subtype, final String topic) {
+		final var internal = subtype == MESSAGE_CONVERSATION_INTERNAL;
+		final var oneMessage = internal ? EVENT_LOG_ONE_INTERNAL_MESSAGE : EVENT_LOG_ONE_MESSAGE;
+		final var messages = internal ? EVENT_LOG_INTERNAL_MESSAGES : EVENT_LOG_MESSAGES;
+		final var text = count == 1 ? oneMessage : messages.formatted(count);
+		return ofNullable(topic)
+			.filter(not(String::isBlank))
+			.map(value -> "%s \"%s\"".formatted(text, value))
+			.orElse(text);
+	}
 
 	SyncedMessages syncMessages(final ConversationEntity conversationEntity, final ErrandEntity errandEntity) {
 
@@ -95,12 +143,13 @@ public class MessageExchangeSyncService {
 		response.getBody().forEach(message -> message.getAttachments().forEach(attachment -> syncAttachment(conversationEntity, message, attachment)));
 
 		final var hasIncomingFromOther = containsMessageFromOtherThan(response.getBody(), errandEntity.getAssignedUserId());
+		final var author = soleAuthor(response.getBody());
 
 		if (hasIncomingFromOther) {
-			applyStatusChange(errandEntity);
+			applyStatusChange(errandEntity, author);
 		}
 
-		return new SyncedMessages(hasIncomingFromOther, soleAuthor(response.getBody()));
+		return new SyncedMessages(hasIncomingFromOther, author, response.getBody().getNumberOfElements());
 	}
 
 	private static Identifier soleAuthor(final Iterable<Message> messages) {
@@ -130,13 +179,27 @@ public class MessageExchangeSyncService {
 		return false;
 	}
 
-	void applyStatusChange(final ErrandEntity errandEntity) {
+	void applyStatusChange(final ErrandEntity errandEntity, final Identifier author) {
 		messageExchangeIntegrationConfigRepository.getByNamespaceAndMunicipalityId(errandEntity.getNamespace(), errandEntity.getMunicipalityId())
 			.filter(config -> shouldTriggerStatusChange(config, errandEntity))
 			.ifPresent(config -> {
 				errandEntity.setStatus(config.getStatusChangeTo());
 				errandsRepository.save(errandEntity);
+				logStatusChange(errandEntity, author);
 			});
+	}
+
+	/**
+	 * Logs that the messages changed the status of the errand, so that subscribers may be notified of it along with the
+	 * messages. No direct notification is made, as the messages themselves make one. The author of the messages caused
+	 * the change, and is no more notified of it than of the messages.
+	 */
+	private void logStatusChange(final ErrandEntity errandEntity, final Identifier author) {
+		try {
+			eventService.createStatusChangeEvent(errandEntity, null, null, author);
+		} catch (final Exception e) {
+			LOG.warn("Failed to log status change event for errand {}: {}", errandEntity.getId(), e.getMessage());
+		}
 	}
 
 	private static boolean shouldTriggerStatusChange(final MessageExchangeIntegrationConfigEntity config, final ErrandEntity errandEntity) {

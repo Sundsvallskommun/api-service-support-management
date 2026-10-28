@@ -95,8 +95,10 @@ public class Errand {
 		is notified about it, it is not handed over, and a search leaves it out unless its filter names lifecycle. ACTIVE - \
 		the errand is \
 		handled as any errand is. Left out on create, the errand is ACTIVE. A draft is made active by a patch setting ACTIVE, which \
-		starts a process the labels start on their own, unless the patch asks not to wake the process. An active errand \
-		never becomes a draft again.""", examples = "ACTIVE", allowableValues = {
+		starts a process the labels start on their own, unless the patch asks not to wake the process. Made active, \
+		everything on the errand is told of as new: every label on it, the ancestors of its labels included, its \
+		assignee, its status and its phase are logged as events, and its actions are created as for a new errand. An \
+		active errand never becomes a draft again.""", examples = "ACTIVE", allowableValues = {
 		"DRAFT", "ACTIVE"
 	})
 	@OneOf(value = {

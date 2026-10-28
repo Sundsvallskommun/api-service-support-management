@@ -6,6 +6,7 @@ import generated.se.sundsvall.webmessagecollector.MessageDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +25,14 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.WebMessageCollectorClient;
 import se.sundsvall.supportmanagement.integration.webmessagecollector.configuration.WebMessageCollectorProperties;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.EventService;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
+import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -40,13 +44,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL;
 
 @ExtendWith(MockitoExtension.class)
 class WebMessageCollectorWorkerTest {
@@ -151,7 +156,7 @@ class WebMessageCollectorWorkerTest {
 		verify(webMessageCollectorMapperMock).toCommunicationEntity(messagedto, errandEntity);
 		verify(communicationServiceMock).saveCommunication(communicationEntityCaptor.capture());
 		verify(communicationServiceMock).saveAttachment(communicationEntityCaptor.capture(), same(errandEntity));
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Nytt meddelande"), same(errandEntity), isNull(), isNull(), same(MESSAGE));
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-tjänsten"), same(errandEntity), isNull(), same(MESSAGE_WEB_MESSAGE_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
 		verify(webMessageCollectorClientMock).getAttachment(MUNICIPALITY_ID, attachmentId);
 		verify(webMessageCollectorMapperMock).toAttachmentDataEntity(data);
 		verify(webMessageCollectorClientMock).deleteMessages(MUNICIPALITY_ID, List.of(id));
@@ -207,7 +212,7 @@ class WebMessageCollectorWorkerTest {
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(errandEntity));
 		when(communicationRepositoryMock.existsByErrandNumberAndNamespaceAndMunicipalityIdAndExternalId(any(), any(), any(), any())).thenReturn(false);
 		when(webMessageCollectorMapperMock.toCommunicationEntity(any(), any())).thenCallRealMethod();
-		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), any());
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), nullable(RevisionResult.class), any(EventSubType.class), any(ErrandEventOptions.class));
 
 		try (final MockedStatic<ErrandSpecification> specificationMockedStatic = Mockito.mockStatic(ErrandSpecification.class)) {
 			specificationMockedStatic.when(() -> ErrandSpecification.hasMatchingTags(any())).thenReturn(specificationMock);

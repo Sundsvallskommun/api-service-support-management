@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.config;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,8 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.INTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 
 @ContextConfiguration
@@ -208,5 +211,68 @@ class NamespaceConfigServiceCacheTest {
 		assertThat(namespaceConfigService.getProcessConsumer(NAMESPACE, MUNICIPALITY_ID)).hasValue("pw-alkt");
 		assertThat(namespaceConfigService.getProcessTriggers(NAMESPACE, MUNICIPALITY_ID)).containsExactly(ERRAND);
 		assertThat(namespaceConfigService.isSingleDecisionPerErrand(NAMESPACE, MUNICIPALITY_ID)).isTrue();
+	}
+
+	@Test
+	void theSubscriberConfigurationIsAnsweredFromCache() {
+		when(mock.findReporterProfileId(any(), any())).thenReturn(Optional.of("profile-id")).thenThrow(new RuntimeException("Result should be cached!"));
+		when(mock.findNewSubscriberChannels(any(), any())).thenReturn(List.of(EMAIL)).thenThrow(new RuntimeException("Result should be cached!"));
+		when(mock.isSmsNotificationsEnabled(any(), any())).thenReturn(true).thenThrow(new RuntimeException("Result should be cached!"));
+
+		assertThat(namespaceConfigService.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).hasValue("profile-id");
+		assertThat(namespaceConfigService.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).containsExactly(EMAIL);
+		assertThat(namespaceConfigService.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).isTrue();
+
+		assertThat(namespaceConfigService.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).hasValue("profile-id");
+		assertThat(namespaceConfigService.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).containsExactly(EMAIL);
+		assertThat(namespaceConfigService.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).isTrue();
+	}
+
+	@Test
+	void createEvictsTheSubscriberConfiguration() {
+		givenSubscriberConfigurationChanges();
+
+		askForTheSubscriberConfiguration();
+		namespaceConfigService.create(NamespaceConfig.create(), NAMESPACE, MUNICIPALITY_ID);
+
+		assertTheChangedSubscriberConfigurationIsRead();
+	}
+
+	@Test
+	void replaceEvictsTheSubscriberConfiguration() {
+		givenSubscriberConfigurationChanges();
+
+		askForTheSubscriberConfiguration();
+		namespaceConfigService.replace(NamespaceConfig.create(), NAMESPACE, MUNICIPALITY_ID);
+
+		assertTheChangedSubscriberConfigurationIsRead();
+	}
+
+	@Test
+	void deleteEvictsTheSubscriberConfiguration() {
+		givenSubscriberConfigurationChanges();
+
+		askForTheSubscriberConfiguration();
+		namespaceConfigService.delete(NAMESPACE, MUNICIPALITY_ID);
+
+		assertTheChangedSubscriberConfigurationIsRead();
+	}
+
+	private void givenSubscriberConfigurationChanges() {
+		when(mock.findReporterProfileId(any(), any())).thenReturn(Optional.empty()).thenReturn(Optional.of("profile-id"));
+		when(mock.findNewSubscriberChannels(any(), any())).thenReturn(List.of(INTERNAL)).thenReturn(List.of(EMAIL));
+		when(mock.isSmsNotificationsEnabled(any(), any())).thenReturn(false, true);
+	}
+
+	private void askForTheSubscriberConfiguration() {
+		assertThat(namespaceConfigService.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).isEmpty();
+		assertThat(namespaceConfigService.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).containsExactly(INTERNAL);
+		assertThat(namespaceConfigService.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).isFalse();
+	}
+
+	private void assertTheChangedSubscriberConfigurationIsRead() {
+		assertThat(namespaceConfigService.findReporterProfileId(NAMESPACE, MUNICIPALITY_ID)).hasValue("profile-id");
+		assertThat(namespaceConfigService.findNewSubscriberChannels(NAMESPACE, MUNICIPALITY_ID)).containsExactly(EMAIL);
+		assertThat(namespaceConfigService.isSmsNotificationsEnabled(NAMESPACE, MUNICIPALITY_ID)).isTrue();
 	}
 }

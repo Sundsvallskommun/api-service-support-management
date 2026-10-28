@@ -43,6 +43,8 @@ scheduler:
     email:
       sender-address: noreply@sundsvall.se
       sender-name: Sundsvalls kommun
+    sms:
+      sender: Sundsvall
   search-reindex:
     name: search_reindex
     enabled: true

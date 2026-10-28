@@ -1,0 +1,14 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPattern": "/api-eventlog/2281/aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*",
+			"Location": "/api-eventlog/2281/aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001/evt-patch-001"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

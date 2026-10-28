@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,8 @@ public interface StatusRepository extends JpaRepository<StatusEntity, String> {
 	List<StatusEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId, Sort sort);
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	Optional<StatusEntity> findByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 

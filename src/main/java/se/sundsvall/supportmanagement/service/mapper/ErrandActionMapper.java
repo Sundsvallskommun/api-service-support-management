@@ -21,6 +21,7 @@ public class ErrandActionMapper {
 	public static Config toActionConfig(ActionConfigEntity entity) {
 		return Config.create()
 			.withActive(entity.getActive())
+			.withNotify(entity.getNotify())
 			.withId(entity.getId())
 			.withParameters(entity.getParameters().stream().map(ErrandActionMapper::toParameter).toList())
 			.withConditions(entity.getConditions().stream().map(ErrandActionMapper::toParameter).toList())
@@ -40,6 +41,7 @@ public class ErrandActionMapper {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withActive(config.getActive())
+			.withNotify(config.getNotify())
 			.withName(config.getName())
 			.withDisplayValue(config.getDisplayValue())
 			.withOperationTypes(toOperationTypes(config));
@@ -63,6 +65,7 @@ public class ErrandActionMapper {
 
 	public static ActionConfigEntity updateEntity(ActionConfigEntity entity, Config config) {
 		entity.setActive(config.getActive());
+		entity.setNotify(config.getNotify());
 		entity.setName(config.getName());
 		entity.setDisplayValue(config.getDisplayValue());
 		entity.setOperationTypes(toOperationTypes(config));

@@ -11,11 +11,11 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 
-class EmailDispatchOutboxEventEmbeddableTest {
+class NotificationDispatchOutboxEventEmbeddableTest {
 
 	@Test
 	void testBean() {
-		MatcherAssert.assertThat(EmailDispatchOutboxEventEmbeddable.class, allOf(
+		MatcherAssert.assertThat(NotificationDispatchOutboxEventEmbeddable.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -28,7 +28,7 @@ class EmailDispatchOutboxEventEmbeddableTest {
 		final var eventId = "event-id";
 		final var description = "En anteckning har skapats";
 
-		final var bean = EmailDispatchOutboxEventEmbeddable.create()
+		final var bean = NotificationDispatchOutboxEventEmbeddable.create()
 			.withEventId(eventId)
 			.withDescription(description);
 
@@ -38,7 +38,7 @@ class EmailDispatchOutboxEventEmbeddableTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(EmailDispatchOutboxEventEmbeddable.create()).hasAllNullFieldsOrProperties();
-		assertThat(new EmailDispatchOutboxEventEmbeddable()).hasAllNullFieldsOrProperties();
+		assertThat(NotificationDispatchOutboxEventEmbeddable.create()).hasAllNullFieldsOrProperties();
+		assertThat(new NotificationDispatchOutboxEventEmbeddable()).hasAllNullFieldsOrProperties();
 	}
 }

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -46,12 +47,15 @@ import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.ContactReasonRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
@@ -60,6 +64,9 @@ import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumb
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.DueAction;
+import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -67,7 +74,9 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -78,11 +87,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -95,7 +106,10 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 
@@ -107,6 +121,11 @@ class ErrandServiceTest {
 	private static final String ERRAND_ID = "errandId";
 	private static final String EVENT_LOG_CREATE_ERRAND = "Ärendet har skapats.";
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
+	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
+	private static final String LABEL_ID_1 = "8a1f4c2e-0000-4000-8000-000000000001";
+	private static final String LABEL_ID_2 = "8a1f4c2e-0000-4000-8000-000000000002";
+	private static final String PARENT_LABEL_ID = "8a1f4c2e-0000-4000-8000-000000000003";
+	private static final String ACTION_LABEL_ID = "8a1f4c2e-0000-4000-8000-000000000004";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "supportmanagement";
@@ -208,7 +227,7 @@ class ErrandServiceTest {
 		inOrder.verify(attachmentSequenceNumberGeneratorMock).startSequence(persisted);
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verifyNoInteractions(relationClientMock);
 	}
 
@@ -251,7 +270,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(any(ErrandEntity.class), eq(OperationType.CREATE));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
 		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class),
-			eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+			eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verify(relationClientMock).createRelation(MUNICIPALITY_ID, relation);
 	}
 
@@ -265,7 +284,7 @@ class ErrandServiceTest {
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
 		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
 		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
-		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), any());
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 
 		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
 
@@ -275,7 +294,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 	}
 
 	@Test
@@ -298,7 +317,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).settleAccessLabels(any());
 		verify(errandRepositoryMock).save(any(ErrandEntity.class));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 		verify(relationClientMock).createRelation(any(), any());
 	}
 
@@ -448,7 +467,273 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+	}
+
+	@Test
+	void createErrandWithAssigneeAndLabels() {
+		final var errand = buildErrand().withLabels(List.of(ErrandLabel.create().withId(LABEL_ID_1), ErrandLabel.create().withId(LABEL_ID_2)));
+		final var persisted = ErrandEntity.create().withId(ERRAND_ID).withAssignedUserId("anna01")
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1), ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_2))));
+
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persisted);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+
+		service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(persisted);
+		// Every label of a new errand counts as added, which is logged apart from the errand being created, and an assigned
+		// new errand is logged as assigned
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), eq(persisted), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
+		verify(eventServiceMock).createLabelEvents(eq(CREATE), eq(persisted), eq(new RevisionResult(null, currentRevisionMock)), eq(Set.of(LABEL_ID_1, LABEL_ID_2)), any());
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, persisted, currentRevisionMock, null, false, ASSIGNMENT);
+	}
+
+	@Test
+	void updateErrandAssigningItAndAddingALabel() {
+		final var entity = buildErrandEntity()
+			.withAssignedUserId("anna01")
+			.withLabels(new ArrayList<>(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1))));
+		final var patch = Errand.create()
+			.withAssignedUserId("bert02")
+			.withLabels(List.of(ErrandLabel.create().withId(LABEL_ID_1), ErrandLabel.create().withId(LABEL_ID_2)));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(entity);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		// Only the label the patch added is logged, apart from the update, and the new assignee makes an assignment event
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(Set.of(LABEL_ID_2)),
+			argThat(actor -> "user".equals(actor.getValue())));
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
+	}
+
+	@Test
+	void createErrandLogsOnlyTheLabelsSetOnIt() {
+		final var errand = buildErrand().withLabels(List.of(ErrandLabel.create().withId(LABEL_ID_1)));
+
+		// The label is expanded with its parent, and an action due at once adds a label of its own
+		doAnswer(invocation -> addLabel(invocation.getArgument(0), PARENT_LABEL_ID)).when(errandLabelServiceMock).settleAccessLabels(any());
+		final var dueActions = List.of(new DueAction(mock(Action.class), ActionConfigEntity.create()));
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+		when(errandActionServiceMock.processErrandActions(any(), eq(OperationType.CREATE))).thenReturn(dueActions);
+		doAnswer(invocation -> addLabel(invocation.getArgument(0), ACTION_LABEL_ID)).when(errandActionServiceMock).executeDueActions(any(), eq(dueActions));
+
+		service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		// The parent came along with the label set, and is no label set itself. The label the action adds is the action's to
+		// tell of, after the errand has been told of as created.
+		final var inOrder = inOrder(revisionServiceMock, eventServiceMock, errandActionServiceMock);
+		inOrder.verify(revisionServiceMock).createErrandRevision(any());
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(), any(RevisionResult.class), eq(ERRAND), options(false, Set.of()));
+		inOrder.verify(eventServiceMock).createLabelEvents(eq(CREATE), any(), any(), eq(Set.of(LABEL_ID_1)), any());
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_ASSIGN_ERRAND), any(), any(), any(), eq(false), eq(ASSIGNMENT));
+		inOrder.verify(errandActionServiceMock).executeDueActions(any(), eq(dueActions));
+	}
+
+	@ParameterizedTest
+	@MethodSource("updateErrandLogsOnlyTheLabelsSetOnItArguments")
+	void updateErrandLogsOnlyTheLabelsSetOnIt(final List<String> patchedLabelIds, final Set<String> expectedLabelIds) {
+		final var entity = buildErrandEntity().withLabels(new ArrayList<>());
+		final var patch = Errand.create().withLabels(patchedLabelIds.stream().map(id -> ErrandLabel.create().withId(id)).toList());
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		// The label is expanded with its parent
+		doAnswer(_ -> addLabel(entity, PARENT_LABEL_ID)).when(errandLabelServiceMock).settleAccessLabels(entity);
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(entity);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), any(RevisionResult.class), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), any(), eq(expectedLabelIds), any());
+	}
+
+	private static Stream<Arguments> updateErrandLogsOnlyTheLabelsSetOnItArguments() {
+		return Stream.of(
+			// Only the child is set, so its parent coming along with it is not told of
+			Arguments.of(List.of(LABEL_ID_1), Set.of(LABEL_ID_1)),
+			// The parent is set as well, so both are
+			Arguments.of(List.of(PARENT_LABEL_ID, LABEL_ID_1), Set.of(PARENT_LABEL_ID, LABEL_ID_1)));
+	}
+
+	@Test
+	void updateErrandWhenTheLabelEventsCannotBeLoggedStillUpdatesTheErrand() {
+		final var entity = buildErrandEntity().withLabels(new ArrayList<>());
+		final var patch = Errand.create().withLabels(List.of(ErrandLabel.create().withId(LABEL_ID_1)));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createLabelEvents(any(), any(), any(), any(), any());
+
+		assertThat(service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch)).isNotNull();
+
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(entity);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), any(), eq(Set.of(LABEL_ID_1)), any());
+	}
+
+	@Test
+	void updateErrandWithSameAssigneeInOtherCasingIsNoAssignment() {
+		// AD accounts are case-insensitive, so this names the assignee the errand already has
+		final var entity = buildErrandEntity().withAssignedUserId("anna01");
+		final var patch = Errand.create().withAssignedUserId("Anna01");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+	}
+
+	@Test
+	void updateErrandTakingTheAssigneeAwayIsNoAssignment() {
+		final var entity = buildErrandEntity().withAssignedUserId("anna01");
+		final var patch = Errand.create().withAssignedUserId("");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		assertThat(entity.getAssignedUserId()).isNull();
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+	}
+
+	@ParameterizedTest
+	@CsvSource(nullValues = "null", value = {
+		// The phase is told of by its display name
+		"Utredning, Fasen har ändrats till \"Utredning\"",
+		// or by its name, for a phase without a display name
+		"null, Fasen har ändrats till \"INVESTIGATION\"",
+		"' ', Fasen har ändrats till \"INVESTIGATION\""
+	})
+	void updateErrandChangingStatusAndPhase(final String phaseDisplayName, final String expectedPhaseMessage) {
+		final var initialPhase = PhaseEntity.create().withId("phase-1").withName("INITIAL");
+		final var nextPhase = PhaseEntity.create().withId("phase-2").withName("INVESTIGATION").withDisplayName(phaseDisplayName);
+		final var entity = buildErrandEntity()
+			.withStatus("NEW")
+			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create().withPhaseEntity(initialPhase))));
+		final var patch = Errand.create().withStatus("ONGOING").withActivePhaseId(nextPhase.getId());
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		// Moves the errand into the next phase, as the phase service does
+		doAnswer(_ -> {
+			entity.getPhases().getFirst().setEnded(now());
+			entity.getPhases().add(ErrandPhaseEntity.create().withPhaseEntity(nextPhase));
+			return null;
+		}).when(errandPhaseServiceMock).applyPhaseChange(eq(entity), eq(nextPhase.getId()), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, nextPhase.getId(), "ONGOING", NAMESPACE, MUNICIPALITY_ID);
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		// The change is logged as such, and its status and its phase each by itself
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, expectedPhaseMessage, entity, currentRevisionMock, previousRevisionMock, false, PHASE);
+	}
+
+	@Test
+	void updateErrandKeepingStatusAndPhaseLogsNeitherAsChanged() {
+		final var entity = buildErrandEntity()
+			.withStatus("NEW")
+			.withPhases(new ArrayList<>(List.of(ErrandPhaseEntity.create().withPhaseEntity(PhaseEntity.create().withId("phase-1").withName("Inledande")))));
+		final var patch = Errand.create().withStatus("NEW").withActivePhaseId("phase-1");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandPhaseServiceMock).applyPhaseChange(entity, "phase-1", "NEW", NAMESPACE, MUNICIPALITY_ID);
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+	}
+
+	@Test
+	void createErrandWhenAssignmentEventFailsStillCreatesErrand() {
+		final var persisted = ErrandEntity.create().withId(ERRAND_ID).withAssignedUserId("anna01");
+
+		when(errandRepositoryMock.save(any(ErrandEntity.class))).thenReturn(persisted);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(null, currentRevisionMock));
+		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
+		when(contactReasonRepositoryMock.findByReasonIgnoreCaseAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(Optional.ofNullable(ContactReasonEntity.create().withReason("reason")));
+		doThrow(new RuntimeException("EventLog down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(), any(), anyBoolean(), eq(ASSIGNMENT));
+
+		final var result = service.createErrand(NAMESPACE, MUNICIPALITY_ID, buildErrand(), null);
+
+		assertThat(result).isEqualTo(ERRAND_ID);
+		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock).settleAccessLabels(any());
+		verify(errandRepositoryMock).save(any(ErrandEntity.class));
+		verify(revisionServiceMock).createErrandRevision(persisted);
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), eq(persisted), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, persisted, currentRevisionMock, null, false, ASSIGNMENT);
 	}
 
 	@Test
@@ -475,7 +760,7 @@ class ErrandServiceTest {
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
-		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(), any(), any());
+		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 	}
 
 	@Test
@@ -488,6 +773,8 @@ class ErrandServiceTest {
 		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
 		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
 		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		final var dueActions = List.of(new DueAction(mock(Action.class), ActionConfigEntity.create()));
+		when(errandActionServiceMock.processErrandActions(entity, OperationType.CREATE)).thenReturn(dueActions);
 
 		final var response = service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, Errand.create().withLifecycle("ACTIVE"));
 
@@ -498,7 +785,61 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
-		verify(eventServiceMock).createErrandEvent(UPDATE, "Ärendet har aktiverats.", entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
+		// A draft notified no one, so its assignee is told of on being made active as on a new errand
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND_ACTIVATION), options(true, Set.of()));
+		// The patch that made it active is an update all the same
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har uppdaterats."), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
+		// as is its status, which a draft never told of either
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		// The actions due at once are carried out once the activation has been told of
+		final var inOrder = inOrder(eventServiceMock, errandActionServiceMock);
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), any(RevisionResult.class), eq(ERRAND_ACTIVATION), any(ErrandEventOptions.class));
+		inOrder.verify(errandActionServiceMock).executeDueActions(entity, dueActions);
+	}
+
+	@ParameterizedTest
+	@MethodSource("updateErrandActivatingADraftLogsEveryLabelOnItArguments")
+	@DisplayName("Verification that a draft made active tells of every label on it, the ancestors its labels were expanded with included")
+	void updateErrandActivatingADraftLogsEveryLabelOnIt(final List<String> patchedLabelIds) {
+		// Stored as a draft is, with the parent its label was expanded with
+		final var entity = buildErrandEntity().withLifecycle(ErrandLifecycle.DRAFT).withLabels(new ArrayList<>(List.of(
+			ErrandLabelEmbeddable.create().withMetadataLabelId(LABEL_ID_1),
+			ErrandLabelEmbeddable.create().withMetadataLabelId(PARENT_LABEL_ID))));
+		final var patch = Errand.create().withLifecycle("ACTIVE")
+			.withLabels(ofNullable(patchedLabelIds).map(ids -> ids.stream().map(id -> ErrandLabel.create().withId(id)).toList()).orElse(null));
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		if (patchedLabelIds != null) {
+			// The label is expanded with its parent
+			doAnswer(_ -> addLabel(entity, PARENT_LABEL_ID)).when(errandLabelServiceMock).settleAccessLabels(entity);
+		}
+
+		service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, patch);
+
+		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
+		verify(errandLabelServiceMock, times(patchedLabelIds == null ? 0 : 1)).settleAccessLabels(entity);
+		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(errandActionServiceMock).processErrandActions(entity, OperationType.CREATE);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq("Ärendet har aktiverats."), eq(entity), any(RevisionResult.class), eq(ERRAND_ACTIVATION), any());
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), any(RevisionResult.class), eq(ERRAND), any());
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ASSIGN_ERRAND, entity, currentRevisionMock, previousRevisionMock, false, ASSIGNMENT);
+		verify(eventServiceMock).createStatusChangeEvent(entity, currentRevisionMock, previousRevisionMock);
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), any(), eq(Set.of(LABEL_ID_1, PARENT_LABEL_ID)), any());
+	}
+
+	private static Stream<Arguments> updateErrandActivatingADraftLogsEveryLabelOnItArguments() {
+		return Stream.of(
+			// Made active alone, telling of the labels it was stored with
+			Arguments.of((List<String>) null),
+			// Made active along with its label being set again, which its parent comes along with
+			Arguments.of(List.of(LABEL_ID_1)));
 	}
 
 	@Test
@@ -520,7 +861,7 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
-		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_UPDATE_ERRAND, entity, currentRevisionMock, previousRevisionMock, true, ERRAND);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_UPDATE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND), options(true, Set.of()));
 	}
 
 	@Test
@@ -617,7 +958,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(any(ErrandEntity.class), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(revisionServiceMock).createErrandRevision(any(ErrandEntity.class));
-		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(currentRevisionMock), eq(null), eq(false), eq(ERRAND));
+		verify(eventServiceMock).createErrandEvent(eq(CREATE), eq(EVENT_LOG_CREATE_ERRAND), any(ErrandEntity.class), eq(new RevisionResult(null, currentRevisionMock)), eq(ERRAND), options(false, Set.of()));
 	}
 
 	@Test
@@ -671,6 +1012,7 @@ class ErrandServiceTest {
 		verify(errandLabelServiceMock).validateLabels(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 		verify(errandPhaseServiceMock).applyPhaseChange(eq(entity), any(), any(), eq(NAMESPACE), eq(MUNICIPALITY_ID));
 		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createLabelEvents(eq(UPDATE), eq(entity), any(), eq(Set.of("new-label-id")), any());
 	}
 
 	@Test
@@ -1240,6 +1582,23 @@ class ErrandServiceTest {
 	// measureValidatorMock is deliberately left out - create and update consult it unconditionally, so every test would
 	// have to verify it. That it is consulted on both paths is asserted by createErrandWithInvalidMeasureType and
 	// updateErrandWithInvalidMeasureType, and what it accepts is MeasureValidatorTest's business.
+	/**
+	 * Matches the options of an errand event by what the errand service decides itself, leaving out the user who acted,
+	 * which is whoever the test runs as.
+	 */
+	private static ErrandEventOptions options(final boolean sendNotification, final Set<String> addedLabelIds) {
+		return argThat(options -> options.sendNotification() == sendNotification && addedLabelIds.equals(options.addedLabelIds()));
+	}
+
+	private static Object addLabel(final ErrandEntity entity, final String labelId) {
+		final var labels = new ArrayList<>(entity.getLabels());
+		if (labels.stream().noneMatch(label -> labelId.equals(label.getMetadataLabelId()))) {
+			labels.add(ErrandLabelEmbeddable.create().withMetadataLabelId(labelId));
+		}
+		entity.setLabels(labels);
+		return null;
+	}
+
 	@AfterEach
 	void tearDown() {
 		Identifier.remove();

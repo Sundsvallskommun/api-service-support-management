@@ -19,6 +19,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.ActionExecutor;
+import se.sundsvall.supportmanagement.service.action.DueAction;
 import se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper;
 
 import static java.time.OffsetDateTime.now;
@@ -34,11 +36,15 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandActionMapper.u
 @Service
 public class ErrandActionService {
 
+	static final String EVENT_LOG_ACTION = "Ärendet har uppdaterats av en åtgärd.";
+
 	private final ActionConfigRepository actionConfigRepository;
+	private final ActionExecutor actionExecutor;
 	private final Map<String, Action> actions;
 
-	public ErrandActionService(ActionConfigRepository actionConfigRepository, List<Action> actions) {
+	public ErrandActionService(ActionConfigRepository actionConfigRepository, ActionExecutor actionExecutor, List<Action> actions) {
 		this.actionConfigRepository = actionConfigRepository;
+		this.actionExecutor = actionExecutor;
 		this.actions = new HashMap<>();
 		actions.forEach(action -> {
 			var result = this.actions.putIfAbsent(action.getName(), action);
@@ -111,20 +117,24 @@ public class ErrandActionService {
 
 	/**
 	 * Removes the actions of the errand that are fulfilled, and creates the ones the action configs of its namespace call
-	 * for, executing at once those that are due. A draft is left alone: it gets no actions until it has been made active.
+	 * for. Those due at once are not carried out here but returned, for the caller to carry out once the change that
+	 * called for them has been recorded, so that what an action does is recorded after it. A draft is left alone: it
+	 * gets no actions until it has been made active.
 	 *
-	 * @param errand        the errand to act on.
-	 * @param operationType the operation the errand has been through.
+	 * @param  errand        the errand to act on.
+	 * @param  operationType the operation the errand has been through.
+	 * @return               the actions due at once, in the order they are to be carried out.
 	 */
 	@Transactional
-	public void processErrandActions(ErrandEntity errand, OperationType operationType) {
+	public List<DueAction> processErrandActions(ErrandEntity errand, OperationType operationType) {
 		if (errand.isDraft()) {
-			return;
+			return List.of();
 		}
 
 		removeFulfilledActions(errand);
 
-		var actionsToAdd = createActionsToAdd(errand, operationType);
+		final var dueActions = new ArrayList<DueAction>();
+		final var actionsToAdd = createActionsToAdd(errand, operationType, dueActions);
 
 		if (!actionsToAdd.isEmpty()) {
 			if (errand.getActions() == null) {
@@ -132,9 +142,21 @@ public class ErrandActionService {
 			}
 			errand.getActions().addAll(actionsToAdd);
 		}
+		return dueActions;
 	}
 
-	private List<ErrandActionEntity> createActionsToAdd(ErrandEntity errand, OperationType operationType) {
+	/**
+	 * Carries out the actions due at once on the errand, each recorded as a change of its own after the change that
+	 * called for them. What they log reaches the subscribers along with that change.
+	 *
+	 * @param errand     the errand to act on.
+	 * @param dueActions the actions {@link #processErrandActions} returned.
+	 */
+	public void executeDueActions(ErrandEntity errand, List<DueAction> dueActions) {
+		dueActions.forEach(dueAction -> actionExecutor.executeAndRecord(errand, dueAction.action(), dueAction.config(), EVENT_LOG_ACTION));
+	}
+
+	private List<ErrandActionEntity> createActionsToAdd(ErrandEntity errand, OperationType operationType, List<DueAction> dueActions) {
 		var actionsToAdd = new ArrayList<ErrandActionEntity>();
 
 		final var configs = actionConfigRepository.findAllByNamespaceAndMunicipalityId(errand.getNamespace(), errand.getMunicipalityId());
@@ -153,7 +175,7 @@ public class ErrandActionService {
 				final var action = actions.get(config.getName());
 				action.createAction(errand, config).ifPresent(errandAction -> {
 					if (errandAction.getExecuteAfter().isEqual(now(ZoneId.systemDefault())) || errandAction.getExecuteAfter().isBefore(now(ZoneId.systemDefault()))) {
-						action.executeAction(errand, config);
+						dueActions.add(new DueAction(action, config));
 					} else {
 						actionsToAdd.add(errandAction);
 					}
