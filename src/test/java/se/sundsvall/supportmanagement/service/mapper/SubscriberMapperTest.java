@@ -45,6 +45,15 @@ class SubscriberMapperTest {
 	}
 
 	@Test
+	void toEventFilterEmbeddableKeepsTheLabelIdInLowerCase() {
+		final var filter = EventFilter.create().withType("UPDATE").withSubtype("LABEL").withLabelId("F2B7C5D1-7E3A-4B8E-9F0A-1C2D3E4F5A6B");
+
+		assertThat(SubscriberMapper.toEventFilterEmbeddable(filter))
+			.isEqualTo(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("LABEL").withLabelId("f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b"));
+		assertThat(SubscriberMapper.toEventFilterEmbeddable(filter.withLabelId(null)).getLabelId()).isNull();
+	}
+
+	@Test
 	void toSubscriberEntityReturnsNullForNullInput() {
 		assertThat(SubscriberMapper.toSubscriberEntity("2281", "ns", null)).isNull();
 	}

@@ -40,7 +40,7 @@ public class EventFilter {
 
 	@ValidUuid(nullable = true)
 	@Schema(description = "Optional id of a metadata label, only allowed together with subtype LABEL. When set, only the event of this label " +
-		"being added to the errand matches. If null, which label was added does not matter.",
+		"being added to the errand matches, the id compared regardless of case. If null, which label was added does not matter.",
 		examples = "f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b")
 	private String labelId;
 
