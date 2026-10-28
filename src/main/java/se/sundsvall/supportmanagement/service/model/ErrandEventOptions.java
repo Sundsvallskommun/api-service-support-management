@@ -10,9 +10,7 @@ import se.sundsvall.dept44.support.Identifier;
  *                                  one
  * @param actor                     the user who acted, or null when nobody did
  * @param addedLabelIds             the metadata labels the event added to the errand, which subscribers may filter on
- * @param errandNotificationMessage the text the users notified directly are told, or null for the text of the event.
- *                                  For an event whose text has changed while the errand notification it makes keeps the
- *                                  text it always had
+ * @param errandNotificationMessage the text the users notified directly are told, or null for the text of the event
  */
 public record ErrandEventOptions(boolean sendNotification, Identifier actor, Set<String> addedLabelIds, String errandNotificationMessage) {
 

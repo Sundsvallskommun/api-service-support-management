@@ -87,8 +87,8 @@ public class MessageExchangeSyncService {
 
 	/**
 	 * Logs the messages the sync brought, whichever channel they were written through, telling how many they were and in
-	 * which conversation. The assigned user is notified as they always were. A sync that brought no message logs nothing,
-	 * and a log that cannot be written is not worth failing the sync over.
+	 * which conversation. The assigned user is notified of messages from others. A sync that brought no message logs
+	 * nothing, and a log that cannot be written is not worth failing the sync over.
 	 */
 	private void logMessages(final ErrandEntity errandEntity, final SyncedMessages synced, final ConversationEntity conversationEntity) {
 		if (synced.count() == 0) {

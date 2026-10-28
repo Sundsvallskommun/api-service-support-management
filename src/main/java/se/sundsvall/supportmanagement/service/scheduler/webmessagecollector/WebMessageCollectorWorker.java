@@ -90,7 +90,7 @@ public class WebMessageCollectorWorker {
 		communicationService.saveCommunication(communicationEntity);
 		communicationService.saveAttachment(communicationEntity, errand);
 		try {
-			// The assigned user is notified as they always were
+			// The assigned user is notified of the message
 			eventService.createErrandEvent(UPDATE, EVENT_LOG_COMMUNICATION, errand, null, MESSAGE_WEB_MESSAGE_EXTERNAL, new ErrandEventOptions(true, getExecutingUser(), Set.of(), ERRAND_NOTIFICATION_COMMUNICATION));
 		} catch (final Exception e) {
 			LOG.warn("Failed to log new-message event for errand {}: {}", errand.getId(), e.getMessage());

@@ -29,8 +29,8 @@ import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
  * Records that a principal has left a subscription profile, so the members sync does not subscribe them to it again
  * for as long as the record stands.
  * <p>
- * Kept against the principal rather than one of their subscribers, so that it holds whichever subscriber the sync
- * would use, and outlives the principal removing their subscribers altogether.
+ * Keyed by the principal, not by a subscriber, so that it holds whichever subscriber the sync would use, and outlives
+ * the principal removing their subscribers altogether.
  */
 @Entity
 @Table(name = "subscription_opt_out",

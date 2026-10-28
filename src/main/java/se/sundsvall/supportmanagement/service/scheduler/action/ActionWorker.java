@@ -121,9 +121,8 @@ public class ActionWorker {
 	 * event for it, through which the process of the errand learns of the change.
 	 * <p>
 	 * Asked only of an action that says it changed the errand. The subscribers of the errand are notified unless the config
-	 * of the action says not to, while the assigned user is not, as a scheduled action never notified them. A failed
-	 * publication marks the transaction for rollback, so the action is rolled back with it and tried again on the next
-	 * run.
+	 * of the action says not to, while the assigned user is not. A failed publication marks the transaction for rollback,
+	 * so the action is rolled back with it and tried again on the next run.
 	 */
 	private void logChange(final ErrandEntity errand) {
 		final var revision = revisionService.createErrandRevision(errand);

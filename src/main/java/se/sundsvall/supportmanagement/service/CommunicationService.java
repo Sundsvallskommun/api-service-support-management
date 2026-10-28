@@ -257,8 +257,8 @@ public class CommunicationService {
 
 	/**
 	 * Logs a message having been sent, for the subscribers of the errand to be notified of. The assigned user is not
-	 * notified, as sending a message never notified them. A log that cannot be written is not worth failing the sending
-	 * over, since the message is already on its way.
+	 * notified. A log that cannot be written is not worth failing the sending over, since the message is already on its
+	 * way.
 	 */
 	private void logSentMessage(final ErrandEntity errandEntity, final String message, final EventSubType subtype) {
 		try {

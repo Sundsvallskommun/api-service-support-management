@@ -184,7 +184,7 @@ public class EmailReaderWorker {
 		}
 		saveEmail(email, errand);
 		try {
-			// The assigned user is notified as they always were
+			// The assigned user is notified of the email
 			eventService.createErrandEvent(EventType.UPDATE, EVENT_LOG_COMMUNICATION, errand, null, EventSubType.MESSAGE_EMAIL_EXTERNAL,
 				new ErrandEventOptions(true, getExecutingUser(), Set.of(), ERRAND_NOTIFICATION_COMMUNICATION));
 		} catch (final Exception e) {
