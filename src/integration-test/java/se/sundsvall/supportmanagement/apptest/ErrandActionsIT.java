@@ -2,11 +2,14 @@ package se.sundsvall.supportmanagement.apptest;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
@@ -34,6 +37,9 @@ class ErrandActionsIT extends AbstractAppTest {
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
+	@Autowired
+	private RevisionRepository revisionRepository;
+
 	@Test
 	void test01_createErrandWithScheduledAction() {
 		// Create errand with STATUS-1, which matches the action config with 24h duration
@@ -53,6 +59,17 @@ class ErrandActionsIT extends AbstractAppTest {
 		// Create errand with STATUS-2, which matches the action config without duration (immediate execution)
 		final var location = createErrand(REQUEST_FILE);
 
+		// The errand is told of as created before the action is, and what the action did is a change of its own
+		final var errandId = location.substring(location.lastIndexOf('/') + 1);
+		final var eventMessages = wiremock.getAllServeEvents().reversed().stream()
+			.filter(event -> event.getRequest().getUrl().equals("/api-eventlog/" + MUNICIPALITY_ID + "/" + errandId))
+			.map(event -> event.getRequest().getBodyAsString())
+			.toList();
+		assertThat(eventMessages).filteredOn(body -> body.contains("\"Ärendet har skapats.\"")).hasSize(1);
+		assertThat(eventMessages).filteredOn(body -> body.contains("\"Ärendet har uppdaterats av en åtgärd.\"")).hasSize(1);
+		assertThat(indexOf(eventMessages, "\"Ärendet har skapats.\"")).isLessThan(indexOf(eventMessages, "\"Ärendet har uppdaterats av en åtgärd.\""));
+		assertThat(revisionRepository.findAllByNamespaceAndMunicipalityIdAndEntityIdOrderByVersion(NAMESPACE, MUNICIPALITY_ID, errandId)).hasSize(2);
+
 		// Verify the action was executed immediately (label added, no pending action)
 		setupCall()
 			.withServicePath(location)
@@ -60,6 +77,15 @@ class ErrandActionsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	private static int indexOf(final List<String> bodies, final String text) {
+		for (var i = 0; i < bodies.size(); i++) {
+			if (bodies.get(i).contains(text)) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	@Test

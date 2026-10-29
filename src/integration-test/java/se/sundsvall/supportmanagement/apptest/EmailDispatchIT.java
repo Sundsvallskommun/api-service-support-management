@@ -7,10 +7,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.EmailDispatchOutboxRepository;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEventEmbeddable;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchScheduler;
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker;
 
@@ -31,6 +31,8 @@ class EmailDispatchIT extends AbstractAppTest {
 	private static final String EMAIL_SUBSCRIBER_ID = "11111111-0000-0000-0000-000000000001";
 	private static final String UPDATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000001";
 	private static final String CREATE_DISPATCH_ID = "33333333-0000-0000-0000-000000000002";
+	private static final String MAS_SUBSCRIBER_ID = "11111111-0000-0000-0000-000000000003";
+	private static final String HSL_LABEL_ID = "44444444-0000-0000-0000-000000000001";
 
 	@Autowired
 	private NotificationDispatchWorker notificationDispatchWorker;
@@ -39,7 +41,7 @@ class EmailDispatchIT extends AbstractAppTest {
 	private NotificationDispatchScheduler notificationDispatchScheduler;
 
 	@Autowired
-	private EmailDispatchOutboxRepository emailDispatchOutboxRepository;
+	private NotificationDispatchOutboxRepository notificationDispatchOutboxRepository;
 
 	@Autowired
 	private NotificationDispatchRepository notificationDispatchRepository;
@@ -51,7 +53,9 @@ class EmailDispatchIT extends AbstractAppTest {
 	private TransactionTemplate transactionTemplate;
 
 	/**
-	 * Processing an UPDATE/MESSAGE dispatch for a subscriber with an EMAIL channel stores the subscriber, the errand and
+	 * Processing an UPDATE/MESSAGE_CONVERSATION_EXTERNAL dispatch for a subscriber with an EMAIL channel stores the
+	 * subscriber, the
+	 * errand and
 	 * the event in the outbox.
 	 */
 	@Test
@@ -66,7 +70,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchWorker.processGroup(dispatchEntries);
 
 		transactionTemplate.executeWithoutResult(_ -> {
-			final var outboxEntries = emailDispatchOutboxRepository.findAll();
+			final var outboxEntries = notificationDispatchOutboxRepository.findAll();
 			assertThat(outboxEntries).hasSize(1);
 
 			final var outbox = outboxEntries.getFirst();
@@ -74,7 +78,7 @@ class EmailDispatchIT extends AbstractAppTest {
 			assertThat(outbox.getErrandId()).isEqualTo(ERRAND_ID);
 			assertThat(outbox.getErrandNumber()).isEqualTo("NS1-2024-000001");
 			assertThat(outbox.getCreated()).isNotNull();
-			assertThat(outbox.getEvents()).containsExactly(EmailDispatchOutboxEventEmbeddable.create().withEventId("evt-001").withDescription("Nytt meddelande"));
+			assertThat(outbox.getEvents()).containsExactly(NotificationDispatchOutboxEventEmbeddable.create().withEventId("evt-001").withDescription("Nytt meddelande"));
 		});
 	}
 
@@ -90,7 +94,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchScheduler.processDispatch();
 
 		assertThat(notificationDispatchRepository.findAll()).isEmpty();
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 		verifyStubs();
 	}
 
@@ -106,7 +110,7 @@ class EmailDispatchIT extends AbstractAppTest {
 		notificationDispatchScheduler.processDispatch();
 
 		assertThat(notificationDispatchRepository.findAll()).isEmpty();
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 		verifyStubs();
 	}
 
@@ -121,15 +125,17 @@ class EmailDispatchIT extends AbstractAppTest {
 			.filter(e -> "grp-001".equals(e.getRequestGroupId()))
 			.toList();
 		notificationDispatchWorker.processGroup(dispatchEntries);
-		assertThat(emailDispatchOutboxRepository.findAll()).hasSize(1);
+		assertThat(notificationDispatchOutboxRepository.findAll()).hasSize(1);
 
 		subscriberRepository.deleteById(EMAIL_SUBSCRIBER_ID);
 
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
 	}
 
 	/**
-	 * A PATCH creates an UPDATE/ERRAND dispatch entry, which does not match the subscriber's {UPDATE, MESSAGE} filter, so
+	 * A PATCH creates an UPDATE/ERRAND dispatch entry, which does not match the subscriber's {UPDATE,
+	 * MESSAGE_CONVERSATION_EXTERNAL}
+	 * filter, so
 	 * nothing is put in the outbox.
 	 */
 	@Test
@@ -154,6 +160,39 @@ class EmailDispatchIT extends AbstractAppTest {
 
 		notificationDispatchWorker.processGroup(processable);
 
-		assertThat(emailDispatchOutboxRepository.findAll()).isEmpty();
+		assertThat(notificationDispatchOutboxRepository.findAll()).isEmpty();
+	}
+
+	/**
+	 * A PATCH adding the HSL risk label queues an UPDATE/LABEL event carrying the label, which the MAS profile's
+	 * labelId filter matches. The MAS subscriber only has the internal channel, but the profile routes the event to
+	 * email, so it lands in the outbox for them and for no one else.
+	 */
+	@Test
+	void test06_addingTheHslLabelMailsTheMasProfile() {
+		notificationDispatchRepository.deleteAll();
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "patcher01; type=adAccount")
+			.withServicePath(PATH + "/" + ERRAND_ID)
+			.withHttpMethod(PATCH)
+			.withRequest("request.json")
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		final var processable = notificationDispatchWorker.fetchProcessable();
+		transactionTemplate.executeWithoutResult(_ -> assertThat(notificationDispatchRepository.findAll())
+			.filteredOn(entry -> "LABEL".equals(entry.getSubType()))
+			.singleElement()
+			.satisfies(entry -> {
+				assertThat(entry.getAddedLabelIds()).containsExactly(HSL_LABEL_ID);
+				assertThat(entry.getDescription()).isEqualTo("Ärendet uppdaterat med etikett \"HSL-risk 4 eller hogre\"");
+			}));
+
+		notificationDispatchWorker.processGroup(processable);
+
+		transactionTemplate.executeWithoutResult(_ -> assertThat(notificationDispatchOutboxRepository.findAll())
+			.singleElement()
+			.satisfies(outbox -> assertThat(outbox.getSubscriber().getId()).isEqualTo(MAS_SUBSCRIBER_ID)));
 	}
 }

@@ -33,7 +33,7 @@ INSERT INTO process_event_outbox(id, municipality_id, namespace, errand_id, proc
                                  event_sub_type, start_allowed, signal_name, executed_by, request_group_id, created,
                                  delivered_at)
 VALUES ('peo-waiting', '2281', 'NAMESPACE.1', 'ERRAND_ID-1', 'pw-alkt', 'alkt-ansokan', 'UPDATE',
-        'MESSAGE', 0, null, 'joe01doe', null, '2026-01-01 11:50:00.000', null),
+        'MESSAGE_CONVERSATION_EXTERNAL', 0, null, 'joe01doe', null, '2026-01-01 11:50:00.000', null),
        -- Too young to be picked up: the transaction that wrote it may still be committing.
        ('peo-just-written', '2281', 'NAMESPACE.1', 'ERRAND_ID-1', 'pw-alkt', 'alkt-ansokan', 'UPDATE',
         'ERRAND', 0, null, 'joe01doe', null, '2026-01-01 11:59:59.000', null),

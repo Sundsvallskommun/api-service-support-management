@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import se.sundsvall.supportmanagement.api.model.subscriber.EventFilter;
 import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannel;
@@ -125,7 +126,8 @@ public final class SubscriberMapper {
 		return Optional.ofNullable(embeddable)
 			.map(e -> EventFilter.create()
 				.withType(e.getType())
-				.withSubtype(e.getSubtype()))
+				.withSubtype(e.getSubtype())
+				.withLabelId(e.getLabelId()))
 			.orElse(null);
 	}
 
@@ -137,11 +139,16 @@ public final class SubscriberMapper {
 			.orElse(null);
 	}
 
+	/**
+	 * The label id is kept in lower case, as the ids of metadata labels are, so that a filter given in upper case still
+	 * matches the label it names.
+	 */
 	static EventFilterEmbeddable toEventFilterEmbeddable(final EventFilter dto) {
 		return Optional.ofNullable(dto)
 			.map(d -> EventFilterEmbeddable.create()
 				.withType(d.getType())
-				.withSubtype(d.getSubtype()))
+				.withSubtype(d.getSubtype())
+				.withLabelId(Optional.ofNullable(d.getLabelId()).map(labelId -> labelId.toLowerCase(Locale.ROOT)).orElse(null)))
 			.orElse(null);
 	}
 }

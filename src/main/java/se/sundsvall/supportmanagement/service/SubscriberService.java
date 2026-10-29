@@ -10,32 +10,33 @@ import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
+import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriberMapper;
 
+import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.isRequestingUser;
 
 @Service
 public class SubscriberService {
 
-	private static final String SUBSCRIBER_NOT_OWNED = "Subscriber '%s' not accessible by user '%s'";
 	private static final String SUBSCRIBER_NOT_FOUND = "Subscriber with id:'%s' not found in namespace:'%s' for municipality with id:'%s'";
 	private static final String SUBSCRIBER_CONFLICT = "Subscriber with identifier (type:'%s', value:'%s') and name:'%s' already exists in namespace:'%s' for municipality with id:'%s'";
 	private static final String IDENTIFIER_FILTER_INCOMPLETE = "Both identifierType and identifierValue must be provided together";
@@ -44,10 +45,17 @@ public class SubscriberService {
 
 	private final SubscriberRepository subscriberRepository;
 	private final SubscriptionRepository subscriptionRepository;
+	private final SubscriptionOptOutService subscriptionOptOutService;
+	private final NamespaceConfigService namespaceConfigService;
+	private final AccessControlService accessControlService;
 
-	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository) {
+	public SubscriberService(final SubscriberRepository subscriberRepository, final SubscriptionRepository subscriptionRepository, final SubscriptionOptOutService subscriptionOptOutService,
+		final NamespaceConfigService namespaceConfigService, final AccessControlService accessControlService) {
 		this.subscriberRepository = subscriberRepository;
 		this.subscriptionRepository = subscriptionRepository;
+		this.subscriptionOptOutService = subscriptionOptOutService;
+		this.namespaceConfigService = namespaceConfigService;
+		this.accessControlService = accessControlService;
 	}
 
 	@Transactional(readOnly = true)
@@ -90,24 +98,37 @@ public class SubscriberService {
 	@Transactional
 	public Subscriber updateSubscriber(final String municipalityId, final String namespace, final String subscriberId, final Subscriber patch) {
 		final var entity = loadEntity(municipalityId, namespace, subscriberId);
-		verifyOwnedByRequestingUser(entity);
+		verifyOwnedOrWritable(entity);
 		SubscriberMapper.applyPatch(entity, patch);
 		validatePauseWindow(entity);
 		final var saved = persistOrThrowConflict(entity);
 		return SubscriberMapper.toSubscriber(saved, subscriptionRepository.countBySubscriberId(subscriberId));
 	}
 
+	/**
+	 * Removes the subscriber and, through the cascade, its subscriptions. Removing it is the user leaving every profile
+	 * it is a member of, which is recorded first, as the members sync would otherwise give the user a new subscriber and
+	 * put them back on the profiles.
+	 */
 	@Transactional
 	public void deleteSubscriber(final String municipalityId, final String namespace, final String subscriberId) {
 		final var entity = loadEntity(municipalityId, namespace, subscriberId);
-		verifyOwnedByRequestingUser(entity);
+		verifyOwnedOrWritable(entity);
+		ofNullable(entity.getSubscriptions()).orElse(emptyList())
+			.forEach(subscriptionOptOutService::recordOptOut);
 		subscriberRepository.delete(entity);
 	}
 
+	/**
+	 * The subscriber of the given principal, created with the channels the namespace gives new subscribers when there is
+	 * none yet. A principal
+	 * holding several subscribers gets the first of them, so subscriptions made on their behalf gather on one subscriber
+	 * rather than spawning another.
+	 */
 	@Transactional
-	public SubscriberEntity findOrCreateSubscriberForAssignee(final String municipalityId, final String namespace, final String assignedUserId) {
+	public SubscriberEntity findOrCreateSubscriber(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {
 		final var existing = subscriberRepository.findAllByNamespaceAndMunicipalityIdAndIdentifierTypeAndIdentifierValue(
-			namespace, municipalityId, IdentifierTypeValues.AD_ACCOUNT, assignedUserId);
+			namespace, municipalityId, identifierType, identifierValue);
 		if (!existing.isEmpty()) {
 			return existing.get(0);
 		}
@@ -115,27 +136,42 @@ public class SubscriberService {
 			.withMunicipalityId(municipalityId)
 			.withNamespace(namespace)
 			.withIdentifier(IdentifierEmbeddable.create()
-				.withType(IdentifierTypeValues.AD_ACCOUNT)
-				.withValue(assignedUserId))
-			.withChannels(new ArrayList<>(List.of(
-				NotificationChannelEmbeddable.create()
-					.withType(NotificationChannelType.INTERNAL)))));
+				.withType(identifierType)
+				.withValue(identifierValue))
+			.withChannels(newSubscriberChannels(namespace, municipalityId)));
 	}
 
 	/**
-	 * A subscriber describes how one user is notified, so only that user may change or remove it; anyone else is
-	 * refused with 403. Listing, reading and creating are not held to ownership.
+	 * The channels the namespace gives new subscribers, without destinations, so that they go to the user's own address
+	 * and number in the employee directory.
+	 */
+	private List<NotificationChannelEmbeddable> newSubscriberChannels(final String namespace, final String municipalityId) {
+		return namespaceConfigService.findNewSubscriberChannels(namespace, municipalityId).stream()
+			.map(channel -> NotificationChannelEmbeddable.create()
+				.withType(NotificationChannelType.valueOf(channel.name())))
+			.collect(toCollection(ArrayList::new));
+	}
+
+	/**
+	 * A subscriber describes how one user is notified, so that user may change or remove it, and so may anyone with RW on
+	 * SUBSCRIBER in the namespace; anyone else is refused with 403. Listing, reading and creating are not held to
+	 * ownership.
 	 */
 	private SubscriberEntity loadEntity(final String municipalityId, final String namespace, final String subscriberId) {
 		return subscriberRepository.findByIdAndNamespaceAndMunicipalityId(subscriberId, namespace, municipalityId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, SUBSCRIBER_NOT_FOUND.formatted(subscriberId, namespace, municipalityId)));
 	}
 
-	private void verifyOwnedByRequestingUser(final SubscriberEntity subscriber) {
+	/**
+	 * Lets the user the subscriber notifies through without an access group of the namespace, so that one subscribed
+	 * on their behalf may always opt out, while anyone else needs RW on SUBSCRIBER.
+	 */
+	private void verifyOwnedOrWritable(final SubscriberEntity subscriber) {
 		final var owner = subscriber.getIdentifier();
-		if (isNull(owner) || !isRequestingUser(owner.getType(), owner.getValue())) {
-			throw Problem.valueOf(FORBIDDEN, SUBSCRIBER_NOT_OWNED.formatted(subscriber.getId(), getAdUser()));
+		if (nonNull(owner) && isRequestingUser(owner.getType(), owner.getValue())) {
+			return;
 		}
+		accessControlService.verifyNamespaceAuthorization(subscriber.getNamespace(), subscriber.getMunicipalityId(), ProtectedResource.SUBSCRIBER, RW);
 	}
 
 	private List<SubscriberEntity> loadSubscribers(final String municipalityId, final String namespace, final String identifierType, final String identifierValue) {

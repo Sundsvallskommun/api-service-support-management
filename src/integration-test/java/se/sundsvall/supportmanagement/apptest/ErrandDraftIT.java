@@ -83,7 +83,7 @@ class ErrandDraftIT extends AbstractAppTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a draft made active is logged as activated and publishes the permission to start its process")
+	@DisplayName("Verification that a draft made active is logged as activated and updated and publishes the permission to start its process")
 	void test02_aDraftMadeActiveMayStartItsProcess() {
 		final var errandId = createDraft();
 
@@ -102,6 +102,7 @@ class ErrandDraftIT extends AbstractAppTest {
 			.withExpectedResponse("response-processes.json")
 			.sendRequestAndVerifyResponse();
 
+		// The namespace triggers on ERRAND alone, so the process is told of the update and not of the activation
 		assertThat(outboxRepository.findAll()).singleElement().satisfies(row -> {
 			assertThat(row.getErrandId()).isEqualTo(errandId);
 			assertThat(row.getEventType()).isEqualTo("UPDATE");

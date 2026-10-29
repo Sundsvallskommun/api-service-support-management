@@ -1,6 +1,7 @@
 
     create table action_config (
         active bit not null,
+        notify bit default 1 not null,
         created datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
@@ -283,21 +284,6 @@
         id varchar(255) not null,
         text longtext not null,
         primary key (id)
-    ) engine=InnoDB;
-
-    create table email_dispatch_outbox (
-        created datetime(3) not null,
-        errand_id varchar(36) not null,
-        id varchar(36) not null,
-        errand_number varchar(255),
-        subscriber_id varchar(255) not null,
-        primary key (id)
-    ) engine=InnoDB;
-
-    create table email_dispatch_outbox_event (
-        event_id varchar(36),
-        outbox_id varchar(36) not null,
-        description varchar(255)
     ) engine=InnoDB;
 
     create table email_worker_config (
@@ -772,6 +758,28 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table notification_dispatch_added_label (
+        dispatch_id varchar(36) not null,
+        metadata_label_id varchar(36) not null,
+        primary key (dispatch_id, metadata_label_id)
+    ) engine=InnoDB;
+
+    create table notification_dispatch_outbox (
+        created datetime(3) not null,
+        errand_id varchar(36) not null,
+        id varchar(36) not null,
+        errand_number varchar(255),
+        subscriber_id varchar(255) not null,
+        channel enum ('EMAIL','INTERNAL','SMS') not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table notification_dispatch_outbox_event (
+        event_id varchar(36),
+        outbox_id varchar(36) not null,
+        description varchar(255)
+    ) engine=InnoDB;
+
     create table parameter (
         version bigint default 0 not null,
         display_name varchar(255),
@@ -991,6 +999,7 @@
 
     create table subscriber_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscriber_id varchar(255) not null,
@@ -1030,16 +1039,54 @@
         created_by_value varchar(255),
         errand_id varchar(255),
         id varchar(255) not null,
+        profile_id varchar(255),
         subscriber_id varchar(255) not null,
         primary key (id)
     ) engine=InnoDB;
 
     create table subscription_event_filter (
         sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
         subtype varchar(64),
         type varchar(64) not null,
         subscription_id varchar(255) not null,
         primary key (sort_order, subscription_id)
+    ) engine=InnoDB;
+
+    create table subscription_opt_out (
+        created datetime(6),
+        identifier_type varchar(16) not null,
+        id varchar(255) not null,
+        identifier_value varchar(255) not null,
+        profile_id varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscription_profile (
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        description varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table subscription_profile_channel (
+        sort_order integer not null check ((sort_order>=0)),
+        type varchar(32) not null check ((type in ('INTERNAL','SMS','EMAIL'))),
+        profile_id varchar(255) not null,
+        primary key (sort_order, profile_id)
+    ) engine=InnoDB;
+
+    create table subscription_profile_event_filter (
+        sort_order integer not null check ((sort_order>=0)),
+        label_id varchar(36),
+        subtype varchar(64),
+        type varchar(64) not null,
+        profile_id varchar(255) not null,
+        primary key (sort_order, profile_id)
     ) engine=InnoDB;
 
     create table telia_ace_contact (
@@ -1207,9 +1254,6 @@
 
     create index idx_decision_term_decision_id 
        on decision_term (decision_id);
-
-    create index idx_email_dispatch_outbox_subscriber_created 
-       on email_dispatch_outbox (subscriber_id, created);
 
     create index idx_namespace_municipality_id 
        on email_worker_config (namespace, municipality_id);
@@ -1487,6 +1531,9 @@
     create index idx_dispatch_errand_id 
        on notification_dispatch (errand_id);
 
+    create index idx_notification_dispatch_outbox_subscriber_channel_created 
+       on notification_dispatch_outbox (subscriber_id, channel, created);
+
     create index idx_phase_municipality_id_namespace 
        on phase (municipality_id, namespace);
 
@@ -1588,6 +1635,18 @@
 
     create index idx_subscription_subscriber_target 
        on subscription (subscriber_id, target_type, errand_id);
+
+    create index idx_subscription_profile_id 
+       on subscription (profile_id);
+
+    alter table if exists subscription_opt_out 
+       add constraint uq_subscription_opt_out_profile_identifier unique (profile_id, identifier_type, identifier_value);
+
+    create index idx_subscription_profile_municipality_id_namespace 
+       on subscription_profile (municipality_id, namespace);
+
+    alter table if exists subscription_profile 
+       add constraint uq_subscription_profile_municipality_namespace_name unique (municipality_id, namespace, name);
 
     create index idx_telia_ace_work_item_errand_id 
        on telia_ace_work_item (errand_id);
@@ -1749,18 +1808,6 @@
        add constraint fk_decision_term_decision_id 
        foreign key (decision_id) 
        references decision (id) 
-       on delete cascade;
-
-    alter table if exists email_dispatch_outbox 
-       add constraint fk_email_dispatch_outbox_subscriber_id 
-       foreign key (subscriber_id) 
-       references subscriber (id) 
-       on delete cascade;
-
-    alter table if exists email_dispatch_outbox_event 
-       add constraint fk_email_dispatch_outbox_event_outbox_id 
-       foreign key (outbox_id) 
-       references email_dispatch_outbox (id) 
        on delete cascade;
 
     alter table if exists errand 
@@ -1940,6 +1987,23 @@
        foreign key (errand_id) 
        references errand (id);
 
+    alter table if exists notification_dispatch_added_label 
+       add constraint fk_notification_dispatch_added_label_dispatch_id 
+       foreign key (dispatch_id) 
+       references notification_dispatch (id);
+
+    alter table if exists notification_dispatch_outbox 
+       add constraint fk_notification_dispatch_outbox_subscriber_id 
+       foreign key (subscriber_id) 
+       references subscriber (id) 
+       on delete cascade;
+
+    alter table if exists notification_dispatch_outbox_event 
+       add constraint fk_notification_dispatch_outbox_event_outbox_id 
+       foreign key (outbox_id) 
+       references notification_dispatch_outbox (id) 
+       on delete cascade;
+
     alter table if exists parameter 
        add constraint fk_parameter_errand_id 
        foreign key (errand_id) 
@@ -2021,6 +2085,12 @@
        on delete cascade;
 
     alter table if exists subscription 
+       add constraint fk_subscription_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id) 
+       on delete cascade;
+
+    alter table if exists subscription 
        add constraint fk_subscription_subscriber_id 
        foreign key (subscriber_id) 
        references subscriber (id) 
@@ -2030,6 +2100,22 @@
        add constraint fk_subscription_event_filter_subscription_id 
        foreign key (subscription_id) 
        references subscription (id);
+
+    alter table if exists subscription_opt_out 
+       add constraint fk_subscription_opt_out_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id) 
+       on delete cascade;
+
+    alter table if exists subscription_profile_channel 
+       add constraint fk_subscription_profile_channel_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id);
+
+    alter table if exists subscription_profile_event_filter 
+       add constraint fk_subscription_profile_event_filter_profile_id 
+       foreign key (profile_id) 
+       references subscription_profile (id);
 
     alter table if exists time_measurement 
        add constraint fk_errand_time_measure_errand_id 

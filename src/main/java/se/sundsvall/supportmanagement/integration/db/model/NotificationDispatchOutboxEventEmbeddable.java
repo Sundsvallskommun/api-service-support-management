@@ -5,7 +5,7 @@ import jakarta.persistence.Embeddable;
 import java.util.Objects;
 
 @Embeddable
-public class EmailDispatchOutboxEventEmbeddable {
+public class NotificationDispatchOutboxEventEmbeddable {
 
 	@Column(name = "event_id", length = 36)
 	private String eventId;
@@ -13,8 +13,8 @@ public class EmailDispatchOutboxEventEmbeddable {
 	@Column(name = "description")
 	private String description;
 
-	public static EmailDispatchOutboxEventEmbeddable create() {
-		return new EmailDispatchOutboxEventEmbeddable();
+	public static NotificationDispatchOutboxEventEmbeddable create() {
+		return new NotificationDispatchOutboxEventEmbeddable();
 	}
 
 	public String getEventId() {
@@ -25,7 +25,7 @@ public class EmailDispatchOutboxEventEmbeddable {
 		this.eventId = eventId;
 	}
 
-	public EmailDispatchOutboxEventEmbeddable withEventId(final String eventId) {
+	public NotificationDispatchOutboxEventEmbeddable withEventId(final String eventId) {
 		this.eventId = eventId;
 		return this;
 	}
@@ -38,7 +38,7 @@ public class EmailDispatchOutboxEventEmbeddable {
 		this.description = description;
 	}
 
-	public EmailDispatchOutboxEventEmbeddable withDescription(final String description) {
+	public NotificationDispatchOutboxEventEmbeddable withDescription(final String description) {
 		this.description = description;
 		return this;
 	}
@@ -56,13 +56,13 @@ public class EmailDispatchOutboxEventEmbeddable {
 		if (obj == null || getClass() != obj.getClass()) {
 			return false;
 		}
-		final EmailDispatchOutboxEventEmbeddable other = (EmailDispatchOutboxEventEmbeddable) obj;
+		final NotificationDispatchOutboxEventEmbeddable other = (NotificationDispatchOutboxEventEmbeddable) obj;
 		return Objects.equals(eventId, other.eventId) && Objects.equals(description, other.description);
 	}
 
 	@Override
 	public String toString() {
-		return "EmailDispatchOutboxEventEmbeddable{" +
+		return "NotificationDispatchOutboxEventEmbeddable{" +
 			"eventId='" + eventId + '\'' +
 			", description='" + description + '\'' +
 			'}';

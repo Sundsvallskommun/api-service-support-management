@@ -2,9 +2,13 @@ package se.sundsvall.supportmanagement.service.scheduler.notificationdispatch;
 
 import java.time.Duration;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,23 +18,32 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static java.time.OffsetDateTime.now;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withId;
 
 @Component
 public class NotificationDispatchWorker {
+
+	private static final Logger LOG = LoggerFactory.getLogger(NotificationDispatchWorker.class);
 
 	/**
 	 * How long a request group must be quiet before it is considered complete and eligible for dispatch.
@@ -72,8 +85,8 @@ public class NotificationDispatchWorker {
 	/**
 	 * Dispatches one group of entries, all belonging to the same errand.
 	 * <p>
-	 * Every subscriber matched by an active subscription receives at most one delivery per group, carrying the subset of
-	 * the group's events that the subscriber's filters accept.
+	 * Every subscriber matched by an active subscription receives at most one delivery per channel and group, carrying
+	 * the subset of the group's events that the subscriber's subscriptions route to that channel.
 	 * <p>
 	 * Deleting the group here is what marks it as done: delivery and deletion share one transaction, so a failure
 	 * anywhere rolls back every delivery and leaves the whole group in place, which is what makes the next scheduler run
@@ -89,12 +102,13 @@ public class NotificationDispatchWorker {
 			.map(ErrandEntity::getErrandNumber)
 			.orElse(null);
 
-		subscriptionRepository.findAllActiveForErrand(first.getMunicipalityId(), first.getNamespace(), errandId, now(ZoneId.systemDefault()))
+		// A subscriber may cover the same errand through both a NAMESPACE and an ERRAND subscription
+		final var subscriptionsBySubscriber = subscriptionRepository.findAllActiveForErrand(first.getMunicipalityId(), first.getNamespace(), errandId, now(ZoneId.systemDefault()))
 			.stream()
-			// A subscriber may cover the same errand through both a NAMESPACE and an ERRAND subscription
-			.collect(groupingBy(subscription -> subscription.getSubscriber().getId(), LinkedHashMap::new, toList()))
-			.values()
-			.forEach(subscriptions -> dispatch(errandId, errandNumber, group, subscriptions));
+			.collect(groupingBy(subscription -> subscription.getSubscriber().getId(), LinkedHashMap::new, toList()));
+
+		LOG.debug("Dispatching {} event(s) on errand {} to {} subscriber(s) with an active subscription", group.size(), errandId, subscriptionsBySubscriber.size());
+		subscriptionsBySubscriber.values().forEach(subscriptions -> dispatch(errandId, errandNumber, group, subscriptions));
 
 		dispatchRepository.deleteAll(group);
 	}
@@ -107,18 +121,94 @@ public class NotificationDispatchWorker {
 		// once the errand is reachable again. Already delivered notifications are deliberately not retracted: the
 		// subscriber had access when they were created, so they tell them nothing they were not entitled to know.
 		if (!mayReachErrand(errandId, subscriber)) {
+			LOG.debug("Subscriber {} may not reach errand {} and is not notified of it", subscriber.getId(), errandId);
 			return;
 		}
 
-		final var events = group.stream()
-			.filter(this::isWithinMaxAge)
-			.filter(entry -> !isExecutingUser(subscriber, entry))
-			.filter(entry -> subscriptions.stream().anyMatch(subscription -> wantsEvent(subscription, entry)))
+		// Each event goes to the union of the channels of every subscription that wants it, so an event reached through
+		// several subscriptions or profiles is still delivered only once per channel
+		final var deliveries = new EnumMap<NotificationChannelType, List<NotificationDispatchEntity>>(NotificationChannelType.class);
+		group.forEach(entry -> channelsFor(errandId, subscriber, subscriptions, entry)
+			.forEach(channel -> deliveries.computeIfAbsent(channel, _ -> new ArrayList<>()).add(entry)));
+
+		if (!deliveries.isEmpty()) {
+			LOG.debug("Delivering event(s) on errand {} to subscriber {} on {}", errandId, subscriber.getId(), deliveries.keySet());
+			channelDispatcher.send(errandId, errandNumber, subscriber, deliveries);
+		}
+	}
+
+	/**
+	 * The channels the event goes to the subscriber on, which is none for a stale event, for an event the subscriber
+	 * caused themselves and for an event none of their subscriptions want.
+	 */
+	private List<NotificationChannelType> channelsFor(final String errandId, final SubscriberEntity subscriber, final List<SubscriptionEntity> subscriptions, final NotificationDispatchEntity entry) {
+		if (!isWithinMaxAge(entry)) {
+			LOG.debug("Event {} on errand {} is older than {} and is not delivered to subscriber {}", entry.getId(), errandId, maxAge, subscriber.getId());
+			return emptyList();
+		}
+		if (isExecutingUser(subscriber, entry)) {
+			LOG.debug("Event {} on errand {} was caused by subscriber {} and is not delivered to them", entry.getId(), errandId, subscriber.getId());
+			return emptyList();
+		}
+
+		final var channels = subscriptions.stream()
+			.flatMap(subscription -> channelsFor(subscription, entry).stream())
+			.distinct()
 			.toList();
 
-		if (!events.isEmpty()) {
-			channelDispatcher.send(errandId, errandNumber, subscriber, events);
+		if (channels.isEmpty()) {
+			// The filters are described only when debug is enabled, as the event is held against them for every subscriber
+			LOG.atDebug()
+				.setMessage("Event {} on errand {} ({}/{}, added labels {}) is wanted by no subscription of subscriber {}: {}")
+				.addArgument(entry.getId())
+				.addArgument(errandId)
+				.addArgument(entry.getEventType())
+				.addArgument(entry.getSubType())
+				.addArgument(entry.getAddedLabelIds())
+				.addArgument(subscriber.getId())
+				.addArgument(() -> describeFilters(subscriptions))
+				.log();
 		}
+		return channels;
+	}
+
+	/**
+	 * The filters each subscription holds events against, as
+	 * {@link #channelsFor(SubscriptionEntity, NotificationDispatchEntity)}
+	 * applies them.
+	 */
+	private static String describeFilters(final List<SubscriptionEntity> subscriptions) {
+		return subscriptions.stream()
+			.map(subscription -> ofNullable(subscription.getProfile())
+				.map(profile -> "profile " + profile.getName() + " " + profile.getEventFilters())
+				.orElseGet(() -> "subscription " + subscription.getId() + " " + filtersOf(subscription)))
+			.collect(joining(", "));
+	}
+
+	/**
+	 * The channels a subscription delivers the event on. A subscription to a profile is governed by the profile - its
+	 * filters select the events and its channels carry them, unless it has none and leaves that to the subscriber's own
+	 * channels. Any other subscription delivers what its filters accept on the subscriber's own channels.
+	 */
+	private List<NotificationChannelType> channelsFor(final SubscriptionEntity subscription, final NotificationDispatchEntity entry) {
+		final var profile = subscription.getProfile();
+		if (profile != null) {
+			return matchesAny(profile.getEventFilters(), entry) ? channelsOf(profile, subscription.getSubscriber()) : emptyList();
+		}
+		return wantsEvent(subscription, entry) ? channelsOf(subscription.getSubscriber()) : emptyList();
+	}
+
+	private static List<NotificationChannelType> channelsOf(final SubscriptionProfileEntity profile, final SubscriberEntity subscriber) {
+		return ofNullable(profile.getChannels())
+			.filter(channels -> !channels.isEmpty())
+			.orElseGet(() -> channelsOf(subscriber));
+	}
+
+	private static List<NotificationChannelType> channelsOf(final SubscriberEntity subscriber) {
+		return ofNullable(subscriber.getChannels()).orElse(emptyList()).stream()
+			.map(NotificationChannelEmbeddable::getType)
+			.filter(Objects::nonNull)
+			.toList();
 	}
 
 	/**
@@ -158,15 +248,23 @@ public class NotificationDispatchWorker {
 	 * filters at either level means everything is wanted.
 	 */
 	private boolean wantsEvent(final SubscriptionEntity subscription, final NotificationDispatchEntity entry) {
-		var filters = subscription.getEventFilters();
-		if (filters == null || filters.isEmpty()) {
-			filters = subscription.getSubscriber().getEventFilters();
-		}
-		return filters == null || filters.isEmpty() || filters.stream().anyMatch(filter -> matches(filter, entry));
+		final var filters = filtersOf(subscription);
+		return filters == null || filters.isEmpty() || matchesAny(filters, entry);
+	}
+
+	private static List<EventFilterEmbeddable> filtersOf(final SubscriptionEntity subscription) {
+		return ofNullable(subscription.getEventFilters())
+			.filter(filters -> !filters.isEmpty())
+			.orElseGet(() -> subscription.getSubscriber().getEventFilters());
+	}
+
+	private boolean matchesAny(final List<EventFilterEmbeddable> filters, final NotificationDispatchEntity entry) {
+		return ofNullable(filters).orElse(emptyList()).stream().anyMatch(filter -> matches(filter, entry));
 	}
 
 	private boolean matches(final EventFilterEmbeddable filter, final NotificationDispatchEntity entry) {
 		return Objects.equals(filter.getType(), entry.getEventType())
-			&& (filter.getSubtype() == null || Objects.equals(filter.getSubtype(), entry.getSubType()));
+			&& (filter.getSubtype() == null || EventSubType.selects(filter.getSubtype(), entry.getSubType()))
+			&& (filter.getLabelId() == null || ofNullable(entry.getAddedLabelIds()).orElse(emptySet()).contains(filter.getLabelId()));
 	}
 }

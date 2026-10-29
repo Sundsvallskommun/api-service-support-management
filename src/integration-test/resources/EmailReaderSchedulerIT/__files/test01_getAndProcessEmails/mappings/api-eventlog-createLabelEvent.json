@@ -1,0 +1,55 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "CREATE",
+					"subType": "LABEL",
+					"owner": "SupportManagement",
+					"metadata": [
+						{
+							"key": "CurrentRevision",
+							"value": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+						},
+						{
+							"key": "CurrentVersion",
+							"value": "0"
+						},
+						{
+							"key": "Namespace",
+							"value": "NAMESPACE-1"
+						},
+						{
+							"key": "Channel",
+							"value": "CHANNEL-1"
+						},
+						{
+							"key": "Status",
+							"value": "STATUS-1"
+						}
+					],
+					"message": "${json-unit.regex}Ärendet uppdaterat med etikett \"SOME_CATEGORY_[12]\"",
+					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+					"sourceType": "Errand",
+					"requestGroupId": "${json-unit.any-string}",
+					"created": "${json-unit.any-string}"
+				},
+				"ignoreArrayOrder": true
+			}
+		],
+		"urlPattern": "/api-eventlog/2281/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createLabelEvent"
+}

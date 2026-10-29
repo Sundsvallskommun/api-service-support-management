@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "17.3"
+  version: "18.1"
 servers:
-- url: http://localhost:65312
+- url: http://localhost:40887
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -84,6 +84,9 @@ tags:
   description: ExternalIdType metadata operations
 - name: Metadata
   description: Metadata operations
+- name: Subscription profiles
+  description: Subscription profile CRUD operations. A profile is a named set of event
+    filters and the channels the events they match are delivered on.
 - name: Metadata for measure types
   description: Measure type metadata operations
 - name: Metadata for roles
@@ -97,6 +100,191 @@ tags:
 - name: Subscriber notifications
   description: Subscriber notification operations
 paths:
+  /{municipalityId}/{namespace}/subscription-profiles/{profileId}/members:
+    get:
+      tags:
+      - Subscription profiles
+      summary: List subscription profile members
+      description: List the principals holding a namespace subscription to the profile.
+      operationId: getSubscriptionProfileMembers
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identifier"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    put:
+      tags:
+      - Subscription profiles
+      summary: Replace subscription profile members
+      description: "Makes the given principals the members of the profile. Principals\
+        \ not yet members are subscribed to the profile for the whole namespace, creating\
+        \ a subscriber for them when they have none, and members missing from the\
+        \ list lose their subscription to the profile. A principal who has left the\
+        \ profile themselves is not subscribed again."
+      operationId: replaceSubscriptionProfileMembers
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Identifier"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/notifications/{notificationId}/acknowledge:
     put:
       tags:
@@ -4210,6 +4398,171 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscription-profiles:
+    get:
+      tags:
+      - Subscription profiles
+      summary: List subscription profiles
+      description: List the subscription profiles of the namespace.
+      operationId: getSubscriptionProfiles
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionProfile"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Subscription profiles
+      summary: Create subscription profile
+      description: Create a new subscription profile in the namespace.
+      operationId: createSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionProfile"
+        required: true
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "409":
+          description: Conflict — a subscription profile with the same name already
+            exists in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -12294,6 +12647,287 @@ paths:
                 $ref: "#/components/schemas/Problem"
         "503":
           description: Search not available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscription-profiles/{profileId}:
+    get:
+      tags:
+      - Subscription profiles
+      summary: Get subscription profile
+      description: Fetch a single subscription profile by id.
+      operationId: getSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionProfile"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Subscription profiles
+      summary: Delete subscription profile
+      description: Delete a subscription profile. All subscriptions pointing at the
+        profile are also removed.
+      operationId: deleteSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — the profile is the reporter profile of the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Subscription profiles
+      summary: Update subscription profile
+      description: Partially update an existing subscription profile. Only non-null
+        fields in the request body are applied; eventFilters and channels are replaced
+        as a whole. The change applies at once to every subscription pointing at the
+        profile.
+      operationId: updateSubscriptionProfile
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: profileId
+        in: path
+        description: Subscription profile ID
+        required: true
+        schema:
+          type: string
+        example: 123e4567-e89b-12d3-a456-426614174000
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionProfile"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionProfile"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — a subscription profile with the same name already
+            exists in the namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
           content:
             application/problem+json:
               schema:
@@ -22992,19 +23626,44 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
+    Identifier:
+      type: object
+      description: Identifier describing a user or subject (AD-account or party-id)
+      properties:
+        type:
+          type: string
+          description: Identifier type
+          enum:
+          - adAccount
+          - partyId
+          examples:
+          - adAccount
+          - partyId
+          minLength: 1
+          pattern: ^(adAccount|partyId)$
+        value:
+          type: string
+          description: Identifier value (AD-account name or partyId UUID)
+          examples:
+          - joe01doe
+          maxLength: 255
+          minLength: 0
+      required:
+      - type
+      - value
     ConstraintViolationProblem:
       type: object
       properties:
@@ -23020,11 +23679,11 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
+        detail:
+          type: string
     Violation:
       type: object
       properties:
@@ -23204,19 +23863,36 @@ components:
             \ DECISION, for a process waiting for its decision to learn that it has\
             \ been made. Commands sent to the process (PROCESS, SIGNAL) are not errand\
             \ changes, are never filtered by this list and may not be listed. Nor\
-            \ may NOTE and SYSTEM, as no event of theirs is ever published to a process"
+            \ may NOTE and SYSTEM, as no event of theirs is ever published to a process.\
+            \ A change of status or phase is told as STATUS or PHASE apart from the\
+            \ ERRAND event of the change it is part of, as are an assignment (ASSIGNMENT),\
+            \ every label added (LABEL) and a draft being made active (ERRAND_ACTIVATION).\
+            \ Messages are logged by the channel they went through, received and sent\
+            \ alike: MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL,\
+            \ and MESSAGE_CONVERSATION_EXTERNAL and MESSAGE_CONVERSATION_INTERNAL\
+            \ for messages in conversations with the outside world and within the\
+            \ organisation respectively"
           items:
             type: string
             enum:
+            - ASSIGNMENT
             - ATTACHMENT
             - DECISION
             - ERRAND
+            - ERRAND_ACTIVATION
             - HANDOVER_IN
             - HANDOVER_OUT
-            - MESSAGE
+            - LABEL
+            - MESSAGE_CONVERSATION_EXTERNAL
+            - MESSAGE_CONVERSATION_INTERNAL
+            - MESSAGE_EMAIL_EXTERNAL
+            - MESSAGE_SMS_EXTERNAL
+            - MESSAGE_WEB_MESSAGE_EXTERNAL
             - NOTE
+            - PHASE
             - PROCESS
             - SIGNAL
+            - STATUS
             - SYSTEM
             - SUSPENSION
         excludeEventDescriptionsInEmail:
@@ -23226,14 +23902,49 @@ components:
             \ is set it defaults to false."
           examples:
           - true
+        smsNotificationsEnabled:
+          type: boolean
+          description: "If set to true subscribers may be notified by sms, which only\
+            \ names the errands that were updated and links to them. Events routed\
+            \ to sms in a namespace where it is not enabled are not delivered by sms.\
+            \ If no value is set it defaults to false."
+          examples:
+          - true
         baseUrl:
           type: string
-          description: Base url of the web application handling errands in this namespace.
-            Links to errands are made as <baseUrl>/<municipalityId>/<namespace>/errands/<errandNumber>.
-            Leaving it out means emails carry no links to errands.
+          description: "Address of an errand in the web application handling errands\
+            \ in this namespace, short of the errand number. Links to errands are\
+            \ made as <baseUrl>/<errandNumber>, a trailing slash on the base url being\
+            \ ignored. Leaving it out means emails carry no links to errands."
           examples:
-          - https://draken.sundsvall.se
+          - https://draken.sundsvall.se/VOF/arende
           pattern: ^https?://\S+$
+        reporterProfileId:
+          type: string
+          description: "Id of a subscription profile in this namespace. When set,\
+            \ the reporter of an errand is subscribed to the errand with this profile\
+            \ as the errand is created. Leaving it out subscribes no reporter."
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
+        newSubscriberChannels:
+          type: array
+          description: "The channels a subscriber is given when the service creates\
+            \ one for a user, as when a user is assigned an errand without being a\
+            \ subscriber in the namespace. Leaving it out gives such a subscriber\
+            \ the INTERNAL channel alone. Subscribers already present keep their own\
+            \ channels."
+          examples:
+          - - INTERNAL
+            - EMAIL
+          items:
+            type: string
+            description: Channel through which a notification is delivered
+            enum:
+            - INTERNAL
+            - EMAIL
+            - SMS
+          maxItems: 2147483647
+          minItems: 1
         limitedReadAccess:
           $ref: "#/components/schemas/LimitedReadAccess"
           description: "What a user whose labels only grant them limited read for\
@@ -23357,6 +24068,16 @@ components:
           description: "If set to true, action will be active"
           examples:
           - true
+        notify:
+          type: boolean
+          default: true
+          description: "If set to false, what the action does notifies no one, as\
+            \ a request sent with X-notify: false. The handler of the errand is not\
+            \ notified of what an action does either way, and the process of the errand\
+            \ is told either way. An action run at once, as part of the request that\
+            \ creates or updates the errand, notifies only if that request does too"
+          examples:
+          - false
         conditions:
           type: array
           description: Conditions for when the action should be added to errand. Parameters
@@ -23443,7 +24164,7 @@ components:
           examples:
           - keycard
           minLength: 1
-          pattern: "[A-Z0-9_]+"
+          pattern: "[A-Z0-9_-]+"
         deprecated:
           type: boolean
           default: false
@@ -23534,11 +24255,15 @@ components:
     JsonNode:
       type: object
       properties:
-        container:
+        empty:
           type: boolean
-        number:
+        array:
           type: boolean
-        valueNode:
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         missingNode:
           type: boolean
@@ -23560,6 +24285,8 @@ components:
           type: boolean
         pojo:
           type: boolean
+        floatingPointNumber:
+          type: boolean
         short:
           type: boolean
         int:
@@ -23579,17 +24306,11 @@ components:
           type: boolean
         binary:
           type: boolean
-        floatingPointNumber:
+        valueNode:
           type: boolean
-        empty:
+        container:
           type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -24140,38 +24861,91 @@ components:
           pattern: ^(CREATE|READ|UPDATE|DELETE|ACCESS|EXECUTE|CANCEL|DROP)$
         subtype:
           type: string
-          description: "Event subtype. If null, all subtypes of the given type match."
+          description: "Event subtype. If null, all subtypes of the given type match.\
+            \ Messages are matched by the channel they went through, received and\
+            \ sent alike: MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL,\
+            \ and MESSAGE_CONVERSATION_EXTERNAL and MESSAGE_CONVERSATION_INTERNAL\
+            \ for messages in conversations with the outside world and within the\
+            \ organisation respectively. ERRAND matches every change to an errand,\
+            \ while STATUS and PHASE match only changes of its status and of its phase\
+            \ respectively. LABEL matches a label being added to an errand, logged\
+            \ once for every label added - as CREATE/LABEL for the labels an errand\
+            \ is created with and as UPDATE/LABEL for those added later. ERRAND_ACTIVATION\
+            \ matches a draft being made active, logged as UPDATE/ERRAND_ACTIVATION\
+            \ alongside the UPDATE/ERRAND of the update that made it active, and is\
+            \ not matched by ERRAND."
           examples:
           - ATTACHMENT
           maxLength: 64
           minLength: 0
+        labelId:
+          type: string
+          description: "Optional id of a metadata label, only allowed together with\
+            \ subtype LABEL. When set, only the event of this label being added to\
+            \ the errand matches, the id compared regardless of case. If null, which\
+            \ label was added does not matter."
+          examples:
+          - f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b
       required:
       - type
-    Identifier:
+    SubscriptionProfile:
       type: object
-      description: Identifier describing a user or subject (AD-account or party-id)
+      description: "A subscription profile is a named set of event filters and the\
+        \ channels the events they match are delivered on. A subscription pointing\
+        \ at a profile delivers the events the profile's filters select, while the\
+        \ subscriber's own event filters do not apply to it. The events are delivered\
+        \ on the profile's channels, or on the subscriber's own channels when the\
+        \ profile has none."
       properties:
-        type:
+        id:
           type: string
-          description: Identifier type
-          enum:
-          - adAccount
-          - partyId
+          description: Unique identifier of the subscription profile
           examples:
-          - adAccount
-          - partyId
-          minLength: 1
-          pattern: ^(adAccount|partyId)$
-        value:
+          - 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        name:
           type: string
-          description: Identifier value (AD-account name or partyId UUID)
+          description: "Name of the profile, unique within the namespace"
           examples:
-          - joe01doe
+          - Mejl om nya ärenden och meddelanden
           maxLength: 255
           minLength: 0
-      required:
-      - type
-      - value
+        description:
+          type: string
+          description: Optional description of what the profile is for
+          examples:
+          - Används av enhetschefer och verksamhetschefer
+          maxLength: 255
+          minLength: 0
+        eventFilters:
+          type: array
+          description: Event filters selecting which events the profile delivers.
+            An event matching any of them is delivered.
+          items:
+            $ref: "#/components/schemas/EventFilter"
+        channels:
+          type: array
+          description: "Channels the events matched by the profile are delivered on.\
+            \ Leaving it out or empty delivers them on the subscriber's own channels\
+            \ instead, which lets each user choose how they are notified. An update\
+            \ with an empty list clears the profile's channels."
+          items:
+            type: string
+            description: Channel through which a notification is delivered
+            enum:
+            - INTERNAL
+            - EMAIL
+            - SMS
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was created
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was last modified
+          readOnly: true
     NotificationChannel:
       type: object
       description: Channel a subscriber wants to receive notifications on
@@ -24189,7 +24963,9 @@ components:
           type: string
           description: "Optional destination override (e.g. an alternative e-mail\
             \ address or phone number). If omitted, the default destination derived\
-            \ from the subscriber's identifier is used."
+            \ from the subscriber's identifier is used, i.e. the e-mail address or\
+            \ mobile number of the employee. The destination of an SMS channel must\
+            \ be an MSISDN, e.g. +46701234567."
           examples:
           - user@example.com
           maxLength: 255
@@ -24281,12 +25057,22 @@ components:
         target:
           $ref: "#/components/schemas/SubscriptionTarget"
           description: What this subscription targets (an errand or the whole namespace).
+        profileId:
+          type: string
+          description: "Optional id of a subscription profile. When set, the profile\
+            \ alone decides which events this subscription delivers, and on which\
+            \ channels unless the profile has none, when the subscriber's own channels\
+            \ are used. The subscriber's event filters do not apply. Cannot be combined\
+            \ with eventFilters."
+          examples:
+          - 123e4567-e89b-12d3-a456-426614174000
         eventFilters:
           type: array
           description: "Optional per-subscription override of the subscriber-level\
             \ event filters. When set, these filters apply to events matched by this\
             \ subscription instead of the subscriber's global filters. When null or\
-            \ empty, the subscriber-level filters are used as-is."
+            \ empty, the subscriber-level filters are used as-is. Cannot be combined\
+            \ with profileId."
           items:
             $ref: "#/components/schemas/EventFilter"
         expiresAt:
@@ -24899,7 +25685,7 @@ components:
           items:
             type: string
             minLength: 1
-            pattern: "[A-Z0-9_]+"
+            pattern: "[A-Z0-9_-]+"
           minItems: 1
         destinationParentPath:
           type: array
@@ -24908,7 +25694,7 @@ components:
           items:
             type: string
             minLength: 1
-            pattern: "[A-Z0-9_]+"
+            pattern: "[A-Z0-9_-]+"
         sourcePaths:
           type: array
           description: "MERGE only: paths of the source labels merged into path"
@@ -24930,7 +25716,7 @@ components:
           type: string
           description: "MOVE only: an optional new resourceName to set at the same\
             \ time (used for a combined move+rename)"
-          pattern: "[A-Z0-9_]+"
+          pattern: "[A-Z0-9_-]+"
       required:
       - path
       - type
@@ -25372,8 +26158,11 @@ components:
             \ ACTIVE - the errand is handled as any errand is. Left out on create,\
             \ the errand is ACTIVE. A draft is made active by a patch setting ACTIVE,\
             \ which starts a process the labels start on their own, unless the patch\
-            \ asks not to wake the process. An active errand never becomes a draft\
-            \ again."
+            \ asks not to wake the process. Made active, everything on the errand\
+            \ is told of as new: every label on it, the ancestors of its labels included,\
+            \ its assignee, its status and its phase are logged as events, and its\
+            \ actions are created as for a new errand. An active errand never becomes\
+            \ a draft again."
           enum:
           - DRAFT
           - ACTIVE
@@ -26955,6 +27744,8 @@ components:
           example: NEW_CASE
         classification:
           $ref: "#/components/schemas/Classification"
+          description: Category/type to set on the new errand. Required when the
+            target namespace validates CATEGORY or TYPE, otherwise optional
         labels:
           type: array
           description: Label UUIDs to apply on the new errand

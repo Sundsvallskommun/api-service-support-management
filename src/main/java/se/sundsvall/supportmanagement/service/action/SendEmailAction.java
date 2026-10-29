@@ -31,6 +31,8 @@ import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 public class SendEmailAction extends AbstractAction {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SendEmailAction.class);
+	private static final String EVENT_LOG_EMAIL_SENT_BY_ACTION = "Meddelande skickat via e-post av schemalagd åtgärd";
+	private static final String EVENT_LOG_EMAIL_SENT_BY_NAMED_ACTION = EVENT_LOG_EMAIL_SENT_BY_ACTION + " \"%s\"";
 
 	private static final String RECIPIENT = "recipient";
 	private static final String SENDER = "sender";
@@ -150,6 +152,16 @@ public class SendEmailAction extends AbstractAction {
 		return createActionWithDuration(errand, actionConfigEntity);
 	}
 
+	/**
+	 * The text the email is logged with, naming the action by its display value when it has one.
+	 */
+	static String toEventMessage(final ActionConfigEntity actionConfigEntity) {
+		return Optional.ofNullable(actionConfigEntity.getDisplayValue())
+			.filter(displayValue -> !displayValue.isBlank())
+			.map(EVENT_LOG_EMAIL_SENT_BY_NAMED_ACTION::formatted)
+			.orElse(EVENT_LOG_EMAIL_SENT_BY_ACTION);
+	}
+
 	@Override
 	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
 		var parameterMap = actionConfigEntity.getParameters().stream()
@@ -175,7 +187,7 @@ public class SendEmailAction extends AbstractAction {
 			.withSubject(subject)
 			.withHtmlMessage(htmlBody);
 
-		communicationService.sendEmail(errand, emailRequest);
+		communicationService.sendEmail(errand, emailRequest, toEventMessage(actionConfigEntity));
 		LOG.info("SEND_EMAIL action executed for errand '{}'", errand.getId());
 
 		return false;

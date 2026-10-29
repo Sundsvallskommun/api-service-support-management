@@ -32,9 +32,9 @@ class SubscriptionEntityTest {
 		assertThat(SubscriptionEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("subscriber", "errand"),
-			hasValidBeanEqualsExcluding("subscriber", "errand"),
-			hasValidBeanToStringExcluding("subscriber", "errand")));
+			hasValidBeanHashCodeExcluding("subscriber", "errand", "profile"),
+			hasValidBeanEqualsExcluding("subscriber", "errand", "profile"),
+			hasValidBeanToStringExcluding("subscriber", "errand", "profile")));
 	}
 
 	@Test
@@ -43,6 +43,7 @@ class SubscriptionEntityTest {
 		final var subscriber = SubscriberEntity.create().withId("subscriber-id");
 		final var targetType = DbSubscriptionTargetType.ERRAND;
 		final var errand = ErrandEntity.create().withId("errand-id");
+		final var profile = SubscriptionProfileEntity.create().withId("profile-id");
 		final var eventFilters = List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("ATTACHMENT"));
 		final var expiresAt = now().plusDays(7);
 		final var created = now().minusDays(1);
@@ -53,6 +54,7 @@ class SubscriptionEntityTest {
 			.withSubscriber(subscriber)
 			.withTargetType(targetType)
 			.withErrand(errand)
+			.withProfile(profile)
 			.withEventFilters(eventFilters)
 			.withExpiresAt(expiresAt)
 			.withCreated(created)
@@ -63,6 +65,7 @@ class SubscriptionEntityTest {
 		assertThat(entity.getSubscriber()).isEqualTo(subscriber);
 		assertThat(entity.getTargetType()).isEqualTo(targetType);
 		assertThat(entity.getErrand()).isEqualTo(errand);
+		assertThat(entity.getProfile()).isEqualTo(profile);
 		assertThat(entity.getEventFilters()).isEqualTo(eventFilters);
 		assertThat(entity.getExpiresAt()).isEqualTo(expiresAt);
 		assertThat(entity.getCreated()).isEqualTo(created);

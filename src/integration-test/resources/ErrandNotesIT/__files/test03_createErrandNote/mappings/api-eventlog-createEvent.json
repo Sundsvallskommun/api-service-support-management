@@ -35,6 +35,7 @@
 					"historyReference": "90572753-e8b0-48f8-b200-3623eaa76f9a",
 					"sourceType": "Note",
 					"created": "${json-unit.any-string}",
+					"requestGroupId": "${json-unit.any-string}",
 					"type": "CREATE",
 					"message": "Ärendenotering har skapats.",
 					"subType": "NOTE",

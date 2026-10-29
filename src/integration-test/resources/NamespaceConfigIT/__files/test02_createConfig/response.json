@@ -12,11 +12,12 @@
 	"singleDecisionPerErrand": false,
 	"teliaAceWorkItemEnabled": false,
 	"excludeEventDescriptionsInEmail": false,
+	"smsNotificationsEnabled": false,
 	"processConsumer": "pw-alkt",
 	"processTriggers": [
 		"ATTACHMENT",
 		"DECISION",
 		"ERRAND",
-		"MESSAGE"
+		"MESSAGE_CONVERSATION_EXTERNAL"
 	]
 }

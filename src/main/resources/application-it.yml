@@ -49,6 +49,10 @@ scheduler:
     email:
       sender-address: no-reply@test.local
       sender-name: Sundsvalls kommun
+    sms:
+      sender: Sundsvall
+  attachment-hash:
+    cron: "-"
   process-event:
     cron: "-"
   process-cleanup:

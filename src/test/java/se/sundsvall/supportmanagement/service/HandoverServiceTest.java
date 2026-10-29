@@ -298,14 +298,39 @@ class HandoverServiceTest {
 		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
 		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
 		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
+		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.CATEGORY)).thenReturn(true);
 
 		assertThatException()
 			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
 			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
 			.satisfies(problem -> {
 				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
-				assertThat(problem.getMessage()).contains("classification");
+				assertThat(problem.getMessage()).contains("classification").contains(TARGET_NAMESPACE);
 			});
+	}
+
+	@Test
+	void handoverValidateMappingsMissingClassificationSucceedsWhenTargetDoesNotValidateClassification() {
+		final var request = HandoverErrandRequest.create()
+			.withTarget(HandoverTarget.create().withNamespace(TARGET_NAMESPACE).withMunicipalityId(TARGET_MUNICIPALITY_ID))
+			.withMapping(HandoverMapping.create()
+				.withStatus(MAPPING_STATUS)
+				.withClassification(null)
+				.withLabels(List.of()));
+		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(idempotencyRepositoryMock.save(any(HandoverIdempotencyEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, RW)).thenReturn(sourceEntity());
+		when(metadataServiceMock.isValidated(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID, EntityType.STATUS)).thenReturn(true);
+		when(metadataServiceMock.findStatuses(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any())).thenReturn(List.of(Status.create().withName(MAPPING_STATUS)));
+		when(errandServiceMock.createErrand(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any(), isNull())).thenReturn(NEW_ERRAND_ID);
+		when(errandsRepositoryMock.findById(NEW_ERRAND_ID)).thenReturn(Optional.of(targetEntity()));
+		when(relationClientMock.createRelation(eq(TARGET_MUNICIPALITY_ID), any()))
+			.thenReturn(ResponseEntity.created(URI.create("/2282/relations/" + RELATION_ID)).build());
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(Revision.create());
+
+		final var result = service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request);
+
+		assertThat(result.getNewErrandId()).isEqualTo(NEW_ERRAND_ID);
 	}
 
 	@Test
@@ -546,6 +571,7 @@ class HandoverServiceTest {
 			.withFileSize(1024)
 			.withSequenceNumber(7)
 			.withReceived(received)
+			.withHash("abc123")
 			.withAttachmentData(AttachmentDataEntity.create().withFile(blobMock));
 		final var freshSource = sourceEntity().withAttachments(new ArrayList<>(List.of(sourceAttachment)));
 		final var target = targetEntity();
@@ -581,6 +607,7 @@ class HandoverServiceTest {
 			assertThat(captor.getValue().getReceived()).isEqualTo(received);
 			assertThat(captor.getValue().getSequenceNumber()).isEqualTo(1);
 			assertThat(captor.getValue().getFileSize()).isEqualTo(1024);
+			assertThat(captor.getValue().getHash()).isEqualTo("abc123");
 			assertThat(captor.getValue().getNamespace()).isEqualTo(TARGET_NAMESPACE);
 			assertThat(captor.getValue().getMunicipalityId()).isEqualTo(TARGET_MUNICIPALITY_ID);
 			assertThat(captor.getValue().getAttachmentData().getFile()).isEqualTo(newBlobMock);

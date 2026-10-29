@@ -23,7 +23,7 @@ class SubscriberMapperTest {
 			.withName("Servicedesk")
 			.withIdentifier(Identifier.create().withType("adAccount").withValue("joe01doe"))
 			.withChannels(List.of(NotificationChannel.create().withType(NotificationChannelType.EMAIL).withDestination("joe@example.com")))
-			.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("ATTACHMENT")))
+			.withEventFilters(List.of(EventFilter.create().withType("UPDATE").withSubtype("ATTACHMENT").withLabelId("label-1")))
 			.withPausedFrom(OffsetDateTime.parse("2026-06-01T00:00:00+02:00"))
 			.withPausedUntil(OffsetDateTime.parse("2026-06-30T00:00:00+02:00"));
 
@@ -37,11 +37,20 @@ class SubscriberMapperTest {
 			NotificationChannelEmbeddable.create()
 				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL)
 				.withDestination("joe@example.com"));
-		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("ATTACHMENT"));
+		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("ATTACHMENT").withLabelId("label-1"));
 		assertThat(entity.getPausedFrom()).isEqualTo(subscriber.getPausedFrom());
 		assertThat(entity.getPausedUntil()).isEqualTo(subscriber.getPausedUntil());
 		// createdBy is set by service, not mapper
 		assertThat(entity.getCreatedBy()).isNull();
+	}
+
+	@Test
+	void toEventFilterEmbeddableKeepsTheLabelIdInLowerCase() {
+		final var filter = EventFilter.create().withType("UPDATE").withSubtype("LABEL").withLabelId("F2B7C5D1-7E3A-4B8E-9F0A-1C2D3E4F5A6B");
+
+		assertThat(SubscriberMapper.toEventFilterEmbeddable(filter))
+			.isEqualTo(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("LABEL").withLabelId("f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b"));
+		assertThat(SubscriberMapper.toEventFilterEmbeddable(filter.withLabelId(null)).getLabelId()).isNull();
 	}
 
 	@Test
@@ -58,7 +67,7 @@ class SubscriberMapperTest {
 			.withChannels(List.of(NotificationChannelEmbeddable.create()
 				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS)
 				.withDestination("+46700000000")))
-			.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype(null)))
+			.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype(null).withLabelId("label-2")))
 			.withCreated(OffsetDateTime.parse("2026-05-01T12:00:00+02:00"))
 			.withModified(OffsetDateTime.parse("2026-05-02T12:00:00+02:00"))
 			.withCreatedBy(IdentifierEmbeddable.create().withType("adAccount").withValue("adm01"));
@@ -69,7 +78,7 @@ class SubscriberMapperTest {
 		assertThat(dto.getName()).isEqualTo("Servicedesk");
 		assertThat(dto.getIdentifier()).isEqualTo(Identifier.create().withType("adAccount").withValue("joe01doe"));
 		assertThat(dto.getChannels()).containsExactly(NotificationChannel.create().withType(NotificationChannelType.SMS).withDestination("+46700000000"));
-		assertThat(dto.getEventFilters()).containsExactly(EventFilter.create().withType("UPDATE"));
+		assertThat(dto.getEventFilters()).containsExactly(EventFilter.create().withType("UPDATE").withLabelId("label-2"));
 		assertThat(dto.getCreated()).isEqualTo(entity.getCreated());
 		assertThat(dto.getModified()).isEqualTo(entity.getModified());
 		assertThat(dto.getCreatedBy()).isEqualTo(Identifier.create().withType("adAccount").withValue("adm01"));
