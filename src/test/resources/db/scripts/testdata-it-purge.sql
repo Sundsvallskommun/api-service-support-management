@@ -107,8 +107,8 @@ INSERT INTO conversation_relation_id(conversation_id, relation_id)
 VALUES ('aaaa7777-0000-0000-0000-000000000001', 'PURGE-RELATION-1');
 
 
--- An investigation and the decision resting on it, each holding a parameter with two values. A run removes them with
--- the errand, the decision whether it is concluded or not.
+-- An investigation with a section, and the decision resting on it, each holding a parameter with two values. A run
+-- removes them with the errand, the decision whether it is concluded or not.
 INSERT INTO investigation(id, errand_id, municipality_id, namespace, status, created, version)
 VALUES ('aaaa9999-0000-0000-0000-000000000001', 'aaaa1111-0000-0000-0000-000000000001', '2281', 'PURGE-NAMESPACE',
         'ACTIVE', '2020-01-01 12:00:00.000', 0);
@@ -119,6 +119,16 @@ VALUES ('aaaa9999-0000-0000-0000-000000000002', 'aaaa9999-0000-0000-0000-0000000
 INSERT INTO investigation_parameter_values(investigation_parameter_id, value_order, value)
 VALUES ('aaaa9999-0000-0000-0000-000000000002', 0, 'Skatteverket'),
        ('aaaa9999-0000-0000-0000-000000000002', 1, 'Kronofogden');
+
+INSERT INTO investigation_section(id, investigation_id, section_key, assessment)
+VALUES ('aaaa9999-0000-0000-0000-000000000005', 'aaaa9999-0000-0000-0000-000000000001', 'premises', 'PENDING');
+
+INSERT INTO investigation_section_parameter(id, investigation_section_id, parameters_key)
+VALUES ('aaaa9999-0000-0000-0000-000000000006', 'aaaa9999-0000-0000-0000-000000000005', 'checklist');
+
+INSERT INTO investigation_section_parameter_values(investigation_section_parameter_id, value_order, value)
+VALUES ('aaaa9999-0000-0000-0000-000000000006', 0, 'ventilation'),
+       ('aaaa9999-0000-0000-0000-000000000006', 1, 'brandskydd');
 
 INSERT INTO decision(id, errand_id, municipality_id, namespace, status, outcome, method, decided_by, decided_at,
                      investigation_id, created, version)

@@ -6,8 +6,9 @@ import java.util.List;
  * A parameter of a handling artefact: a key with a list of values, a display name and a group, held as unstructured
  * metadata of the artefact.
  * <p>
- * Implemented by {@link DecisionParameterEntity} and {@link InvestigationParameterEntity}, which share this shape and
- * keep it in a table each, beside their owner. This is what lets one mapper map both.
+ * Implemented by {@link DecisionParameterEntity}, {@link InvestigationParameterEntity} and
+ * {@link InvestigationSectionParameterEntity}, which share this shape and keep it in a table each, beside their owner.
+ * This is what lets one mapper map them all.
  */
 public interface ArtefactParameter {
 

@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.0"
+  version: "18.1"
 servers:
 - url: http://localhost:40887
   description: Generated server url
@@ -27324,6 +27324,16 @@ components:
           description: Timestamp when the section was completed
           examples:
           - 2021-09-28T12:00:00Z
+        parameters:
+          type: array
+          description: "Parameters of the section, unstructured metadata as keys with\
+            \ lists of values, returned in the order of their keys. Keys are trimmed,\
+            \ and parameters sent for the same key are merged: their values are joined\
+            \ in the order sent, and the display name and group are those of the first.\
+            \ On update the sent list replaces the stored one; an omitted list leaves\
+            \ them as they are and an empty list removes them all"
+          items:
+            $ref: "#/components/schemas/Parameter"
     HandoverPreviewRequest:
       type: object
       description: Request describing which namespace a source errand should be previewed

@@ -33,8 +33,8 @@ import static org.hibernate.type.SqlTypes.VARCHAR;
  * One assessed area of an investigation.
  * <p>
  * The assessment is held in a column of its own, so it can be counted across investigations - how many investigations
- * had a deficiency in the financial section, say. The rest of the section is free text, and more structure goes in a
- * JSON parameter with a registered schema.
+ * had a deficiency in the financial section, say. The rest of the section is free text and parameters, and more
+ * structure goes in a JSON parameter with a registered schema.
  */
 @Entity
 @Table(name = "investigation_section",
@@ -88,6 +88,12 @@ public class InvestigationSectionEntity {
 	@OneToMany(mappedBy = "investigationSectionEntity", cascade = ALL, orphanRemoval = true)
 	@OrderBy("key")
 	private List<InvestigationSectionJsonParameterEntity> jsonParameters;
+
+	/**
+	 * The parameters of the section: unstructured metadata as keys with lists of values, held in no particular order.
+	 */
+	@OneToMany(mappedBy = "investigationSectionEntity", cascade = ALL, orphanRemoval = true)
+	private List<InvestigationSectionParameterEntity> parameters;
 
 	public static InvestigationSectionEntity create() {
 		return new InvestigationSectionEntity();
@@ -220,6 +226,19 @@ public class InvestigationSectionEntity {
 
 	public InvestigationSectionEntity withJsonParameters(final List<InvestigationSectionJsonParameterEntity> jsonParameters) {
 		this.jsonParameters = jsonParameters;
+		return this;
+	}
+
+	public List<InvestigationSectionParameterEntity> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(final List<InvestigationSectionParameterEntity> parameters) {
+		this.parameters = parameters;
+	}
+
+	public InvestigationSectionEntity withParameters(final List<InvestigationSectionParameterEntity> parameters) {
+		this.parameters = parameters;
 		return this;
 	}
 

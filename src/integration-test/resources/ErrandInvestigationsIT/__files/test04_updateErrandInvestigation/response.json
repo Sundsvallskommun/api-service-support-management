@@ -16,14 +16,39 @@
 			"heading": "Ekonomisk skötsamhet",
 			"sortOrder": 1,
 			"assessment": "APPROVED",
-			"text": "Inga betalningsanmärkningar finns registrerade."
+			"text": "Inga betalningsanmärkningar finns registrerade.",
+			"parameters": [
+				{
+					"key": "creditCheck",
+					"values": [
+						"UC"
+					]
+				}
+			]
 		},
 		{
 			"id": "f3000000-0000-0000-0000-000000000002",
 			"sectionKey": "premises",
 			"heading": "Lokalen",
 			"sortOrder": 2,
-			"assessment": "PENDING"
+			"assessment": "PENDING",
+			"parameters": [
+				{
+					"key": "area",
+					"values": [
+						"120"
+					]
+				},
+				{
+					"key": "checklist",
+					"displayName": "Checklista",
+					"group": "lokal",
+					"values": [
+						"ventilation",
+						"brandskydd"
+					]
+				}
+			]
 		}
 	],
 	"attachments": [

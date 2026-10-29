@@ -1,0 +1,17 @@
+{
+	"id": "${json-unit.any-string}",
+	"sectionKey": "personal",
+	"heading": "Personlig lämplighet",
+	"sortOrder": 3,
+	"assessment": "PENDING",
+	"parameters": [
+		{
+			"key": "references",
+			"displayName": "Referenser",
+			"values": [
+				"Arbetsgivare",
+				"Hyresvärd"
+			]
+		}
+	]
+}

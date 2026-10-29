@@ -17,6 +17,11 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Schema(description = "Parameter model")
 public class Parameter {
 
+	/** How the parameters of a handling artefact are written and read, for the description of the list on the artefact. */
+	public static final String ARTEFACT_PARAMETERS_DESCRIPTION = "unstructured metadata as keys with lists of values, returned in the order of their keys. "
+		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
+		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all";
+
 	@Schema(description = "Parameter key", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
 	@NotBlank(groups = {
 		Default.class, OnCreate.class, OnUpdate.class

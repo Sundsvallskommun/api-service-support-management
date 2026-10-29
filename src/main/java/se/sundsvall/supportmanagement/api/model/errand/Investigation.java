@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static se.sundsvall.supportmanagement.api.model.errand.Parameter.ARTEFACT_PARAMETERS_DESCRIPTION;
 
 /**
  * An investigation of an errand. The sections are read here but written through their own resource.
@@ -92,9 +93,7 @@ public class Investigation {
 		arraySchema = @Schema(description = "Attachments of the errand linked to this investigation"))
 	private List<ErrandAttachment> attachments;
 
-	@Schema(description = "Parameters of the investigation, unstructured metadata as keys with lists of values, returned in the order of their keys. "
-		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
-		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all")
+	@Schema(description = "Parameters of the investigation, " + ARTEFACT_PARAMETERS_DESCRIPTION)
 	private List<@NotNull(groups = {
 		Default.class, OnCreate.class, OnUpdate.class
 	}) @Valid @ConvertGroup(from = OnUpdate.class, to = Default.class) Parameter> parameters;

@@ -137,72 +137,18 @@ class ErrandInvestigationsResourceTest {
 
 	@Test
 	void createErrandInvestigationWithInvalidParameters() {
-
-		// Act
-		final var response = webTestClient.post()
+		assertInvalidParametersAreRejected(webTestClient.post()
 			.uri(builder -> builder.path(PATH).build(PATH_VARIABLES))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(Arrays.asList(
-				Parameter.create().withKey(" "),
-				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
-				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
-				null,
-				Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")))))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verify
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(
-				tuple("parameters[0].key", "must not be blank"),
-				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
-				tuple("parameters[2].key", "size must be between 0 and 255"),
-				tuple("parameters[2].displayName", "size must be between 0 and 255"),
-				tuple("parameters[2].group", "size must be between 0 and 255"),
-				tuple("parameters[3]", "must not be null"),
-				tuple("parameters[4].values[1]", "must not be blank"),
-				tuple("parameters[4].values[2]", "must not be blank"));
-		verifyNoInteractions(serviceMock);
+			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(invalidParameters())));
 	}
 
 	@Test
 	void updateErrandInvestigationWithInvalidParameters() {
-
-		// Act
-		final var response = webTestClient.patch()
+		assertInvalidParametersAreRejected(webTestClient.patch()
 			.uri(builder -> builder.path(PATH_WITH_ID).build(PATH_VARIABLES))
 			.contentType(APPLICATION_JSON)
-			.bodyValue(Investigation.create().withParameters(Arrays.asList(
-				Parameter.create().withValues(List.of("value")),
-				Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
-				Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
-				null,
-				Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")))))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody(ConstraintViolationProblem.class)
-			.returnResult()
-			.getResponseBody();
-
-		// Verify
-		assertThat(response).isNotNull();
-		assertThat(response.getViolations())
-			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(
-				tuple("parameters[0].key", "must not be blank"),
-				tuple("parameters[1].values[0]", "size must be between 0 and 3000"),
-				tuple("parameters[2].key", "size must be between 0 and 255"),
-				tuple("parameters[2].displayName", "size must be between 0 and 255"),
-				tuple("parameters[2].group", "size must be between 0 and 255"),
-				tuple("parameters[3]", "must not be null"),
-				tuple("parameters[4].values[1]", "must not be blank"),
-				tuple("parameters[4].values[2]", "must not be blank"));
-		verifyNoInteractions(serviceMock);
+			.bodyValue(Investigation.create().withParameters(invalidParameters())));
 	}
 
 	@Test
@@ -288,6 +234,22 @@ class ErrandInvestigationsResourceTest {
 			.expectBody(InvestigationSection.class);
 
 		verify(serviceMock).updateInvestigationSection(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(INVESTIGATION_ID), eq(SECTION_ID), any(InvestigationSection.class));
+	}
+
+	@Test
+	void createInvestigationSectionWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.post()
+			.uri(builder -> builder.path(PATH_WITH_ID + "/sections").build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(InvestigationSection.create().withSectionKey("financial").withAssessment("APPROVED").withParameters(invalidParameters())));
+	}
+
+	@Test
+	void updateInvestigationSectionWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.patch()
+			.uri(builder -> builder.path(SECTION_PATH).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(InvestigationSection.create().withParameters(invalidParameters())));
 	}
 
 	@Test
@@ -548,5 +510,46 @@ class ErrandInvestigationsResourceTest {
 			.expectStatus().isNoContent();
 
 		verify(serviceMock).deleteSectionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, SECTION_ID, KEY, "\"3\"");
+	}
+
+	/**
+	 * Parameters breaking one rule each: a blank key, a missing key, a value too long, a key, display name and group too
+	 * long, a parameter that is null, and values that are null or blank.
+	 */
+	private static List<Parameter> invalidParameters() {
+		return Arrays.asList(
+			Parameter.create().withKey(" "),
+			Parameter.create().withValues(List.of("value")),
+			Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
+			Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
+			null,
+			Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")));
+	}
+
+	/**
+	 * Sends a request carrying {@link #invalidParameters()} and verifies that it is rejected with one violation per broken
+	 * rule, before the service is reached.
+	 */
+	private void assertInvalidParametersAreRejected(final WebTestClient.RequestHeadersSpec<?> request) {
+		final var response = request.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "must not be blank"),
+				tuple("parameters[1].key", "must not be blank"),
+				tuple("parameters[2].values[0]", "size must be between 0 and 3000"),
+				tuple("parameters[3].key", "size must be between 0 and 255"),
+				tuple("parameters[3].displayName", "size must be between 0 and 255"),
+				tuple("parameters[3].group", "size must be between 0 and 255"),
+				tuple("parameters[4]", "must not be null"),
+				tuple("parameters[5].values[1]", "must not be blank"),
+				tuple("parameters[5].values[2]", "must not be blank"));
+		verifyNoInteractions(serviceMock);
 	}
 }

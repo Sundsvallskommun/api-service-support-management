@@ -536,6 +536,22 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table investigation_section_parameter (
+        display_name varchar(255),
+        id varchar(255) not null,
+        investigation_section_id varchar(255) not null,
+        parameter_group varchar(255),
+        parameters_key varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    create table investigation_section_parameter_values (
+        value_order integer default 0 not null check ((value_order>=0)),
+        value varchar(3000),
+        investigation_section_parameter_id varchar(255) not null,
+        primary key (value_order, investigation_section_parameter_id)
+    ) engine=InnoDB;
+
     create table job (
         processed integer,
         progress integer,
@@ -1416,6 +1432,9 @@
     alter table if exists investigation_section_json_parameter 
        add constraint uq_investigation_section_json_parameter_section_id_key unique (investigation_section_id, parameter_key);
 
+    create index idx_investigation_section_parameter_section_id 
+       on investigation_section_parameter (investigation_section_id);
+
     create index idx_job_namespace_municipality_id_status 
        on job (namespace, municipality_id, status);
 
@@ -1883,6 +1902,18 @@
        add constraint fk_investigation_section_json_parameter_section_id 
        foreign key (investigation_section_id) 
        references investigation_section (id) 
+       on delete cascade;
+
+    alter table if exists investigation_section_parameter 
+       add constraint fk_investigation_section_parameter_section_id 
+       foreign key (investigation_section_id) 
+       references investigation_section (id) 
+       on delete cascade;
+
+    alter table if exists investigation_section_parameter_values 
+       add constraint fk_investigation_section_parameter_values_parameter_id 
+       foreign key (investigation_section_parameter_id) 
+       references investigation_section_parameter (id) 
        on delete cascade;
 
     alter table if exists json_parameter 

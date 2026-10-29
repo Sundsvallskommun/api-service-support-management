@@ -2,5 +2,20 @@
 	"sectionKey": "personal",
 	"heading": "Personlig lämplighet",
 	"sortOrder": 3,
-	"assessment": "PENDING"
+	"assessment": "PENDING",
+	"parameters": [
+		{
+			"key": "references",
+			"displayName": "Referenser",
+			"values": [
+				"Arbetsgivare"
+			]
+		},
+		{
+			"key": " references ",
+			"values": [
+				"Hyresvärd"
+			]
+		}
+	]
 }
