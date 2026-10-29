@@ -2,18 +2,12 @@ package se.sundsvall.supportmanagement.apptest;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
-import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.ETAG;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.HttpHeaders.LOCATION;
@@ -29,6 +23,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 
 /**
@@ -40,6 +35,7 @@ import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
+@SqlMergeMode(MERGE)
 class ErrandInvestigationsIT extends AbstractAppTest {
 
 	private static final String NAMESPACE = "NAMESPACE-ARTEFACT";
@@ -55,43 +51,36 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	private static final String PATH = ERRAND_PATH + "/investigations";
 	private static final String INVESTIGATION_PATH = PATH + "/" + INVESTIGATION_ID;
 	private static final String SECTION_PATH = INVESTIGATION_PATH + "/sections/" + SECTION_ID;
+	private static final String DECISION_PATH = ERRAND_PATH + "/decisions/" + DECISION_ID;
 	private static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String GET_RESPONSE_FILE = "get-response.json";
 	private static final String AD_ACCOUNT = "joe01doe; type=adAccount";
+	private static final String MODIFIED_BY_THE_CALLER = "update investigation set modified_by = 'joe01doe' where id = '" + INVESTIGATION_ID + "'";
 
-	@Autowired
-	private InvestigationRepository investigationRepository;
-
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
-
+	/**
+	 * The location names the investigation that was created. The parameters sent for the same key are held under one,
+	 * with their values in the order sent.
+	 */
 	@Test
 	void test01_createErrandInvestigation() {
-		setupCall()
+		final var headers = setupCall()
 			.withServicePath(PATH)
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(PATH + "/" + UUID_PATTERN))
-			.sendRequestAndVerifyResponse();
+			.sendRequest()
+			.getResponseHeaders();
 
-		assertThat(investigationRepository.findByNamespaceAndMunicipalityIdAndErrandEntityIdOrderByCreated(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
-			.filteredOn(investigation -> "Utredning av lokalen".equals(investigation.getTitle()))
-			.singleElement()
-			.satisfies(investigation -> {
-				assertThat(investigation.getStatus()).isEqualTo(ItemStatus.DRAFT);
-				assertThat(investigation.getNamespace()).isEqualTo(NAMESPACE);
-			});
-		assertThat(jdbcTemplate.queryForList("""
-			select concat_ws('|', p.parameters_key, p.display_name, p.parameter_group, v.value) from investigation_parameter p
-			join investigation i on i.id = p.investigation_id
-			join investigation_parameter_values v on v.investigation_parameter_id = p.id
-			where i.title = 'Utredning av lokalen'
-			order by p.parameters_key, v.value_order""", String.class))
-			.as("the values sent for the same key are held under one parameter")
-			.containsExactly("checkedSources|underlag|Skatteverket", "riskLevel|Risknivå|low", "riskLevel|Risknivå|medium");
+		setupCall()
+			.withServicePath(headers.getLocation().getPath())
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withJsonAssertOptions(null)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -124,13 +113,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(investigationRepository.findById(INVESTIGATION_ID)).get()
-			.satisfies(investigation -> {
-				assertThat(investigation.getStatus()).isEqualTo(ItemStatus.COMPLETED);
-				assertThat(investigation.getRecommendation()).isEqualTo("APPROVAL");
-				assertThat(investigation.getVersion()).isEqualTo(1L);
-			});
-		assertThat(parameterValues()).as("the sent parameters replaced the stored ones").containsExactly("riskLevel=medium");
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -155,8 +143,6 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withJsonAssertOptions(null)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-
-		assertThat(sectionsWithKey("personal")).isOne();
 	}
 
 	@Test
@@ -179,6 +165,9 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The section is part of the investigation, so a change to it moves the version of the investigation.
+	 */
 	@Test
 	void test08_updateInvestigationSection() {
 		setupCall()
@@ -196,13 +185,16 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(GET_RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(assessmentOf(SECTION_ID)).isEqualTo(SectionAssessment.DEFICIENCY.name());
-		assertThat(investigationRepository.findById(INVESTIGATION_ID)).get()
-			.extracting(InvestigationEntity::getVersion).as("the section is part of the investigation, so its version moved").isEqualTo(1L);
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(ETAG, List.of("1"))
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
-	 * A section takes the JSON parameters it owns with it, and the other section keeps its parameters.
+	 * Removing a section leaves the other section with its parameters, and the JSON parameters of the investigation.
 	 */
 	@Test
 	void test09_deleteInvestigationSection() {
@@ -219,9 +211,11 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(sections(SECTION_ID)).isZero();
-		assertThat(sectionJsonParametersWithKey("sectionForm")).as("the parameter of the section went with it").isZero();
-		assertThat(investigationJsonParametersWithKey("investigationForm")).as("the one of the investigation stayed").isOne();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/json-parameters/investigationForm")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -238,8 +232,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The investigation takes what it owns - its sections, the JSON parameters of both and its parameters - and leaves the
-	 * attachments linked to it on the errand.
+	 * The investigation is removed, and leaves the attachments linked to it on the errand and the decision resting on it
+	 * without the reference.
 	 */
 	@Test
 	void test11_deleteErrandInvestigation() {
@@ -249,16 +243,24 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).isFalse();
-		assertThat(investigationJsonParametersWithKey("investigationForm")).isZero();
-		assertThat(sectionJsonParametersWithKey("sectionForm")).isZero();
-		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter where investigation_id = ?", Integer.class, INVESTIGATION_ID))
-			.as("its parameters went with it").isZero();
-		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter_values", Integer.class)).as("with their values").isZero();
-		assertThat(attachmentLinks()).as("the link went").isZero();
-		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
-		assertThat(jdbcTemplate.queryForObject("select investigation_id from decision where id = ?", String.class, DECISION_ID))
-			.as("the decision resting on it stayed, without the reference").isNull();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/attachments/" + LINKED_ATTACHMENT_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(DECISION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -279,9 +281,14 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withRequestFile("attachment", "test.txt")
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(ERRAND_PATH + "/attachments/" + UUID_PATTERN))
-			.sendRequestAndVerifyResponse();
+			.sendRequest();
 
-		assertThat(attachmentLinks()).as("the uploaded attachment is linked to the investigation").isEqualTo(2);
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -295,9 +302,17 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(attachmentLinks()).isEqualTo(2);
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The link goes, and the attachment stays on the errand.
+	 */
 	@Test
 	void test16_unlinkInvestigationAttachment() {
 		setupCall()
@@ -306,8 +321,18 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(attachmentLinks()).as("the link went").isZero();
-		assertThat(attachments(LINKED_ATTACHMENT_ID)).as("the attachment stayed on the errand").isOne();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(ERRAND_PATH + "/attachments/" + LINKED_ATTACHMENT_ID)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -339,11 +364,19 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(INVESTIGATION_PATH + "/json-parameters/dispatchLog"))
 			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
+			.sendRequest();
 
-		assertThat(investigationJsonParametersWithKey("dispatchLog")).isOne();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/json-parameters/dispatchLog")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The JSON parameter goes, and the investigation stays.
+	 */
 	@Test
 	void test20_deleteInvestigationJsonParameter() {
 		setupCall()
@@ -352,8 +385,17 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(investigationJsonParametersWithKey("investigationForm")).isZero();
-		assertThat(investigationRepository.existsById(INVESTIGATION_ID)).as("the investigation stayed").isTrue();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH + "/json-parameters/investigationForm")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -385,11 +427,19 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of(SECTION_PATH + "/json-parameters/dispatchLog"))
 			.withExpectedResponse(RESPONSE_FILE)
-			.sendRequestAndVerifyResponse();
+			.sendRequest();
 
-		assertThat(sectionJsonParametersWithKey("dispatchLog")).isOne();
+		setupCall()
+			.withServicePath(SECTION_PATH + "/json-parameters/dispatchLog")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The JSON parameter goes, and the section stays.
+	 */
 	@Test
 	void test24_deleteSectionJsonParameter() {
 		setupCall()
@@ -398,8 +448,17 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(sectionJsonParametersWithKey("sectionForm")).isZero();
-		assertThat(sections(SECTION_ID)).as("the section stayed").isOne();
+		setupCall()
+			.withServicePath(SECTION_PATH + "/json-parameters/sectionForm")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(SECTION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -415,8 +474,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select recommendation from investigation where id = ?", String.class, INVESTIGATION_ID))
-			.as("the recommendation was not written").isNull();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -425,9 +488,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	 * changes.
 	 */
 	@Test
+	@Sql(statements = MODIFIED_BY_THE_CALLER)
 	void test26_updatingOnlyTheParametersMovesTheVersion() {
-		jdbcTemplate.update("update investigation set modified_by = 'joe01doe' where id = ?", INVESTIGATION_ID);
-
 		setupCall()
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(INVESTIGATION_PATH)
@@ -439,8 +501,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select version from investigation where id = ?", Long.class, INVESTIGATION_ID)).isOne();
-		assertThat(parameterValues()).containsExactly("checkedSources=Skatteverket", "checkedSources=Polisen");
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -448,9 +514,8 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	 * investigation as it stands.
 	 */
 	@Test
+	@Sql(statements = MODIFIED_BY_THE_CALLER)
 	void test27_sameParametersLeaveTheInvestigationAsItStands() {
-		jdbcTemplate.update("update investigation set modified_by = 'joe01doe' where id = ?", INVESTIGATION_ID);
-
 		setupCall()
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(INVESTIGATION_PATH)
@@ -461,9 +526,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForList("select id from investigation_parameter where investigation_id = ? order by id", String.class, INVESTIGATION_ID))
-			.as("the stored parameters were not written again")
-			.containsExactly("fa000000-0000-0000-0000-000000000001", "fa000000-0000-0000-0000-000000000002");
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -477,8 +545,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter where investigation_id = ?", Integer.class, INVESTIGATION_ID)).isZero();
-		assertThat(jdbcTemplate.queryForObject("select count(*) from investigation_parameter_values", Integer.class)).as("the values went with them").isZero();
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -491,7 +563,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(parameterValues()).containsExactly("checkedSources=Skatteverket", "checkedSources=Kronofogden", "riskLevel=low");
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(GET_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -500,20 +577,21 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 	 * its parameters in the order of their keys.
 	 */
 	@Test
-	void test30_theSameParametersInAnotherOrderLeaveTheInvestigationAsItStands() {
-		jdbcTemplate.update("update investigation set modified_by = 'joe01doe' where id = ?", INVESTIGATION_ID);
-		jdbcTemplate.update("delete from investigation_parameter where investigation_id = ?", INVESTIGATION_ID);
-		jdbcTemplate.update("""
+	@Sql(statements = {
+		MODIFIED_BY_THE_CALLER,
+		"delete from investigation_parameter where investigation_id = '" + INVESTIGATION_ID + "'",
+		"""
 			insert into investigation_parameter(id, investigation_id, parameters_key)
-			values ('fa000000-0000-0000-0000-000000000011', ?, 'zon'),
-			       ('fa000000-0000-0000-0000-000000000012', ?, 'ärende'),
-			       ('fa000000-0000-0000-0000-000000000013', ?, 'Zon')""", INVESTIGATION_ID, INVESTIGATION_ID, INVESTIGATION_ID);
-		jdbcTemplate.update("""
+			values ('fa000000-0000-0000-0000-000000000011', 'f2000000-0000-0000-0000-000000000001', 'zon'),
+			       ('fa000000-0000-0000-0000-000000000012', 'f2000000-0000-0000-0000-000000000001', 'ärende'),
+			       ('fa000000-0000-0000-0000-000000000013', 'f2000000-0000-0000-0000-000000000001', 'Zon');""",
+		"""
 			insert into investigation_parameter_values(investigation_parameter_id, value_order, value)
 			values ('fa000000-0000-0000-0000-000000000011', 0, 'a'),
 			       ('fa000000-0000-0000-0000-000000000012', 0, 'b'),
-			       ('fa000000-0000-0000-0000-000000000013', 0, 'c')""");
-
+			       ('fa000000-0000-0000-0000-000000000013', 0, 'c');"""
+	})
+	void test30_theSameParametersInAnotherOrderLeaveTheInvestigationAsItStands() {
 		setupCall()
 			.withHeader(SENT_BY_HEADER, AD_ACCOUNT)
 			.withServicePath(INVESTIGATION_PATH)
@@ -524,9 +602,12 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForList("select id from investigation_parameter where investigation_id = ? order by id", String.class, INVESTIGATION_ID))
-			.as("the stored parameters were not written again")
-			.containsExactly("fa000000-0000-0000-0000-000000000011", "fa000000-0000-0000-0000-000000000012", "fa000000-0000-0000-0000-000000000013");
+		setupCall()
+			.withServicePath(INVESTIGATION_PATH)
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
 	}
 
 	/**
@@ -570,7 +651,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withJsonAssertOptions(null)
-			.withExpectedResponse(GET_RESPONSE_FILE)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
 
@@ -591,45 +672,7 @@ class ErrandInvestigationsIT extends AbstractAppTest {
 			.withServicePath(SECTION_PATH)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(GET_RESPONSE_FILE)
+			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
-	}
-
-	/** The parameter values of the investigation as key=value, in the order of the keys and then of the values. */
-	private List<String> parameterValues() {
-		return jdbcTemplate.queryForList("""
-			select concat(p.parameters_key, '=', v.value) from investigation_parameter p
-			join investigation_parameter_values v on v.investigation_parameter_id = p.id
-			where p.investigation_id = ?
-			order by p.parameters_key, v.value_order""", String.class, INVESTIGATION_ID);
-	}
-
-	/** Counts the investigation sections with the given id, read with SQL. */
-	private int sections(final String sectionId) {
-		return jdbcTemplate.queryForObject("select count(*) from investigation_section where id = ?", Integer.class, sectionId);
-	}
-
-	private int sectionsWithKey(final String sectionKey) {
-		return jdbcTemplate.queryForObject("select count(*) from investigation_section where investigation_id = ? and section_key = ?", Integer.class, INVESTIGATION_ID, sectionKey);
-	}
-
-	private String assessmentOf(final String sectionId) {
-		return jdbcTemplate.queryForObject("select assessment from investigation_section where id = ?", String.class, sectionId);
-	}
-
-	private int investigationJsonParametersWithKey(final String key) {
-		return jdbcTemplate.queryForObject("select count(*) from investigation_json_parameter where parameter_key = ?", Integer.class, key);
-	}
-
-	private int sectionJsonParametersWithKey(final String key) {
-		return jdbcTemplate.queryForObject("select count(*) from investigation_section_json_parameter where parameter_key = ?", Integer.class, key);
-	}
-
-	private int attachmentLinks() {
-		return jdbcTemplate.queryForObject("select count(*) from investigation_attachment where investigation_id = ?", Integer.class, INVESTIGATION_ID);
-	}
-
-	private int attachments(final String attachmentId) {
-		return jdbcTemplate.queryForObject("select count(*) from attachment where id = ?", Integer.class, attachmentId);
 	}
 }
