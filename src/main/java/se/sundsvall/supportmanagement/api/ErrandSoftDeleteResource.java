@@ -44,7 +44,7 @@ class ErrandSoftDeleteResource {
 		Soft deletes the errand that matches the provided id. The errand is kept with everything belonging to it, but is left \
 		out of every read until it is restored, apart from a listing whose filter names deleted. It can still be deleted for \
 		good. An errand with a process cannot be soft deleted once one of its decisions can no longer be changed, as it cannot \
-		be deleted.""", responses = {
+		be deleted, nor while a process is still running on it.""", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -54,7 +54,7 @@ class ErrandSoftDeleteResource {
 			description = "Not Found — no such errand, or it is already soft deleted",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "409",
-			description = "Conflict — resource modified concurrently, or the errand holds a decision that can no longer be changed",
+			description = "Conflict — resource modified concurrently, the errand holds a decision that can no longer be changed, or it has a process that is still running",
 			content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "412", description = "Precondition Failed — If-Match version mismatch", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))

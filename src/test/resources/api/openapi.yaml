@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "18.2"
 servers:
-- url: http://localhost:65213
+- url: http://localhost:50630
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -8164,7 +8164,8 @@ paths:
         \ is kept with everything belonging to it, but is left out of every read until\
         \ it is restored, apart from a listing whose filter names deleted. It can\
         \ still be deleted for good. An errand with a process cannot be soft deleted\
-        \ once one of its decisions can no longer be changed, as it cannot be deleted."
+        \ once one of its decisions can no longer be changed, as it cannot be deleted,\
+        \ nor while a process is still running on it."
       operationId: softDeleteErrand
       parameters:
       - name: namespace
@@ -8250,8 +8251,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, or the errand holds\
-            \ a decision that can no longer be changed"
+          description: "Conflict — resource modified concurrently, the errand holds\
+            \ a decision that can no longer be changed, or it has a process that is\
+            \ still running"
           content:
             application/problem+json:
               schema:
@@ -24505,6 +24507,29 @@ components:
           type: boolean
         number:
           type: boolean
+        boolean:
+          type: boolean
+        long:
+          type: boolean
+        short:
+          type: boolean
+        pojo:
+          type: boolean
+        string:
+          type: boolean
+        int:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        binary:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -24517,34 +24542,11 @@ components:
           - OBJECT
           - POJO
           - STRING
-        bigDecimal:
-          type: boolean
-        valueNode:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
         integralNumber:
           type: boolean
         bigInteger:
           type: boolean
-        pojo:
-          type: boolean
-        short:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        long:
-          type: boolean
-        double:
-          type: boolean
-        boolean:
-          type: boolean
-        int:
-          type: boolean
-        binary:
-          type: boolean
-        string:
+        valueNode:
           type: boolean
         embeddedValue:
           type: boolean

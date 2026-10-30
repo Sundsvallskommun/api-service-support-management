@@ -293,10 +293,12 @@ public class ProcessEventRelay {
 	}
 
 	/**
-	 * Whether the row would start a process for an errand removed since the row was written.
+	 * Whether the row would start a process for an errand removed or soft deleted since the row was written. A start
+	 * skipped for a soft deleted errand is not made up for when the errand is restored; the process is then started by
+	 * hand.
 	 */
 	private boolean isStartForAnErrandGone(final ProcessEventOutboxEntity row) {
-		return row.isStartAllowed() && !errandsRepository.existsById(row.getErrandId());
+		return row.isStartAllowed() && !errandsRepository.existsByIdAndDeletedIsNull(row.getErrandId());
 	}
 
 	private void dropAllAgedOut() {

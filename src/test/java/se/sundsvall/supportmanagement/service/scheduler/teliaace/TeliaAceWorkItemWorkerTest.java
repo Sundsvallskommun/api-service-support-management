@@ -72,7 +72,7 @@ class TeliaAceWorkItemWorkerTest {
 	}
 
 	private void errandExists() {
-		when(errandsRepositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndDeletedIsNull(ERRAND_ID)).thenReturn(true);
 	}
 
 	@Test
@@ -88,7 +88,7 @@ class TeliaAceWorkItemWorkerTest {
 	@Test
 	void process_whenErrandNoLongerExists_dropsWorkItemWithoutCallingClient() {
 		final var workItem = TeliaAceWorkItemEntity.create().withId("id-1").withErrandId(ERRAND_ID);
-		when(errandsRepositoryMock.existsById(ERRAND_ID)).thenReturn(false);
+		when(errandsRepositoryMock.existsByIdAndDeletedIsNull(ERRAND_ID)).thenReturn(false);
 
 		worker.process(workItem);
 

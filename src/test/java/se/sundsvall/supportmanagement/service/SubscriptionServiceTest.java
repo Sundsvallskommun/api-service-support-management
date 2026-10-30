@@ -134,7 +134,7 @@ class SubscriptionServiceTest {
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		final var newId = randomUUID().toString();
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId(newId));
@@ -143,7 +143,7 @@ class SubscriptionServiceTest {
 
 		assertThat(result).isEqualTo(newId);
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
 		verify(subscriptionRepositoryMock).saveAndFlush(entityCaptor.capture());
 		final var saved = entityCaptor.getValue();
@@ -197,7 +197,7 @@ class SubscriptionServiceTest {
 	void createErrandSubscriptionErrandNotFound() {
 		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.empty());
 
 		final var dto = Subscription.create()
 			.withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
@@ -207,7 +207,7 @@ class SubscriptionServiceTest {
 			.extracting("status").isEqualTo(NOT_FOUND);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, errandsRepositoryMock);
 		verifyNoInteractions(subscriptionRepositoryMock);
@@ -218,7 +218,7 @@ class SubscriptionServiceTest {
 		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(true);
 
 		final var dto = Subscription.create()
@@ -229,7 +229,7 @@ class SubscriptionServiceTest {
 			.extracting("status").isEqualTo(CONFLICT);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID);
 		verify(subscriptionRepositoryMock, never()).saveAndFlush(any());
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
@@ -292,7 +292,7 @@ class SubscriptionServiceTest {
 			.withProfileId(PROFILE_ID);
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionProfileServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID)).thenReturn(profile);
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID)).thenReturn(true);
 
@@ -302,7 +302,7 @@ class SubscriptionServiceTest {
 			.extracting("status").isEqualTo(CONFLICT);
 
 		verify(subscriberServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID);
-		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(subscriptionProfileServiceMock).findEntity(MUNICIPALITY_ID, NAMESPACE, PROFILE_ID);
 		verify(subscriptionRepositoryMock).existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileId(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID, PROFILE_ID);
 		verifyNoMoreInteractions(subscriberServiceMock, subscriptionProfileServiceMock, subscriptionRepositoryMock, errandsRepositoryMock);
@@ -388,7 +388,7 @@ class SubscriptionServiceTest {
 		final var subscriber = SubscriberEntity.create().withId(SUBSCRIBER_ID).withIdentifier(IdentifierEmbeddable.create().withType(IDENTIFIER_TYPE).withValue(IDENTIFIER_VALUE));
 		final var errand = new ErrandEntity().withId(ERRAND_ID);
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class)))
 			.thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq_subscription_subscriber_target_errand"));
@@ -624,7 +624,7 @@ class SubscriptionServiceTest {
 		final var dto = Subscription.create().withTarget(SubscriptionTarget.create().withType(SubscriptionTargetType.ERRAND).withId(ERRAND_ID));
 
 		when(subscriberServiceMock.findEntity(MUNICIPALITY_ID, NAMESPACE, SUBSCRIBER_ID)).thenReturn(subscriber);
-		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
+		when(errandsRepositoryMock.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID)).thenReturn(Optional.of(errand));
 		when(subscriptionRepositoryMock.existsBySubscriberIdAndTargetTypeAndErrandIdAndProfileIsNull(SUBSCRIBER_ID, DB_ERRAND, ERRAND_ID)).thenReturn(false);
 		when(subscriptionRepositoryMock.saveAndFlush(any(SubscriptionEntity.class))).thenAnswer(inv -> inv.<SubscriptionEntity>getArgument(0).withId("new-id"));
 

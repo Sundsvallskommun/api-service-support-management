@@ -37,6 +37,8 @@ class ErrandSoftDeleteIT extends AbstractAppTest {
 	private static final String ERRAND_PATH = PATH + "/" + ERRAND_ID;
 	// Held at read by fro01lin, who therefore may neither soft delete nor restore it
 	private static final String ERRAND_HELD_AT_READ_PATH = "/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b";
+	// Runs a live process in PROCESS-NAMESPACE, and may therefore not be soft deleted
+	private static final String ERRAND_WITH_LIVE_PROCESS = "aa000000-0000-0000-0000-0000000000a1";
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String USER = "smo02key; type=adAccount";
 
@@ -136,6 +138,19 @@ class ErrandSoftDeleteIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test06_softDeleteErrandWithALiveProcessIsRefused() {
+		setupCall()
+			.withHeader(SENT_BY_HEADER, USER)
+			.withServicePath("/2281/PROCESS-NAMESPACE/errands/" + ERRAND_WITH_LIVE_PROCESS + "/soft-delete")
+			.withHttpMethod(POST)
+			.withExpectedResponseStatus(CONFLICT)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(errandsRepository.findById(ERRAND_WITH_LIVE_PROCESS)).hasValueSatisfying(errand -> assertThat(errand.getDeleted()).isNull());
 	}
 
 	@Test

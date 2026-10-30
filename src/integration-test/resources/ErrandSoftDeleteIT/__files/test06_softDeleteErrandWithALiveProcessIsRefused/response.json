@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "Errand with id 'aa000000-0000-0000-0000-0000000000a1' has a process that is still running, and cannot be soft deleted"
+}
