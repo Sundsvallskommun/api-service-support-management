@@ -58,6 +58,8 @@ class ErrandTest {
 		final var status = "status";
 		final var title = "title";
 		final var touched = OffsetDateTime.now().plusDays(2);
+		final var deleted = OffsetDateTime.now().plusDays(3);
+		final var deletedBy = "deletedBy";
 		final var type = "type";
 		final var resolution = "resolution";
 		final var description = "description";
@@ -94,6 +96,8 @@ class ErrandTest {
 			.withTitle(title)
 			.withErrandNumber(errandNumber)
 			.withTouched(touched)
+			.withDeleted(deleted)
+			.withDeletedBy(deletedBy)
 			.withResolution(resolution)
 			.withDescription(description)
 			.withChannel(channel)
@@ -129,6 +133,8 @@ class ErrandTest {
 		assertThat(bean.getLifecycle()).isEqualTo("DRAFT");
 		assertThat(bean.getTitle()).isEqualTo(title);
 		assertThat(bean.getTouched()).isEqualTo(touched);
+		assertThat(bean.getDeleted()).isEqualTo(deleted);
+		assertThat(bean.getDeletedBy()).isEqualTo(deletedBy);
 		assertThat(bean.getResolution()).isEqualTo(resolution);
 		assertThat(bean.getDescription()).isEqualTo(description);
 		assertThat(bean.getChannel()).isEqualTo(channel);

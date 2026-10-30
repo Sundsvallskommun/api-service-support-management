@@ -42,7 +42,7 @@ public class ActionWorker {
 
 	@Transactional
 	public List<ErrandActionEntity> getExpiredActions() {
-		return errandActionRepository.findAllByExecuteAfterBefore(now(ZoneId.systemDefault()));
+		return errandActionRepository.findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(now(ZoneId.systemDefault()));
 	}
 
 	@Transactional(propagation = REQUIRES_NEW)

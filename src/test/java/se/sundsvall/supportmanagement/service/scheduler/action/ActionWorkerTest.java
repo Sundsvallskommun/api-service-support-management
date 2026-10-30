@@ -77,12 +77,12 @@ class ActionWorkerTest {
 	@Test
 	void getExpiredActions() {
 		final var expiredAction = ErrandActionEntity.create().withId("action-1");
-		when(errandActionRepositoryMock.findAllByExecuteAfterBefore(any(OffsetDateTime.class))).thenReturn(List.of(expiredAction));
+		when(errandActionRepositoryMock.findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of(expiredAction));
 
 		final var result = actionWorker.getExpiredActions();
 
 		assertThat(result).containsExactly(expiredAction);
-		verify(errandActionRepositoryMock).findAllByExecuteAfterBefore(any(OffsetDateTime.class));
+		verify(errandActionRepositoryMock).findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(any(OffsetDateTime.class));
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 

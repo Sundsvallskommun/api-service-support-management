@@ -42,6 +42,14 @@
 			"level": "R"
 		},
 		{
+			"field": "deleted",
+			"level": "R"
+		},
+		{
+			"field": "deletedBy",
+			"level": "R"
+		},
+		{
 			"field": "priority",
 			"level": "R"
 		},

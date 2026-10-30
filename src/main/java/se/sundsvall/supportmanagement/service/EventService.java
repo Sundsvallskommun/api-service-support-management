@@ -51,6 +51,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.NOTE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
@@ -75,6 +77,9 @@ public class EventService {
 
 	/** The parts of a change to an errand that are logged alongside the change itself, for subscribers to filter on. */
 	private static final Set<EventSubType> LOGGED_ALONGSIDE_ERRAND_CHANGE = EnumSet.of(ASSIGNMENT, ERRAND_ACTIVATION, LABEL, PHASE, STATUS);
+
+	/** Soft deleting an errand or restoring it subscribes no one, as deleting it for good does not. */
+	private static final Set<EventSubType> SUBSCRIBING_NO_ONE = EnumSet.of(ERRAND_DELETION, ERRAND_RESTORATION);
 
 	/**
 	 * Who an event about an errand notifies, beyond what a draft or a request asking to notify no one rules out.
@@ -355,7 +360,7 @@ public class EventService {
 		// the change to the errand they are part of, which already subscribes the assignee. A label added by a scheduled action
 		// has no such change,
 		// and subscribes no one either.
-		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype)) {
+		if (eventType != EventType.DELETE && !LOGGED_ALONGSIDE_ERRAND_CHANGE.contains(subtype) && !SUBSCRIBING_NO_ONE.contains(subtype)) {
 			eventPublisher.publishEvent(new AutoSubscribeEvent(errandEntity, eventType == EventType.CREATE && subtype == EventSubType.ERRAND));
 		}
 

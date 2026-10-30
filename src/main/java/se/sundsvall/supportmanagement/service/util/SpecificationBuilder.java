@@ -19,6 +19,8 @@ public class SpecificationBuilder<T> {
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
 	private static final String ID_ATTRIBUTE = "id";
 	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
+	private static final String DELETED_ATTRIBUTE = "deleted";
+	private static final String DELETED_BY_ATTRIBUTE = "deletedBy";
 	private static final String TOUCHED_ATTRIBUTE = "touched";
 	private static final String MODIFIED_ATTRIBUTE = "modified";
 	private static final String CREATED_ATTRIBUTE = "created";
@@ -53,6 +55,24 @@ public class SpecificationBuilder<T> {
 		return filter instanceof final FilterSpecification<ErrandEntity> filterSpecification && namesField(filterSpecification.getFilter(), LIFECYCLE_ATTRIBUTE)
 			? (_, _, criteriaBuilder) -> criteriaBuilder.and()
 			: withLifecycle(ErrandLifecycle.ACTIVE);
+	}
+
+	/**
+	 * Narrows a search to the errands that are not soft deleted, unless the filter of the search says something about the
+	 * deletion itself, by naming deleted or deletedBy. Soft deleted errands are thereby left out of a search that does not
+	 * ask for them.
+	 * <p>
+	 * Only a filter parsed from the filter parameter of a request is looked into, as for
+	 * {@link #withDefaultLifecycle(Specification)}.
+	 *
+	 * @param  filter the filter of the search, or null
+	 * @return        specification matching the errands not soft deleted, or every errand when the filter names deleted
+	 */
+	public static Specification<ErrandEntity> withDefaultDeleted(Specification<ErrandEntity> filter) {
+		return filter instanceof final FilterSpecification<ErrandEntity> filterSpecification
+			&& (namesField(filterSpecification.getFilter(), DELETED_ATTRIBUTE) || namesField(filterSpecification.getFilter(), DELETED_BY_ATTRIBUTE))
+				? (_, _, criteriaBuilder) -> criteriaBuilder.and()
+				: (root, _, criteriaBuilder) -> criteriaBuilder.isNull(root.get(DELETED_ATTRIBUTE));
 	}
 
 	/**

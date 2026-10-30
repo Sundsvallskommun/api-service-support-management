@@ -235,6 +235,24 @@ class ErrandAttachmentServiceTest {
 	}
 
 	@Test
+	void readAttachmentsOfErrandToDelete() {
+
+		// Mock
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(errandMock);
+		when(errandMock.getAttachments()).thenReturn(List.of(buildAttachmentEntity(buildErrandEntity())));
+
+		// Call
+		final var result = service.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		// Assertions and verifications
+		assertThat(result).isNotNull().hasSize(1);
+		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
+
+		verify(accessControlServiceMock).getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ATTACHMENT, LR);
+		verifyNoInteractions(revisionServiceMock);
+	}
+
+	@Test
 	void readErrandAttachmentNotFoundOnErrand() {
 
 		// Act/assert

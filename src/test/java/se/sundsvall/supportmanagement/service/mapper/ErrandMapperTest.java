@@ -90,6 +90,8 @@ class ErrandMapperTest {
 	private static final String STATUS = "status";
 	private static final String TITLE = "title";
 	private static final OffsetDateTime TOUCHED = now().plusWeeks(1);
+	private static final OffsetDateTime DELETED = now().plusWeeks(2);
+	private static final String DELETED_BY = "deletedBy";
 	private static final String TYPE = "type";
 	private static final String DESCRIPTION = "description";
 	private static final String CHANNEL = "channel";
@@ -230,6 +232,8 @@ class ErrandMapperTest {
 			.withTitle(TITLE)
 			.withType(TYPE)
 			.withTouched(TOUCHED)
+			.withDeleted(DELETED)
+			.withDeletedBy(DELETED_BY)
 			.withModified(MODIFIED)
 			.withResolution(RESOLUTION)
 			.withDescription(DESCRIPTION)
@@ -330,6 +334,8 @@ class ErrandMapperTest {
 		assertThat(errand.getStatus()).isEqualTo(STATUS);
 		assertThat(errand.getTitle()).isEqualTo(TITLE);
 		assertThat(errand.getTouched()).isEqualTo(TOUCHED);
+		assertThat(errand.getDeleted()).isEqualTo(DELETED);
+		assertThat(errand.getDeletedBy()).isEqualTo(DELETED_BY);
 		assertThat(errand.getResolution()).isEqualTo(RESOLUTION);
 		assertThat(errand.getDescription()).isEqualTo(DESCRIPTION);
 		assertThat(errand.getChannel()).isEqualTo(CHANNEL);
