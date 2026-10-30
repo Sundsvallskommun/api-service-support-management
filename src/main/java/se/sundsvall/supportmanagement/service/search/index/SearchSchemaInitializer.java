@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
  * Hibernate Search could do this while the service starts, but then the service could not start without OpenSearch,
  * and search is the one thing this service can do without. So the schema is put in place afterwards, off the thread
  * that started the service, with a few tries for an OpenSearch that is starting at the same time. Should it still not
- * be there, a full reindex creates it later, and the search endpoints report the failure until then.
+ * be there, the nightly reindex or a full reindex creates it later, and the search endpoints report the failure until
+ * then.
  */
 @Component
 public class SearchSchemaInitializer {
@@ -56,7 +57,7 @@ public class SearchSchemaInitializer {
 				return;
 			} catch (final RuntimeException e) {
 				if (attempt == ATTEMPTS) {
-					LOG.error("Search index schema could not be created or updated after {} attempts. Search stays unavailable until a full reindex creates it", ATTEMPTS, e);
+					LOG.error("Search index schema could not be created or updated after {} attempts. Search stays unavailable until the nightly reindex or a full reindex creates it", ATTEMPTS, e);
 					return;
 				}
 				LOG.warn("Search index schema could not be created or updated (attempt {} of {}), trying again in {}: {}", attempt, ATTEMPTS, pauseBetweenAttempts, e.getMessage());

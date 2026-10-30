@@ -73,6 +73,10 @@ public class ErrandReindexService {
 	 * this does nightly. A namespace at a time, as the endpoint does it, so that only the namespace being rebuilt is
 	 * searched with a hole in it rather than the whole index at once.
 	 * <p>
+	 * The index is created first where it is missing, as it is after OpenSearch restarted without its data while this
+	 * instance went on running: the schema is otherwise only put in place when the service starts, and a rebuild of a
+	 * namespace writes into the index without creating it. An index that is there is left as it is.
+	 * <p>
 	 * Skipped where the environment has no search index, and where a rebuild is already running: the one under way is
 	 * doing this very work, and two mass indexers on one index only slow each other down.
 	 */
@@ -89,6 +93,8 @@ public class ErrandReindexService {
 		}
 
 		try {
+			Search.mapping(entityManagerFactory).scope(ErrandEntity.class).schemaManager().createIfMissing();
+
 			final var namespaces = namespaceConfigRepository.findAll();
 			final var failed = new ArrayList<String>();
 
