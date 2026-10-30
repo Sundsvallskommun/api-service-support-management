@@ -193,6 +193,10 @@ class ErrandsRepositoryTest {
 		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isFalse();
 		assertThat(errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isFalse();
 		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isTrue();
+		assertThat(errandsRepository.existsByIdAndDeletedIsNull(kept.getId())).isTrue();
+		assertThat(errandsRepository.existsByIdAndDeletedIsNull(deleted.getId())).isFalse();
+		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(kept.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isPresent();
+		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isEmpty();
 	}
 
 	@Test

@@ -1277,7 +1277,7 @@ class ErrandServiceTest {
 		assertThat(entity.getDeleted()).isCloseTo(now(), within(5, SECONDS));
 		assertThat(entity.getDeletedBy()).isEqualTo("user");
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
-		verify(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(entityManagerMock).lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -1292,7 +1292,7 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity();
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
@@ -1371,6 +1371,21 @@ class ErrandServiceTest {
 				assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 				assertThat(problem.getDetail()).isEqualTo("The errand '%s' is not soft deleted, and there is nothing to restore".formatted(ERRAND_ID));
 			});
+
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock, entityManagerMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a restore held to a stale version is refused as a precondition failure, before whether the errand is soft deleted is looked at")
+	void restoreErrandWithAStaleIfMatch() {
+		final var entity = buildErrandEntity().withVersion(3L);
+
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.restoreErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"2\""))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED));
 
 		verify(errandRepositoryMock, never()).saveAndFlush(any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock, entityManagerMock);

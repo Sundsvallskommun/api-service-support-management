@@ -66,7 +66,7 @@ public class NotificationService {
 	}
 
 	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Sort sort) {
-		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort)
+		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort)
 			.stream()
 			.map(NotificationMapper::toNotification)
 			.toList();

@@ -332,7 +332,9 @@ public class ErrandService {
 	 * {@link #deleteErrand(String, String, String, String)}.
 	 * <p>
 	 * Held to what deleting the errand for good is held to: the access it takes, the version the caller believes it is at
-	 * and no decision of it that can no longer be changed. The deletion is recorded as a revision and told of as an update.
+	 * and no decision of it that can no longer be changed. Nor is an errand with a process still running on it soft
+	 * deleted, since the process would be left calling an errand that answers as gone. The deletion is recorded as a
+	 * revision and told of as an update.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId id of the municipality of the errand.
@@ -344,7 +346,7 @@ public class ErrandService {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		validateIfMatch(ifMatch, entity.getVersion());
-		decisionValidator.validateErrandRemovable(namespace, municipalityId, id);
+		decisionValidator.validateErrandSoftDeletable(namespace, municipalityId, id);
 
 		entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		entity.setDeleted(now(systemDefault()).truncatedTo(MILLIS));
@@ -369,10 +371,11 @@ public class ErrandService {
 	public void restoreErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
 		final var entity = accessControlService.getErrandIncludingDeleted(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
+		// Held to the version first, as every other write to the errand is
+		validateIfMatch(ifMatch, entity.getVersion());
 		if (isNull(entity.getDeleted())) {
 			throw Problem.valueOf(CONFLICT, ERRAND_NOT_DELETED.formatted(id));
 		}
-		validateIfMatch(ifMatch, entity.getVersion());
 
 		entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		entity.setDeleted(null);

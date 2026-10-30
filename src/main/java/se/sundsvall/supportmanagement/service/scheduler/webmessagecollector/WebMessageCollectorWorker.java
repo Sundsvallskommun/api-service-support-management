@@ -66,6 +66,7 @@ public class WebMessageCollectorWorker {
 
 	private void doProcessMessage(final MessageDTO message, final String municipalityId, final Consumer<String> setUnHealthyConsumer) {
 
+		// A soft deleted errand is found too: what comes in is kept on it, to be seen once it is restored
 		final var entity = errandsRepository.findOne(hasMatchingTags(List.of(
 			DbExternalTag.create().withKey("caseId").withValue(message.getExternalCaseId()),
 			DbExternalTag.create().withKey("familyId").withValue(message.getFamilyId()))));

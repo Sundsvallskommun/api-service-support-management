@@ -40,6 +40,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
+	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(String id, String namespace, String municipalityId);
+
+	boolean existsByIdAndDeletedIsNull(String id);
+
 	// A soft deleted errand is left suspended, and is woken up by the first run after it is restored
 	List<ErrandEntity> findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime now);
 

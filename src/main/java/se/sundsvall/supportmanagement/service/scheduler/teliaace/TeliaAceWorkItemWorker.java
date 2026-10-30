@@ -81,7 +81,7 @@ public class TeliaAceWorkItemWorker {
 			return;
 		}
 
-		if (!errandsRepository.existsById(workItem.getErrandId())) {
+		if (!errandsRepository.existsByIdAndDeletedIsNull(workItem.getErrandId())) {
 			LOG.warn("Dropping Telia ACE work item for errand {}: the errand no longer exists", workItem.getErrandId());
 			workItemRepository.delete(workItem);
 			return;

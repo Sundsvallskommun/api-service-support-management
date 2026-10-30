@@ -112,6 +112,7 @@ public class MessageExchangeWorker {
 
 	private Function<ResourceIdentifier, ConversationEntity> createConversation(final Conversation conversation) {
 		return identifier -> {
+			// A soft deleted errand is found too: what comes in is kept on it, to be seen once it is restored
 			final var errand = errandsRepository.findById(identifier.getResourceId())
 				.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Bug in relation filter"));
 			return ConversationEntity.create().withErrandId(errand.getId())

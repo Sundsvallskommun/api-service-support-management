@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.action.ActionExecutor;
 
 import static java.time.OffsetDateTime.now;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
@@ -61,6 +62,12 @@ public class ActionWorker {
 		}
 
 		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
+
+		// Soft deleted since the action was picked up: left waiting, to be carried out once the errand is restored
+		if (nonNull(errand.getDeleted())) {
+			return;
+		}
+
 		final var parameters = toParameterMap(configEntity);
 
 		if (action.actionFulfilled(errand, parameters) || !action.conditionsFulfilled(errand, configEntity)) {
