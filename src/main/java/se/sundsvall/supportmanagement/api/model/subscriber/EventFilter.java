@@ -34,7 +34,8 @@ public class EventFilter {
 		"to an errand, while STATUS and PHASE match only changes of its status and of its phase respectively. LABEL matches a label being added to an " +
 		"errand, logged once for every label added - as CREATE/LABEL for the labels an errand is created with and as UPDATE/LABEL for those added later. " +
 		"ERRAND_ACTIVATION matches a draft being made active, logged as UPDATE/ERRAND_ACTIVATION alongside the UPDATE/ERRAND of the update that made it " +
-		"active, and is not matched by ERRAND.",
+		"active, and is not matched by ERRAND. ERRAND_DELETION and ERRAND_RESTORATION match an errand being soft deleted and restored, logged as " +
+		"UPDATE/ERRAND_DELETION and UPDATE/ERRAND_RESTORATION, and are matched by ERRAND as well.",
 		examples = "ATTACHMENT")
 	private String subtype;
 

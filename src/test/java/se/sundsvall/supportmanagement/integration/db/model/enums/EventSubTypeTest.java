@@ -15,6 +15,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
@@ -41,6 +43,8 @@ class EventSubTypeTest {
 			arguments(DECISION, false),
 			arguments(ERRAND, false),
 			arguments(ERRAND_ACTIVATION, false),
+			arguments(ERRAND_DELETION, false),
+			arguments(ERRAND_RESTORATION, false),
 			arguments(HANDOVER_IN, false),
 			arguments(HANDOVER_OUT, false),
 			arguments(LABEL, false),
@@ -60,7 +64,8 @@ class EventSubTypeTest {
 
 	@Test
 	void enums() {
-		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, ERRAND_ACTIVATION, HANDOVER_IN, HANDOVER_OUT, LABEL, MESSAGE_CONVERSATION_EXTERNAL, MESSAGE_CONVERSATION_INTERNAL, MESSAGE_EMAIL_EXTERNAL,
+		assertThat(values()).containsExactlyInAnyOrder(ASSIGNMENT, ATTACHMENT, DECISION, ERRAND, ERRAND_ACTIVATION, ERRAND_DELETION, ERRAND_RESTORATION, HANDOVER_IN, HANDOVER_OUT, LABEL, MESSAGE_CONVERSATION_EXTERNAL, MESSAGE_CONVERSATION_INTERNAL,
+			MESSAGE_EMAIL_EXTERNAL,
 			MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL, NOTE, PHASE, PROCESS,
 			SIGNAL, STATUS, SYSTEM, SUSPENSION);
 	}
@@ -71,6 +76,8 @@ class EventSubTypeTest {
 		assertThat(DECISION.getValue()).isEqualTo("DECISION");
 		assertThat(ERRAND.getValue()).isEqualTo("ERRAND");
 		assertThat(ERRAND_ACTIVATION.getValue()).isEqualTo("ERRAND_ACTIVATION");
+		assertThat(ERRAND_DELETION.getValue()).isEqualTo("ERRAND_DELETION");
+		assertThat(ERRAND_RESTORATION.getValue()).isEqualTo("ERRAND_RESTORATION");
 		assertThat(LABEL.getValue()).isEqualTo("LABEL");
 		assertThat(MESSAGE_CONVERSATION_EXTERNAL.getValue()).isEqualTo("MESSAGE_CONVERSATION_EXTERNAL");
 		assertThat(MESSAGE_CONVERSATION_INTERNAL.getValue()).isEqualTo("MESSAGE_CONVERSATION_INTERNAL");
@@ -120,6 +127,11 @@ class EventSubTypeTest {
 		"ERRAND, ERRAND_ACTIVATION, false",
 		"ERRAND_ACTIVATION, ERRAND, false",
 		"LABEL, ERRAND, false",
+		// An errand being soft deleted or restored is a change to the errand to a filter on ERRAND
+		"ERRAND, ERRAND_DELETION, true",
+		"ERRAND, ERRAND_RESTORATION, true",
+		"ERRAND_DELETION, ERRAND, false",
+		"ERRAND_DELETION, ERRAND_RESTORATION, false",
 		// Unrelated subtypes do not select one another
 		"ATTACHMENT, MESSAGE_CONVERSATION_EXTERNAL, false",
 		"HANDOVER_IN, HANDOVER_OUT, false",

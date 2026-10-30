@@ -42,6 +42,14 @@
 			"level": "RW"
 		},
 		{
+			"field": "deleted",
+			"level": "RW"
+		},
+		{
+			"field": "deletedBy",
+			"level": "RW"
+		},
+		{
 			"field": "priority",
 			"level": "RW"
 		},

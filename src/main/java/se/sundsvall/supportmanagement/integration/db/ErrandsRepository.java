@@ -29,11 +29,19 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<ErrandEntity> findWithLockingById(String id);
 
+	// As the two above, leaving out a soft deleted errand, which the API holds to be gone until it is restored
+	boolean existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(String id, String namespace, String municipalityId);
+
+	// Locks row in transaction. Other threads will wait until lock is released.
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	boolean existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(String id, String namespace, String municipalityId);
+
 	Optional<ErrandEntity> findByErrandNumberAndNamespaceAndMunicipalityId(String errandNumber, String namespace, String municipalityId);
 
 	Optional<ErrandEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
-	List<ErrandEntity> findAllBySuspendedToBefore(OffsetDateTime now);
+	// A soft deleted errand is left suspended, and is woken up by the first run after it is restored
+	List<ErrandEntity> findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime now);
 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 

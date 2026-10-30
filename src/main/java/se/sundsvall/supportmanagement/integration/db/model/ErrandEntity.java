@@ -278,6 +278,16 @@ public class ErrandEntity {
 	@NonStandardField(name = ErrandIndex.TOUCHED, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime touched;
 
+	// Set while the errand is soft deleted, which keeps it out of every read of the API until it is restored
+	@Column(name = "deleted")
+	@TimeZoneStorage(NORMALIZE)
+	@NonStandardField(name = ErrandIndex.DELETED, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
+	private OffsetDateTime deleted;
+
+	@Column(name = "deleted_by")
+	@KeywordField(name = ErrandIndex.DELETED_BY, normalizer = LOWERCASE)
+	private String deletedBy;
+
 	@Column(name = "errand_number", nullable = false)
 	@KeywordField(name = ErrandIndex.ERRAND_NUMBER, normalizer = LOWERCASE, sortable = Sortable.YES)
 	private String errandNumber;
@@ -726,6 +736,32 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public OffsetDateTime getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(final OffsetDateTime deleted) {
+		this.deleted = deleted;
+	}
+
+	public ErrandEntity withDeleted(final OffsetDateTime deleted) {
+		this.deleted = deleted;
+		return this;
+	}
+
+	public String getDeletedBy() {
+		return deletedBy;
+	}
+
+	public void setDeletedBy(final String deletedBy) {
+		this.deletedBy = deletedBy;
+	}
+
+	public ErrandEntity withDeletedBy(final String deletedBy) {
+		this.deletedBy = deletedBy;
+		return this;
+	}
+
 	public String getErrandNumber() {
 		return errandNumber;
 	}
@@ -918,7 +954,7 @@ public class ErrandEntity {
 				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
 					.equals(actions, that.actions) && Objects.equals(phases, that.phases) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
 						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
-							touched, that.touched) && Objects.equals(errandNumber,
+							touched, that.touched) && Objects.equals(deleted, that.deleted) && Objects.equals(deletedBy, that.deletedBy) && Objects.equals(errandNumber,
 								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(
 									timeMeasures,
 									that.timeMeasures) && Objects.equals(measures, that.measures);
@@ -927,7 +963,8 @@ public class ErrandEntity {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, lifecycle, resolution, description, channel, priority, reporterUserId,
-			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, errandNumber, tempPreviousStatus,
+			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, deleted, deletedBy, errandNumber,
+			tempPreviousStatus,
 			previousStatus,
 			timeMeasures, measures);
 	}
@@ -970,6 +1007,8 @@ public class ErrandEntity {
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
+			", deleted=" + deleted +
+			", deletedBy='" + deletedBy + '\'' +
 			", errandNumber='" + errandNumber + '\'' +
 			", version=" + version +
 			", tempPreviousStatus='" + tempPreviousStatus + '\'' +
