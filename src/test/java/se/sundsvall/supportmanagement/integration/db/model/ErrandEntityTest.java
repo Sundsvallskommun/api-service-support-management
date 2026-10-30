@@ -85,6 +85,7 @@ class ErrandEntityTest {
 		final var actions = List.of(ErrandActionEntity.create().withId("action-id"));
 		final var phases = List.of(ErrandPhaseEntity.create().withId("phase-id"));
 		final var version = 1L;
+		final var deletedBy = "deletedBy";
 
 		final var errandEntity = ErrandEntity.create()
 			.withAssignedGroupId(assignedGroupId)
@@ -113,6 +114,8 @@ class ErrandEntityTest {
 			.withContactReasonDescription(contactReasonDescription)
 			.withErrandNumber(errandNumber)
 			.withTouched(now)
+			.withDeleted(now)
+			.withDeletedBy(deletedBy)
 			.withCreated(now)
 			.withModified(now)
 			.withSuspendedFrom(now)
@@ -156,7 +159,8 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(errandEntity).extracting(ErrandEntity::getModified,
 			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo,
-			ErrandEntity::getCreated).allSatisfy(date -> assertThat(date).isEqualTo(now));
+			ErrandEntity::getCreated, ErrandEntity::getDeleted).allSatisfy(date -> assertThat(date).isEqualTo(now));
+		assertThat(errandEntity.getDeletedBy()).isEqualTo(deletedBy);
 		assertThat(errandEntity.getPreviousStatus()).isEqualTo(previousStatus);
 		assertThat(errandEntity.getTimeMeasures()).isSameAs(timeMeasure);
 		assertThat(errandEntity.getMeasures()).isSameAs(measures);

@@ -40,7 +40,8 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 		final String municipalityId,
 		final String errandId);
 
-	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerId(
+	// The notifications of a soft deleted errand are kept, and listed again once it is restored
+	List<NotificationEntity> findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(
 		final String namespace,
 		final String municipalityId,
 		final String ownerId,

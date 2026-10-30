@@ -582,6 +582,55 @@ class DecisionValidatorTest {
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 	}
 
+	@Test
+	void anErrandWithoutAProcessIsSoftDeletable() {
+
+		// Arrange
+		givenProcesses();
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+	}
+
+	@Test
+	void anErrandWhoseProcessHasRunToItsEndIsSoftDeletable() {
+
+		// Arrange
+		givenProcesses(COMPLETED);
+
+		// Act & Verify
+		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+	}
+
+	@Test
+	void anErrandWithALiveProcessIsNotSoftDeletable() {
+
+		// Arrange
+		givenProcesses(RUNNING);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' has a process that is still running, and cannot be soft deleted");
+	}
+
+	@Test
+	void anErrandThatIsNotRemovableIsNotSoftDeletable() {
+
+		// Arrange
+		givenDecisionHeld();
+		givenProcesses(COMPLETED);
+
+		// Act
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+
+		// Verify
+		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' holds a decision that can no longer be changed, and cannot be removed");
+	}
+
 	private void givenDecisionHeld() {
 		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(true);
 	}

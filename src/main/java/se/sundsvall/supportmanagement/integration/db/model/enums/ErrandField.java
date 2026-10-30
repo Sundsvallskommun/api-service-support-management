@@ -24,6 +24,8 @@ public enum ErrandField {
 	CREATED("created", false, null, IndexBinding.of(ErrandIndex.CREATED).sortedBy(ErrandIndex.CREATED)),
 	MODIFIED("modified", false, null, IndexBinding.of(ErrandIndex.MODIFIED).sortedBy(ErrandIndex.MODIFIED)),
 	TOUCHED("touched", false, null, IndexBinding.of(ErrandIndex.TOUCHED).sortedBy(ErrandIndex.TOUCHED)),
+	DELETED("deleted", false, null, IndexBinding.of(ErrandIndex.DELETED).sortedBy(ErrandIndex.DELETED)),
+	DELETED_BY("deletedBy", false, null, IndexBinding.of(ErrandIndex.DELETED_BY)),
 	PRIORITY("priority", false, null, IndexBinding.of(ErrandIndex.PRIORITY).sortedBy(ErrandIndex.PRIORITY).groupedBy(ErrandIndex.PRIORITY)),
 	DESCRIPTION("description", false, null, IndexBinding.of(ErrandIndex.DESCRIPTION)),
 	CLASSIFICATION("classification", false, null, IndexBinding.of(ErrandIndex.CATEGORY, ErrandIndex.TYPE)

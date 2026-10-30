@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db;
 
+import jakarta.persistence.EntityManager;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ class NotificationRepositoryTest {
 
 	@Autowired
 	private NotificationRepository notificationRepository;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	void createNotification() {
@@ -93,10 +97,23 @@ class NotificationRepositoryTest {
 	void findAllByNamespaceAndMunicipalityIdAndOwnerId() {
 
 		// Act
-		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerId("namespace-1", "2281", "owner_id-1", Sort.by(Sort.Direction.DESC, "created"));
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull("namespace-1", "2281", "owner_id-1", Sort.by(Sort.Direction.DESC, "created"));
 
 		// Assert
 		assertThat(notifications).hasSize(1);
+	}
+
+	@Test
+	void findAllByNamespaceAndMunicipalityIdAndOwnerIdLeavesOutSoftDeletedErrands() {
+
+		// Arrange
+		entityManager.createNativeQuery("update errand set deleted = now(6) where id = 'ERRAND_ID-1'").executeUpdate();
+
+		// Act
+		final var notifications = notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull("namespace-1", "2281", "owner_id-1", Sort.by(Sort.Direction.DESC, "created"));
+
+		// Assert
+		assertThat(notifications).isEmpty();
 	}
 
 	@Test

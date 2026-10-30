@@ -35,6 +35,7 @@ import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
+import static java.util.Objects.isNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -77,7 +78,8 @@ public class ErrandSearchService {
 
 	/**
 	 * Searches the errands of a namespace the requesting user reaches. Drafts are left out unless the query names the
-	 * life cycle, see {@link ErrandSearchPredicates#lifecycle}.
+	 * life cycle, see {@link ErrandSearchPredicates#lifecycle}, and soft deleted errands unless it names the deletion, see
+	 * {@link ErrandSearchPredicates#deleted}.
 	 *
 	 * @param  namespace                                      namespace
 	 * @param  municipalityId                                 municipality id
@@ -106,6 +108,7 @@ public class ErrandSearchService {
 				.where(f -> f.bool()
 					.filter(predicates.tenant(f, namespace, municipalityId))
 					.filter(predicates.lifecycle(f, query))
+					.filter(predicates.deleted(f, query))
 					.must(predicates.clauses(f, plan.clauses(), query)))
 				.sort(f -> toSort(f, pageable.getSort()))
 				// A query the index cannot answer within this is given up on, rather than held against everyone else
@@ -119,7 +122,12 @@ public class ErrandSearchService {
 		// OpenSearch was away would otherwise answer for labels the errand no longer carries, so what the database refuses
 		// is dropped here rather than returned trimmed
 		final var reached = accessControlService.errandReach(namespace, municipalityId, user);
-		final var hits = result.hits().stream().filter(reached).toList();
+		// Held against the database for the same reason: an errand soft deleted a moment ago may not have left the index yet
+		final var namesDeletion = predicates.namesDeletion(query);
+		final var hits = result.hits().stream()
+			.filter(reached)
+			.filter(entity -> namesDeletion || isNull(entity.getDeleted()))
+			.toList();
 
 		final var fieldResolver = accessControlService.roleBasedFieldResolver(namespace, municipalityId, user);
 		final var enrichment = new ErrandEnrichment(errandProcessService.findLatestProcesses(namespace, municipalityId, hits.stream().map(ErrandEntity::getId).toList()));
@@ -214,6 +222,7 @@ public class ErrandSearchService {
 			.where(f -> f.bool()
 				.filter(predicates.tenant(f, namespace, municipalityId))
 				.filter(predicates.lifecycle(f, query))
+				.filter(predicates.deleted(f, query))
 				.must(predicates.clauses(f, clauses, query)));
 	}
 

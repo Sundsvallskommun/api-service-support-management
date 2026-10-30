@@ -1,0 +1,35 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "POST",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"owner": "SupportManagement",
+					"sourceType": "Errand",
+					"type": "UPDATE",
+					"message": "Ärendet har återställts.",
+					"subType": "ERRAND_RESTORATION",
+					"executingUser": {
+						"type": "AD_USER",
+						"value": "smo02key"
+					}
+				},
+				"ignoreArrayOrder": true,
+				"ignoreExtraElements": true
+			}
+		],
+		"urlPath": "/api-eventlog/2281/1be673c0-6ba3-4fb0-af4a-43acf23389f6"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent-restoration"
+}

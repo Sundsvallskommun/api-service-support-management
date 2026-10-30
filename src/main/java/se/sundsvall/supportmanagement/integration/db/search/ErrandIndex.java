@@ -30,6 +30,8 @@ public final class ErrandIndex {
 	public static final String CREATED = "created";
 	public static final String MODIFIED = "modified";
 	public static final String TOUCHED = "touched";
+	public static final String DELETED = "deleted";
+	public static final String DELETED_BY = "deletedBy";
 	public static final String PRIORITY = "priority";
 	public static final String DESCRIPTION = "description";
 	public static final String CATEGORY = "category";

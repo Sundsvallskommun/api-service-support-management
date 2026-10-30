@@ -51,6 +51,16 @@
 			"keyed": false
 		},
 		{
+			"field": "DELETED",
+			"property": "deleted",
+			"keyed": false
+		},
+		{
+			"field": "DELETED_BY",
+			"property": "deletedBy",
+			"keyed": false
+		},
+		{
 			"field": "PRIORITY",
 			"property": "priority",
 			"keyed": false

@@ -33,7 +33,7 @@ public class SuspensionWorker {
 	@Transactional
 	public void processExpiredSuspensions() {
 		errandsRepository
-			.findAllBySuspendedToBefore(now(ZoneId.systemDefault()))
+			.findAllBySuspendedToBeforeAndDeletedIsNull(now(ZoneId.systemDefault()))
 			.forEach(entity -> {
 
 				if (!"SUSPENDED".equals(entity.getStatus())) {

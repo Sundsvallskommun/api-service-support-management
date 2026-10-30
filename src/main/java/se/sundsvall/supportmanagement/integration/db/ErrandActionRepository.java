@@ -9,5 +9,6 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 @CircuitBreaker(name = "errandActionRepository")
 public interface ErrandActionRepository extends JpaRepository<ErrandActionEntity, String> {
 
-	List<ErrandActionEntity> findAllByExecuteAfterBefore(OffsetDateTime now);
+	// The actions of a soft deleted errand are left waiting, and are carried out by the first run after it is restored
+	List<ErrandActionEntity> findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(OffsetDateTime now);
 }

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
+import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -75,6 +76,7 @@ import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +84,7 @@ import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -103,12 +106,15 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
@@ -127,6 +133,8 @@ class ErrandServiceTest {
 	private static final String PARENT_LABEL_ID = "8a1f4c2e-0000-4000-8000-000000000003";
 	private static final String ACTION_LABEL_ID = "8a1f4c2e-0000-4000-8000-000000000004";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String EVENT_LOG_SOFT_DELETE_ERRAND = "Ärendet har mjukraderats.";
+	private static final String EVENT_LOG_RESTORE_ERRAND = "Ärendet har återställts.";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "supportmanagement";
 
@@ -1127,15 +1135,15 @@ class ErrandServiceTest {
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
+		when(errandAttachmentServiceMock.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(List.of(errandAttachment));
 
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
-		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+		verify(accessControlServiceMock).getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
 		verify(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		verify(errandAttachmentServiceMock).readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(errandAttachmentServiceMock).readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("id")));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
@@ -1148,7 +1156,7 @@ class ErrandServiceTest {
 	void deleteErrandHoldingALockedDecision() {
 		final var entity = buildErrandEntity();
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
@@ -1166,9 +1174,9 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity();
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(errandAttachmentServiceMock.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
 
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
@@ -1186,9 +1194,9 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity().withExternalTags(new ArrayList<>(List.of(tag)));
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(errandAttachmentServiceMock.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
 
 		// Stands in for the removal emptying the persistence context: what a caller is left holding is an errand whose
 		// collections are no longer there to be read.
@@ -1213,9 +1221,9 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity().withLabels(new ArrayList<>(List.of(label)));
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(errandAttachmentServiceMock.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
 		doAnswer(invocation -> {
 			invocation.<ErrandEntity>getArgument(0).setLabels(null);
 			return null;
@@ -1239,9 +1247,9 @@ class ErrandServiceTest {
 		final var entity = buildErrandEntity();
 		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
 
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
 		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
-		when(errandAttachmentServiceMock.readErrandAttachments(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
+		when(errandAttachmentServiceMock.readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(emptyList());
 		doThrow(new RuntimeException("Event log down")).when(eventServiceMock)
 			.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 
@@ -1252,6 +1260,135 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that a soft delete marks the errand as deleted by the caller, keeps everything belonging to it, and records it as a revision and an update event")
+	void softDeleteErrand() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		assertThat(entity.getDeleted()).isCloseTo(now(), within(5, SECONDS));
+		assertThat(entity.getDeletedBy()).isEqualTo("user");
+		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+		verify(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(entityManagerMock).lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_SOFT_DELETE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND_DELETION), options(true, Set.of()));
+		verify(errandRepositoryMock, never()).deleteById(any());
+		verifyNoInteractions(errandDataDeleterMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not soft deleted, as it is not deleted")
+	void softDeleteErrandHoldingALockedDecision() {
+		final var entity = buildErrandEntity();
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(CONFLICT));
+
+		assertThat(entity.getDeleted()).isNull();
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock, entityManagerMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a soft delete held to a stale version is refused before anything is touched")
+	void softDeleteErrandWithAStaleIfMatch() {
+		final var entity = buildErrandEntity().withVersion(3L);
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"2\""))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED));
+
+		assertThat(entity.getDeleted()).isNull();
+		verifyNoInteractions(decisionValidatorMock, revisionServiceMock, eventServiceMock, entityManagerMock);
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("Verification that the soft delete stands when the event log is unreachable")
+	void softDeleteErrandWhenEventLogFails() {
+		final var entity = buildErrandEntity();
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		doThrow(new RuntimeException("Event log down")).when(eventServiceMock).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
+
+		service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		assertThat(entity.getDeleted()).isNotNull();
+		verify(errandRepositoryMock).saveAndFlush(entity);
+	}
+
+	@Test
+	@DisplayName("Verification that a restore clears the deletion of a soft deleted errand, found though it is soft deleted, and records it as a revision and an update event")
+	void restoreErrand() {
+		final var entity = buildErrandEntity().withDeleted(now()).withDeletedBy("user");
+		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user"));
+
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+		when(errandRepositoryMock.saveAndFlush(entity)).thenReturn(entity);
+		when(revisionServiceMock.createErrandRevision(any())).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+
+		service.restoreErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+
+		assertThat(entity.getDeleted()).isNull();
+		assertThat(entity.getDeletedBy()).isNull();
+		verify(accessControlServiceMock).getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+		verify(entityManagerMock).lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		verify(errandRepositoryMock).saveAndFlush(entity);
+		verify(revisionServiceMock).createErrandRevision(entity);
+		verify(eventServiceMock).createErrandEvent(eq(UPDATE), eq(EVENT_LOG_RESTORE_ERRAND), eq(entity), eq(new RevisionResult(previousRevisionMock, currentRevisionMock)), eq(ERRAND_RESTORATION), options(true, Set.of()));
+		verifyNoInteractions(decisionValidatorMock);
+	}
+
+	@Test
+	@DisplayName("Verification that restoring an errand that is not soft deleted is refused with a conflict, and nothing is touched")
+	void restoreErrandThatIsNotDeleted() {
+		final var entity = buildErrandEntity();
+
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.restoreErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
+			.satisfies(problem -> {
+				assertThat(problem.getStatus()).isEqualTo(CONFLICT);
+				assertThat(problem.getDetail()).isEqualTo("The errand '%s' is not soft deleted, and there is nothing to restore".formatted(ERRAND_ID));
+			});
+
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock, entityManagerMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a restore held to a stale version is refused as a precondition failure, before whether the errand is soft deleted is looked at")
+	void restoreErrandWithAStaleIfMatch() {
+		final var entity = buildErrandEntity().withVersion(3L);
+
+		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.restoreErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "\"2\""))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(PRECONDITION_FAILED));
+
+		verify(errandRepositoryMock, never()).saveAndFlush(any());
+		verifyNoInteractions(revisionServiceMock, eventServiceMock, entityManagerMock);
 	}
 
 	@Test

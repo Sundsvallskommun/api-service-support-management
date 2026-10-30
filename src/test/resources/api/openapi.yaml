@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.1"
+  version: "18.2"
 servers:
-- url: http://localhost:40887
+- url: http://localhost:50630
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -7452,7 +7452,9 @@ paths:
       summary: Read matching errands
       description: "Query for errands with or without filters. The resource allows\
         \ the client a wide range of variations on how to filter the result. Drafts\
-        \ are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'."
+        \ are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'.\
+        \ Soft deleted errands are left out unless the filter names deleted or deletedBy,\
+        \ e.g. deleted is not null."
       operationId: findErrands
       parameters:
       - name: namespace
@@ -8147,6 +8149,231 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/soft-delete:
+    post:
+      tags:
+      - Errands
+      summary: Soft delete errand
+      description: "Soft deletes the errand that matches the provided id. The errand\
+        \ is kept with everything belonging to it, but is left out of every read until\
+        \ it is restored, apart from a listing whose filter names deleted. It can\
+        \ still be deleted for good. An errand with a process cannot be soft deleted\
+        \ once one of its decisions can no longer be changed, as it cannot be deleted,\
+        \ nor while a process is still running on it."
+      operationId: softDeleteErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: "Not Found — no such errand, or it is already soft deleted"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — resource modified concurrently, the errand holds\
+            \ a decision that can no longer be changed, or it has a process that is\
+            \ still running"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/errands/{errandId}/restore:
+    post:
+      tags:
+      - Errands
+      summary: Restore errand
+      description: "Restores the soft deleted errand that matches the provided id,\
+        \ as it was when it was soft deleted."
+      operationId: restoreErrand
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: errandId
+        in: path
+        description: Errand id
+        required: true
+        schema:
+          type: string
+        example: b82bd8ac-1507-4d9a-958d-369261eecc15
+      - name: If-Match
+        in: header
+        description: Optional ETag for optimistic locking — omit to skip version check
+        required: false
+        schema:
+          type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — resource modified concurrently, or the errand is\
+            \ not soft deleted"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "412":
+          description: Precondition Failed — If-Match version mismatch
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -16478,9 +16705,10 @@ paths:
       tags:
       - Errands
       summary: Delete errand
-      description: "Deletes the errand that matches the provided id. An errand with\
-        \ a process cannot be deleted once one of its decisions can no longer be changed\
-        \ - when the process has run to its end, or the decision is completed."
+      description: "Deletes the errand that matches the provided id for good, whether\
+        \ it is soft deleted or not. An errand with a process cannot be deleted once\
+        \ one of its decisions can no longer be changed - when the process has run\
+        \ to its end, or the decision is completed."
       operationId: deleteErrand
       parameters:
       - name: namespace
@@ -22648,14 +22876,15 @@ paths:
       summary: Search errands
       description: "Searches the errands the requesting user has access to, ranked\
         \ by how well they match. Drafts are left out unless the query names lifecycle,\
-        \ e.g. lifecycle:DRAFT. Without a sort the best matches come first, newest\
-        \ first among equals. Sortable properties: created, modified, touched, suspendedFrom,\
-        \ suspendedTo, errandNumber, title, status, category, type, priority, resolution,\
-        \ channel, reporterUserId, assignedUserId, assignedGroupId. The total counts\
-        \ what the index answered, and the database has the last word on every hit,\
-        \ so a page may hold fewer errands than the total implies while an errand\
-        \ is indexed as something it no longer is. A rebuild of the index puts the\
-        \ two back in step."
+        \ e.g. lifecycle:DRAFT. Soft deleted errands are left out unless the query\
+        \ names deleted or deletedBy, e.g. _exists_:deleted. Without a sort the best\
+        \ matches come first, newest first among equals. Sortable properties: created,\
+        \ modified, touched, deleted, suspendedFrom, suspendedTo, errandNumber, title,\
+        \ status, category, type, priority, resolution, channel, reporterUserId, assignedUserId,\
+        \ assignedGroupId. The total counts what the index answered, and the database\
+        \ has the last word on every hit, so a page may hold fewer errands than the\
+        \ total implies while an errand is indexed as something it no longer is. A\
+        \ rebuild of the index puts the two back in step."
       operationId: searchErrands
       parameters:
       - name: namespace
@@ -22695,7 +22924,7 @@ paths:
 
           A bare word is a search term, it is only a field name when followed by a colon. The characters `+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /` are part of the syntax and are escaped with a backslash when meant literally.
 
-          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `lifecycle`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `lifecycle`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `deleted`, `deletedBy`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
           Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, `stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, `stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, `stakeholders.parameters.key`, `stakeholders.parameters.values`.
           Of its parameters: `parameters.key`, `parameters.displayName`, `parameters.parameterGroup`, `parameters.values`, `jsonParameters.<key>.<path>` for every scalar in a JSON parameter (`.raw` appended for the exact value).
           Of its phases: `phases.phase.name`, `phases.phase.displayName`, `phases.started`, `phases.ended`.
@@ -22818,25 +23047,26 @@ paths:
       description: "Counts the errands a query matches, without answering with the\
         \ errands themselves. The query is the one the search takes, read and refused\
         \ by the same rules. Drafts are left out unless the query names lifecycle,\
-        \ e.g. lifecycle:DRAFT. Optionally divides the count over one column of the\
-        \ errand with groupBy, which accepts: status, resolution, channel, priority,\
-        \ category, type, reporterUserId, assignedUserId, assignedGroupId. Labels,\
-        \ parameters and JSON parameters cannot be grouped by, since an errand may\
-        \ carry several of each and the buckets would add up to more than the count.\
-        \ The values come back in the casing the metadata of the namespace gives them,\
-        \ or, for priority, the casing of the enum; the identifiers and the uncatalogued\
-        \ strings come back lowercased as the index holds them. The count is the count\
-        \ of the search however it is divided up, so the same query may be sent to\
-        \ both endpoints, and the breakdown accounts for all of it: its buckets, withoutValue\
-        \ and withheld add up to the count. An errand carrying nothing in the column\
-        \ is counted by withoutValue, and one carrying something the user may not\
-        \ read by withheld, of which nothing further is said. A column dividing the\
-        \ search over more values than a breakdown answers with is refused with 400\
-        \ rather than answered in part. The count is what the index answers, and unlike\
-        \ the search it is not held against the database afterwards, so while the\
-        \ index is behind it the number can be off by an errand or two. A rebuild\
-        \ puts the two back in step. Sorting and paging have no meaning here and are\
-        \ ignored."
+        \ e.g. lifecycle:DRAFT. Soft deleted errands are left out unless the query\
+        \ names deleted or deletedBy, e.g. _exists_:deleted. Optionally divides the\
+        \ count over one column of the errand with groupBy, which accepts: status,\
+        \ resolution, channel, priority, category, type, reporterUserId, assignedUserId,\
+        \ assignedGroupId. Labels, parameters and JSON parameters cannot be grouped\
+        \ by, since an errand may carry several of each and the buckets would add\
+        \ up to more than the count. The values come back in the casing the metadata\
+        \ of the namespace gives them, or, for priority, the casing of the enum; the\
+        \ identifiers and the uncatalogued strings come back lowercased as the index\
+        \ holds them. The count is the count of the search however it is divided up,\
+        \ so the same query may be sent to both endpoints, and the breakdown accounts\
+        \ for all of it: its buckets, withoutValue and withheld add up to the count.\
+        \ An errand carrying nothing in the column is counted by withoutValue, and\
+        \ one carrying something the user may not read by withheld, of which nothing\
+        \ further is said. A column dividing the search over more values than a breakdown\
+        \ answers with is refused with 400 rather than answered in part. The count\
+        \ is what the index answers, and unlike the search it is not held against\
+        \ the database afterwards, so while the index is behind it the number can\
+        \ be off by an errand or two. A rebuild puts the two back in step. Sorting\
+        \ and paging have no meaning here and are ignored."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -22876,7 +23106,7 @@ paths:
 
           A bare word is a search term, it is only a field name when followed by a colon. The characters `+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /` are part of the syntax and are escaped with a backslash when meant literally.
 
-          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `lifecycle`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
+          Fields of the errand: `errandNumber`, `title`, `description`, `contactReasonDescription`, `contactReason.reason`, `status`, `lifecycle`, `category`, `type`, `resolution`, `channel`, `priority`, `reporterUserId`, `assignedUserId`, `assignedGroupId`, `escalationEmail`, `businessRelated`, `created`, `modified`, `touched`, `deleted`, `deletedBy`, `suspendedFrom`, `suspendedTo`, `externalTags.key`, `externalTags.value`, `labels.metadataLabelId`, `attachments.fileName`, `attachments.mimeType`.
           Of its stakeholders: `stakeholders.externalId`, `stakeholders.externalIdType`, `stakeholders.role`, `stakeholders.firstName`, `stakeholders.lastName`, `stakeholders.organizationName`, `stakeholders.address`, `stakeholders.careOf`, `stakeholders.zipCode`, `stakeholders.city`, `stakeholders.country`, `stakeholders.contactChannels.type`, `stakeholders.contactChannels.value`, `stakeholders.parameters.key`, `stakeholders.parameters.values`.
           Of its parameters: `parameters.key`, `parameters.displayName`, `parameters.parameterGroup`, `parameters.values`, `jsonParameters.<key>.<path>` for every scalar in a JSON parameter (`.raw` appended for the exact value).
           Of its phases: `phases.phase.name`, `phases.phase.displayName`, `phases.started`, `phases.ended`.
@@ -22979,7 +23209,9 @@ paths:
       - Errands
       summary: Count errands
       description: "Counts errands based on the provided filters. Drafts are left\
-        \ out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'."
+        \ out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'. Soft deleted\
+        \ errands are left out unless the filter names deleted or deletedBy, e.g.\
+        \ deleted is not null."
       operationId: countErrands_1
       parameters:
       - name: namespace
@@ -23867,8 +24099,10 @@ components:
             \ A change of status or phase is told as STATUS or PHASE apart from the\
             \ ERRAND event of the change it is part of, as are an assignment (ASSIGNMENT),\
             \ every label added (LABEL) and a draft being made active (ERRAND_ACTIVATION).\
-            \ Messages are logged by the channel they went through, received and sent\
-            \ alike: MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL,\
+            \ An errand being soft deleted or restored is told as ERRAND_DELETION\
+            \ or ERRAND_RESTORATION, and only to a namespace listing them. Messages\
+            \ are logged by the channel they went through, received and sent alike:\
+            \ MESSAGE_EMAIL_EXTERNAL, MESSAGE_SMS_EXTERNAL, MESSAGE_WEB_MESSAGE_EXTERNAL,\
             \ and MESSAGE_CONVERSATION_EXTERNAL and MESSAGE_CONVERSATION_INTERNAL\
             \ for messages in conversations with the outside world and within the\
             \ organisation respectively"
@@ -23880,6 +24114,8 @@ components:
             - DECISION
             - ERRAND
             - ERRAND_ACTIVATION
+            - ERRAND_DELETION
+            - ERRAND_RESTORATION
             - HANDOVER_IN
             - HANDOVER_OUT
             - LABEL
@@ -24267,6 +24503,33 @@ components:
           type: boolean
         missingNode:
           type: boolean
+        container:
+          type: boolean
+        number:
+          type: boolean
+        boolean:
+          type: boolean
+        long:
+          type: boolean
+        short:
+          type: boolean
+        pojo:
+          type: boolean
+        string:
+          type: boolean
+        int:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        binary:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
         nodeType:
           type: string
           enum:
@@ -24279,38 +24542,11 @@ components:
           - OBJECT
           - POJO
           - STRING
-        string:
-          type: boolean
         integralNumber:
-          type: boolean
-        pojo:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
           type: boolean
         bigInteger:
           type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
         valueNode:
-          type: boolean
-        container:
-          type: boolean
-        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -24873,7 +25109,9 @@ components:
             \ is created with and as UPDATE/LABEL for those added later. ERRAND_ACTIVATION\
             \ matches a draft being made active, logged as UPDATE/ERRAND_ACTIVATION\
             \ alongside the UPDATE/ERRAND of the update that made it active, and is\
-            \ not matched by ERRAND."
+            \ not matched by ERRAND. ERRAND_DELETION and ERRAND_RESTORATION match\
+            \ an errand being soft deleted and restored, logged as UPDATE/ERRAND_DELETION\
+            \ and UPDATE/ERRAND_RESTORATION, and are matched by ERRAND as well."
           examples:
           - ATTACHMENT
           maxLength: 64
@@ -26289,6 +26527,23 @@ components:
           description: Timestamp when errand was last touched (created or modified)
           examples:
           - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        deleted:
+          type: string
+          format: date-time
+          description: "Timestamp when the errand was soft deleted. Null for an errand\
+            \ that is not. A soft deleted errand is left out of every read until it\
+            \ is restored, but for a listing whose filter names deleted, e.g. deleted\
+            \ is not null."
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        deletedBy:
+          type: string
+          description: The user who soft deleted the errand. Null for an errand that
+            is not soft deleted
+          examples:
+          - joe01doe
           readOnly: true
         version:
           type: integer
@@ -27744,8 +27999,8 @@ components:
           example: NEW_CASE
         classification:
           $ref: "#/components/schemas/Classification"
-          description: Category/type to set on the new errand. Required when the
-            target namespace validates CATEGORY or TYPE, otherwise optional
+          description: "Category/type to set on the new errand. Required when the\
+            \ target namespace validates CATEGORY or TYPE, otherwise optional"
         labels:
           type: array
           description: Label UUIDs to apply on the new errand

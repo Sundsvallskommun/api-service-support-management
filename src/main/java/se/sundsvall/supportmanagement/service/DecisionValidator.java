@@ -55,6 +55,7 @@ public class DecisionValidator {
 	private static final String ATTACHMENT_OF_LOCKED_DECISION = "Attachment with id '%s' belongs to a decision that can no longer be changed, and cannot be removed from errand with id '%s'";
 	private static final String INVESTIGATION_OF_LOCKED_DECISION = "Investigation with id '%s' is what a decision that can no longer be changed rests on, and cannot be removed from errand with id '%s'";
 	private static final String ERRAND_OF_LOCKED_DECISION = "Errand with id '%s' holds a decision that can no longer be changed, and cannot be removed";
+	private static final String ERRAND_WITH_LIVE_PROCESS = "Errand with id '%s' has a process that is still running, and cannot be soft deleted";
 
 	private final DecisionRepository decisionRepository;
 	private final DecisionOutcomeRepository decisionOutcomeRepository;
@@ -218,6 +219,22 @@ public class DecisionValidator {
 			() -> decisionRepository.existsByNamespaceAndMunicipalityIdAndErrandEntityId(namespace, municipalityId, errandId),
 			() -> decisionRepository.existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(namespace, municipalityId, errandId, COMPLETED),
 			ERRAND_OF_LOCKED_DECISION.formatted(errandId));
+	}
+
+	/**
+	 * Rejects with 409 soft deleting an errand: what keeps it from being removed, and a process still running on it, which
+	 * would be left calling an errand that answers as gone.
+	 *
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId municipality of the errand.
+	 * @param errandId       the errand about to be soft deleted.
+	 */
+	public void validateErrandSoftDeletable(final String namespace, final String municipalityId, final String errandId) {
+		validateErrandRemovable(namespace, municipalityId, errandId);
+
+		if (processRepository.findByErrandIdOrderByCreatedDesc(errandId).stream().anyMatch(ErrandProcessEntity::isLive)) {
+			throw Problem.valueOf(CONFLICT, ERRAND_WITH_LIVE_PROCESS.formatted(errandId));
+		}
 	}
 
 	/**

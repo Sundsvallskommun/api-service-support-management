@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.accessmapper.Access;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -693,7 +695,7 @@ class AccessControlServiceTest {
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
 
 		// Act
@@ -703,7 +705,7 @@ class AccessControlServiceTest {
 		assertThat(result).isSameAs(entity);
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
@@ -720,7 +722,7 @@ class AccessControlServiceTest {
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
-		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
 
 		// Act
@@ -730,7 +732,7 @@ class AccessControlServiceTest {
 		assertThat(result).isSameAs(entity);
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
-		verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
@@ -738,7 +740,7 @@ class AccessControlServiceTest {
 	@Test
 	void getErrandNotFound() {
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(false);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(false);
 
 		// Act
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, LR));
@@ -748,7 +750,86 @@ class AccessControlServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verifyNoInteractions(namespaceConfigServiceMock, accessMapperService);
+	}
+
+	@Test
+	void getErrandIncludingDeleted() {
+		// Setup
+		final var entity = ErrandEntity.create().withDeleted(OffsetDateTime.now());
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+
+		// Act
+		final var result = accessControlService.getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
+
+		// Verify
+		assertThat(result).isSameAs(entity);
+		verify(errandsRepositoryMock).existsWithLockingByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock, never()).existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any());
+		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
+		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
+	}
+
+	@Test
+	void getErrandIncludingDeletedWithoutLock() {
+		// Setup
+		final var entity = ErrandEntity.create();
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(NamespaceConfig.create());
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.of(entity));
+
+		// Act
+		final var result = accessControlService.getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.ERRAND, RW);
+
+		// Verify
+		assertThat(result).isSameAs(entity);
 		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+	}
+
+	@Test
+	void getErrandIncludingDeletedRefusedWhenNotAccessible() {
+		// Setup
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var config = NamespaceConfig.create().withAccessControl(true);
+		final var allowedLabels = Set.of(MetadataLabelEntity.create());
+
+		// Mock
+		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
+		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(FORBIDDEN);
+		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
+	}
+
+	@Test
+	void getErrandIncludingDeletedNotFound() {
+		// Mock
+		when(errandsRepositoryMock.existsWithLockingByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(false);
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW));
+
+		// Verify
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		verifyNoInteractions(namespaceConfigServiceMock, accessMapperService);
 	}
 
@@ -763,7 +844,7 @@ class AccessControlServiceTest {
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.findOne(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(Optional.empty());
 
 		// Act
@@ -775,7 +856,7 @@ class AccessControlServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).findOne(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
@@ -791,7 +872,7 @@ class AccessControlServiceTest {
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(true);
 
 		// Act
@@ -800,7 +881,7 @@ class AccessControlServiceTest {
 		// Verify
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
@@ -808,7 +889,7 @@ class AccessControlServiceTest {
 	@Test
 	void verifyExistingErrandAndAuthorizationNotFound() {
 		// Mock
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(false);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(false);
 
 		// Act
 		final var exception = assertThrows(ThrowableProblem.class, () -> accessControlService.verifyExistingErrandAndAuthorization(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ProtectedResource.ERRAND, LR));
@@ -818,7 +899,7 @@ class AccessControlServiceTest {
 		assertThat(exception.getTitle()).isEqualTo(NOT_FOUND.getReasonPhrase());
 		assertThat(exception.getMessage()).isEqualTo("Not Found: An errand with id 'errandId' could not be found in namespace 'namespace' for municipality with id 'municipalityId'");
 
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(namespaceConfigServiceMock, accessMapperService);
 	}
 
@@ -833,7 +914,7 @@ class AccessControlServiceTest {
 		// Mock
 		when(namespaceConfigServiceMock.get(any(), any())).thenReturn(config);
 		when(accessMapperService.getAccessSnapshot(any(), any(), any())).thenReturn(snapshotOf(allowedLabels));
-		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(any(), any(), any())).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(any(), any(), any())).thenReturn(true);
 		when(errandsRepositoryMock.exists(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(false);
 
 		// Act
@@ -845,7 +926,7 @@ class AccessControlServiceTest {
 		assertThat(exception.getMessage()).isEqualTo("Forbidden: Errand not accessible by user 'user'");
 		verify(namespaceConfigServiceMock).get(NAMESPACE, MUNICIPALITY_ID);
 		verify(accessMapperService).getAccessSnapshot(MUNICIPALITY_ID, NAMESPACE, user);
-		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+		verify(errandsRepositoryMock).existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock).exists(specificationCaptor.capture());
 		assertThat(specificationCaptor.getValue()).usingRecursiveComparison().isEqualTo(withId(ERRAND_ID).and(hasAllowedMetadataLabels(allowedLabels)));
 	}
