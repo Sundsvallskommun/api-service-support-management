@@ -3,10 +3,13 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.employee.PortalPersonData;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -42,7 +45,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.unsorted;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
+import static se.sundsvall.dept44.support.Identifier.Type.PARTY_ID;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
@@ -127,7 +132,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var ownerId = randomUUID().toString();
+		final var ownerId = "EXECUTINGUSERID";
 		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
 		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort))
@@ -147,7 +152,7 @@ class NotificationServiceTest {
 		// Arrange
 		final var municipalityId = "2281";
 		final var namespace = "namespace";
-		final var ownerId = randomUUID().toString();
+		final var ownerId = "executingUserId";
 		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
 		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort))
@@ -159,6 +164,50 @@ class NotificationServiceTest {
 		// Assert
 		assertThat(result).isNotNull().isEmpty();
 		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort);
+	}
+
+	@Test
+	void getNotificationsByOwnerIdOfOtherUser() {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var sort = Sort.by(Sort.Direction.DESC, "created");
+
+		// Act
+		assertThatThrownBy(() -> notificationService.getNotificationsByOwnerId(municipalityId, namespace, "otherUserId", sort))
+			.isInstanceOf(Problem.class)
+			.hasFieldOrPropertyWithValue("status", FORBIDDEN)
+			.hasMessage("Forbidden: Notifications of 'otherUserId' not accessible by user 'executingUserId'");
+
+		// Assert
+		verifyNoInteractions(notificationRepositoryMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("callersWithoutAdAccount")
+	void getNotificationsByOwnerIdWithoutAdAccount(final Identifier identifier) {
+
+		// Arrange
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var sort = Sort.by(Sort.Direction.DESC, "created");
+		Identifier.remove();
+		Optional.ofNullable(identifier).ifPresent(Identifier::set);
+
+		// Act
+		assertThatThrownBy(() -> notificationService.getNotificationsByOwnerId(municipalityId, namespace, "executingUserId", sort))
+			.isInstanceOf(Problem.class)
+			.hasFieldOrPropertyWithValue("status", FORBIDDEN);
+
+		// Assert
+		verifyNoInteractions(notificationRepositoryMock);
+	}
+
+	private static Stream<Identifier> callersWithoutAdAccount() {
+		return Stream.of(
+			null,
+			Identifier.create().withType(PARTY_ID).withValue("executingUserId"));
 	}
 
 	@Test

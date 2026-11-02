@@ -14,6 +14,7 @@ import static org.springframework.http.HttpMethod.PATCH;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -62,6 +63,7 @@ class NotificationIT extends AbstractAppTest {
 	void test02_getNotificationsByOwnerId() {
 		setupCall()
 			.withServicePath(GLOBAL_NOTIFICATIONS_PATH + "?ownerId=" + OWNER_ID)
+			.withHeader(SENT_BY_HEADER, OWNER_ID + "; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
@@ -134,5 +136,15 @@ class NotificationIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test08_getNotificationsByOwnerIdOfOtherUser() {
+		setupCall()
+			.withServicePath(GLOBAL_NOTIFICATIONS_PATH + "?ownerId=" + OWNER_ID)
+			.withHeader(SENT_BY_HEADER, "jane02doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(FORBIDDEN)
+			.sendRequest();
 	}
 }

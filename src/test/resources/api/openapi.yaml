@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.2"
+  version: "19.0"
 servers:
 - url: http://localhost:50630
   description: Generated server url
@@ -13432,8 +13432,8 @@ paths:
       tags:
       - User notifications
       summary: Get notifications
-      description: Get notifications for the namespace and municipality with the specified
-        ownerId
+      description: "Get notifications for the namespace and municipality with the\
+        \ specified ownerId, which must be the ad account of the requesting user"
       operationId: getNotificationsByOwnerId
       parameters:
       - name: namespace
@@ -13509,6 +13509,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notification"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not found
           content:
