@@ -8,12 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.core.io.Resource;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.util.UriComponentsBuilder;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.dept44.util.ResourceUtils;
 import se.sundsvall.supportmanagement.Application;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -21,16 +18,7 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 import static java.nio.file.Files.writeString;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
-@ActiveProfiles("it")
-@AutoConfigureTestRestTemplate
-@SpringBootTest(
-	webEnvironment = WebEnvironment.RANDOM_PORT,
-	classes = Application.class,
-	properties = {
-		"spring.main.banner-mode=off",
-		"logging.level.se.sundsvall.dept44.payload=OFF",
-		"wiremock.server.port=10101"
-	})
+@WireMockAppTestSuite(files = "classpath:/OpenApiSpecificationIT/", classes = Application.class)
 class OpenApiSpecificationIT {
 
 	private static final YAMLMapper YAML_MAPPER = new YAMLMapper();

@@ -55,6 +55,7 @@ class InvestigationTest {
 		final var recommendationMotivation = "recommendationMotivation";
 		final var sections = List.of(InvestigationSection.create());
 		final var attachments = List.of(ErrandAttachment.create());
+		final var parameters = List.of(Parameter.create());
 		final var createdBy = "createdBy";
 		final var modifiedBy = "modifiedBy";
 		final var created = now();
@@ -78,6 +79,7 @@ class InvestigationTest {
 			.withRecommendationMotivation(recommendationMotivation)
 			.withSections(sections)
 			.withAttachments(attachments)
+			.withParameters(parameters)
 			.withCreatedBy(createdBy)
 			.withModifiedBy(modifiedBy)
 			.withCreated(created)
@@ -101,6 +103,7 @@ class InvestigationTest {
 		assertThat(result.getRecommendationMotivation()).isEqualTo(recommendationMotivation);
 		assertThat(result.getSections()).isEqualTo(sections);
 		assertThat(result.getAttachments()).isEqualTo(attachments);
+		assertThat(result.getParameters()).isEqualTo(parameters);
 		assertThat(result.getCreatedBy()).isEqualTo(createdBy);
 		assertThat(result.getModifiedBy()).isEqualTo(modifiedBy);
 		assertThat(result.getCreated()).isEqualTo(created);

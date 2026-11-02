@@ -38,9 +38,7 @@ public interface RevisionRepository extends JpaRepository<RevisionEntity, String
 	/**
 	 * Find the ids of every revision of an errand.
 	 * <p>
-	 * Only the ids are read, and that is the point of the method. A revision holds a full serialized snapshot of the
-	 * errand, so a removal that reads whole revisions before removing any would hold every snapshot of the errand at
-	 * once - which for a long lived errand is more than the heap has to spare.
+	 * Only the ids are read, not the full serialized snapshot of the errand that every revision holds.
 	 *
 	 * @param  namespace      namespace of the errand.
 	 * @param  municipalityId id of the municipality of the errand.

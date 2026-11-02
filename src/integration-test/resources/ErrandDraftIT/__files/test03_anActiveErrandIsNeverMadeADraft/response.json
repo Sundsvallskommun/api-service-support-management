@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "The errand 'ac000000-0000-0000-0000-0000000000c2' is active, and an active errand never becomes a draft again"
+}

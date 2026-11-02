@@ -35,6 +35,7 @@
 					"historyReference": "${json-unit.regex}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
+					"requestGroupId": "${json-unit.any-string}",
 					"type": "CREATE",
 					"message": "Ärendet har skapats.",
 					"subType": "ERRAND",

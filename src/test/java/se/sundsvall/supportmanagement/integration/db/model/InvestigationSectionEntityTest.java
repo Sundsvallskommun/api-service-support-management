@@ -22,7 +22,7 @@ class InvestigationSectionEntityTest {
 
 	// What the section points at rather than what it is: the investigation it belongs to and the parameters it holds.
 	private static final String[] RELATIONS = {
-		"investigationEntity", "jsonParameters"
+		"investigationEntity", "jsonParameters", "parameters"
 	};
 
 	@BeforeAll
@@ -55,6 +55,7 @@ class InvestigationSectionEntityTest {
 		final var completedBy = "jo12doe";
 		final var completedAt = now().plusDays(1);
 		final var jsonParameters = List.of(InvestigationSectionJsonParameterEntity.create());
+		final var parameters = List.of(InvestigationSectionParameterEntity.create());
 
 		// Act
 		final var result = InvestigationSectionEntity.create()
@@ -67,7 +68,8 @@ class InvestigationSectionEntityTest {
 			.withText(text)
 			.withCompletedBy(completedBy)
 			.withCompletedAt(completedAt)
-			.withJsonParameters(jsonParameters);
+			.withJsonParameters(jsonParameters)
+			.withParameters(parameters);
 
 		// Assert
 		assertThat(result).hasNoNullFieldsOrProperties();
@@ -81,6 +83,7 @@ class InvestigationSectionEntityTest {
 		assertThat(result.getCompletedBy()).isEqualTo(completedBy);
 		assertThat(result.getCompletedAt()).isEqualTo(completedAt);
 		assertThat(result.getJsonParameters()).isEqualTo(jsonParameters);
+		assertThat(result.getParameters()).isEqualTo(parameters);
 	}
 
 	@Test

@@ -1,0 +1,15 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MOVE",
+			"path": [
+				"ANSOKAN",
+				"FORSTAGANG"
+			],
+			"destinationParentPath": [
+				"TILLSYN"
+			]
+		}
+	]
+}

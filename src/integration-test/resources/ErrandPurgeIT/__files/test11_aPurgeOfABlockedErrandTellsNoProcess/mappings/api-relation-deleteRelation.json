@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "DELETE",
+		"urlPathPattern": "/api-relation/2281/relations/PURGE-RELATION-[0-9]"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 204
+	},
+	"name": "api-relation-deleteRelation"
+}

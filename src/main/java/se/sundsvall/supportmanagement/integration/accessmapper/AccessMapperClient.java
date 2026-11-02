@@ -17,9 +17,8 @@ import static se.sundsvall.supportmanagement.integration.accessmapper.configurat
 public interface AccessMapperClient {
 
 	/**
-	 * Everything the access mapper knows about the user within the namespace. The endpoint takes an optional type filter,
-	 * which is deliberately not sent: the answer is filtered per type where it is used, and asking once for all of them
-	 * keeps labels, roles and resources from being read from three different moments in time.
+	 * Everything the access mapper knows about the user within the namespace, labels, roles and resources alike. The
+	 * optional type filter of the endpoint is not sent, and the answer is filtered per type where it is used.
 	 */
 	@GetMapping(path = "/{municipalityId}/{namespace}/access/ad/{adId}", produces = APPLICATION_JSON_VALUE)
 	ResponseEntity<List<AccessGroup>> getAccessDetails(

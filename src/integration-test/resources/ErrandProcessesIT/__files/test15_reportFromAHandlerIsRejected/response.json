@@ -1,0 +1,5 @@
+{
+	"detail": "A report is taken only from the process consumer 'pw-alkt' of namespace 'PROCESS-NAMESPACE', named in the 'X-Sent-By' header",
+	"title": "Bad Request",
+	"status": 400
+}

@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "DELETE",
+		"urlPathPattern": "/api-messageexchange/2281/draken/conversations/[0-9a-f-]+"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 204
+	},
+	"name": "api-messageexchange-deleteConversation"
+}

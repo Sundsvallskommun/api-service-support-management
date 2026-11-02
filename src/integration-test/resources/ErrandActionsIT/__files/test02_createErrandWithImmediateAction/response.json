@@ -1,6 +1,7 @@
 {
 	"id": "${json-unit.any-string}",
 	"errandNumber": "${json-unit.any-string}",
+	"lifecycle": "ACTIVE",
 	"title": "Errand with immediate action",
 	"reporterUserId": "joe01doe",
 	"priority": "LOW",
@@ -32,7 +33,17 @@
 			"displayName": "CATEGORY-DISPLAY-NAME-1",
 			"resourcePath": "CATEGORY-1",
 			"resourceName": "CATEGORY-1",
-			"version": 0
+			"version": 0,
+			"attributes": [
+				{
+					"key": "escalationEmail",
+					"value": "escalation@example.com"
+				},
+				{
+					"key": "owner",
+					"value": "team-a"
+				}
+			]
 		},
 		{
 			"id": "f4d6e210-633b-48a6-ad0a-7be839b28762",

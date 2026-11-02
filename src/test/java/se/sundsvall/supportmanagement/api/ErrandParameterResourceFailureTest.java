@@ -1,34 +1,26 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.errand.Parameter;
-import se.sundsvall.supportmanagement.service.ErrandJsonParameterService;
 import se.sundsvall.supportmanagement.service.ErrandParameterService;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandParameterResourceFailureTest {
 
 	private static final String NAMESPACE = "namespace";
@@ -41,10 +33,7 @@ class ErrandParameterResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
-	private ErrandJsonParameterService errandJsonParameterServiceMock;
-
-	@MockitoBean
+	@Autowired
 	private ErrandParameterService errandParameterServiceMock;
 
 	@Test
@@ -68,6 +57,59 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandParameters.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParametersWithTooLongFields() {
+		final var tooLong = "x".repeat(256);
+		final var requestBody = List.of(Parameter.create().withKey(tooLong).withDisplayName(tooLong).withGroup(tooLong));
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameters.errandParameters[0].key", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].displayName", "size must be between 0 and 255"),
+				tuple("updateErrandParameters.errandParameters[0].group", "size must be between 0 and 255"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParametersWithNullParameterOrBlankValue() {
+		final var requestBody = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameters.errandParameters[0].<list element>", "must not be null"),
+				tuple("updateErrandParameters.errandParameters[1].values[1].<list element>", "must not be blank"),
+				tuple("updateErrandParameters.errandParameters[1].values[2].<list element>", "must not be blank"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -268,6 +310,33 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("updateErrandParameter.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
+
+		verifyNoInteractions(errandParameterServiceMock);
+	}
+
+	@Test
+	void updateErrandParameterWithBlankValue() {
+
+		final var requestBody = Arrays.asList("value", null, " ");
+
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
+			.contentType(APPLICATION_JSON)
+			.accept(APPLICATION_JSON)
+			.bodyValue(requestBody)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("updateErrandParameter.parameterValues[1].<list element>", "must not be blank"),
+				tuple("updateErrandParameter.parameterValues[2].<list element>", "must not be blank"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}

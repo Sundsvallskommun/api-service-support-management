@@ -4,5 +4,9 @@
 	"notificationTTLInDays": 30,
 	"accessControl": true,
 	"notifyReporter": true,
-	"baseUrl": "https://draken.example.com"
+	"baseUrl": "https://draken.example.com",
+	"newSubscriberChannels": [
+		"INTERNAL",
+		"EMAIL"
+	]
 }

@@ -17,7 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
+import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 
 import static java.time.OffsetDateTime.now;
@@ -40,6 +42,8 @@ class ErrandAttachmentMapperTest {
 	private static final String MIME_TYPE = "mimeType";
 
 	private static final OffsetDateTime CREATED = now().minusWeeks(1);
+	private static final OffsetDateTime MODIFIED = now().minusDays(1);
+	private static final OffsetDateTime RECEIVED = now().minusWeeks(2);
 
 	@Mock
 	private MultipartFile multipartFileMock;
@@ -64,7 +68,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, null);
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "received", "sequenceNumber", "hash", "purpose", "attachmentDataId");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -87,9 +91,10 @@ class ErrandAttachmentMapperTest {
 			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
 			when(lobHelperMock.createBlob(any(), anyLong())).thenReturn(blobMock);
 
-			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, "MY_PAGES");
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, multipartFileMock, ErrandAttachment.create().withChannel("MY_PAGES").withReceived(RECEIVED));
 
 			assertThat(result.getChannel()).isEqualTo("MY_PAGES");
+			assertThat(result.getReceived()).isEqualTo(RECEIVED);
 		}
 	}
 
@@ -108,7 +113,7 @@ class ErrandAttachmentMapperTest {
 
 			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, FILE_NAME, fileSize, "MY_PAGES");
 
-			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "hash", "purpose", "attachmentDataId");
+			assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("id", "created", "modified", "received", "sequenceNumber", "hash", "purpose", "attachmentDataId");
 			assertThat(result.getMunicipalityId()).isEqualTo(errandEntity.getMunicipalityId());
 			assertThat(result.getNamespace()).isEqualTo(errandEntity.getNamespace());
 			assertThat(result.getFileName()).isEqualTo(FILE_NAME);
@@ -131,7 +136,7 @@ class ErrandAttachmentMapperTest {
 	@Test
 	void toErrandAttachments() {
 
-		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity()).withCreated(CREATED).withChannel("EMAIL")));
+		final var result = ErrandAttachmentMapper.toErrandAttachments(List.of(buildAttachmentEntity(buildErrandEntity()).withCreated(CREATED).withModified(MODIFIED).withReceived(RECEIVED).withSequenceNumber(3).withChannel("EMAIL")));
 
 		assertThat(result).isNotNull();
 		assertThat(result.getFirst().getId()).isEqualTo(ATTACHMENT_ID);
@@ -139,7 +144,33 @@ class ErrandAttachmentMapperTest {
 		assertThat(result.getFirst().getMimeType()).isEqualTo(MIME_TYPE);
 		assertThat(result.getFirst().getChannel()).isEqualTo("EMAIL");
 		assertThat(result.getFirst().getCreated()).isCloseTo(CREATED, within(5, SECONDS));
+		assertThat(result.getFirst().getModified()).isEqualTo(MODIFIED);
+		assertThat(result.getFirst().getReceived()).isEqualTo(RECEIVED);
+		assertThat(result.getFirst().getSequenceNumber()).isEqualTo(3);
 		assertThat(result.getFirst().getHash()).isNull();
+	}
+
+	@Test
+	void updateAttachmentEntity() {
+		final var purpose = AttachmentPurposeEntity.create().withId("purpose-2");
+		final var entity = buildAttachmentEntity(buildErrandEntity()).withPurpose(AttachmentPurposeEntity.create().withId("purpose-1")).withReceived(CREATED);
+
+		final var result = ErrandAttachmentMapper.updateAttachmentEntity(entity, UpdateErrandAttachmentRequest.create().withReceived(RECEIVED), purpose);
+
+		assertThat(result).isSameAs(entity);
+		assertThat(result.getPurpose()).isSameAs(purpose);
+		assertThat(result.getReceived()).isEqualTo(RECEIVED);
+	}
+
+	@Test
+	void updateAttachmentEntityLeavesWhatTheRequestLeavesOut() {
+		final var purpose = AttachmentPurposeEntity.create().withId("purpose-1");
+		final var entity = buildAttachmentEntity(buildErrandEntity()).withPurpose(purpose).withReceived(CREATED);
+
+		final var result = ErrandAttachmentMapper.updateAttachmentEntity(entity, UpdateErrandAttachmentRequest.create(), null);
+
+		assertThat(result.getPurpose()).isSameAs(purpose);
+		assertThat(result.getReceived()).isEqualTo(CREATED);
 	}
 
 	@Test

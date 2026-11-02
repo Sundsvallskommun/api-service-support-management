@@ -1,15 +1,24 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import com.turkraft.springfilter.converter.FilterSpecification;
+import com.turkraft.springfilter.parser.node.FieldNode;
+import com.turkraft.springfilter.parser.node.FilterNode;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.apache.commons.lang3.Strings;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
 	private static final String ID_ATTRIBUTE = "id";
+	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
 	private static final String TOUCHED_ATTRIBUTE = "touched";
 	private static final String MODIFIED_ATTRIBUTE = "modified";
 	private static final String CREATED_ATTRIBUTE = "created";
@@ -26,12 +35,31 @@ public class SpecificationBuilder<T> {
 		return ERRAND_ENTITY_BUILDER.buildEqualFilter("id", id);
 	}
 
+	public static Specification<ErrandEntity> withLifecycle(ErrandLifecycle lifecycle) {
+		return ERRAND_ENTITY_BUILDER.buildEqualFilter(LIFECYCLE_ATTRIBUTE, lifecycle);
+	}
+
+	/**
+	 * Narrows a search to the active errands, unless the filter of the search says something about the life cycle itself.
+	 * Drafts are thereby left out of a search that does not ask for them.
+	 * <p>
+	 * Only a filter parsed from the filter parameter of a request is looked into. Any other specification is taken to say
+	 * nothing about the life cycle.
+	 *
+	 * @param  filter the filter of the search, or null
+	 * @return        specification matching the active errands, or every errand when the filter names the life cycle
+	 */
+	public static Specification<ErrandEntity> withDefaultLifecycle(Specification<ErrandEntity> filter) {
+		return filter instanceof final FilterSpecification<ErrandEntity> filterSpecification && namesField(filterSpecification.getFilter(), LIFECYCLE_ATTRIBUTE)
+			? (_, _, criteriaBuilder) -> criteriaBuilder.and()
+			: withLifecycle(ErrandLifecycle.ACTIVE);
+	}
+
 	/**
 	 * Matches errands that have not been touched since the sent in point in time.
 	 * <p>
-	 * Which timestamp says when an errand was last touched depends on what has happened to it, so the first one that is
-	 * set decides. An errand carrying none of them is left out: one that cannot be dated cannot be shown to be old
-	 * enough to act on, and the coalesce answers null for it.
+	 * The first of touched, modified and created that is set says when an errand was last touched. An errand carrying
+	 * none of them is left out.
 	 *
 	 * @param  cutoff the point in time an errand must have been untouched since
 	 * @return        specification matching errands last touched before the sent in point in time
@@ -44,8 +72,8 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
-	 * Matches errands whose id sorts after the sent in one, which is how a walk over a namespace carries on from where
-	 * the previous batch ended without stepping over what moved up behind a removed errand.
+	 * Matches errands whose id sorts after the sent in one, which lets a walk over a namespace carry on from where the
+	 * previous batch ended.
 	 *
 	 * @param  id the id the previous batch ended on
 	 * @return    specification matching errands that come after the sent in id
@@ -64,5 +92,21 @@ public class SpecificationBuilder<T> {
 	 */
 	private Specification<T> buildEqualFilter(String attribute, Object value) {
 		return (entity, _, cb) -> nonNull(value) ? cb.equal(entity.get(attribute), value) : cb.and();
+	}
+
+	/**
+	 * Whether the parsed filter names the sent in field, or a path beneath it, anywhere in its tree.
+	 */
+	private static boolean namesField(FilterNode node, String field) {
+		if (isNull(node)) {
+			return false;
+		}
+
+		if (node instanceof final FieldNode fieldNode && (field.equals(fieldNode.getName()) || Strings.CS.startsWith(fieldNode.getName(), field + "."))) {
+			return true;
+		}
+
+		return Optional.ofNullable(node.getChildren()).orElse(List.of()).stream()
+			.anyMatch(child -> namesField(child, field));
 	}
 }

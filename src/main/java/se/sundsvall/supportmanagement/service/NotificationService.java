@@ -30,6 +30,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.toNotificationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.NotificationMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 
 @Service
 public class NotificationService {
@@ -81,6 +82,8 @@ public class NotificationService {
 
 	public String createNotification(final String municipalityId, final String namespace, final String errandId, final Notification notification) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.NOTIFICATION, RW);
+		requireActive(errandEntity);
+
 		return createNotification(errandEntity, notification);
 	}
 

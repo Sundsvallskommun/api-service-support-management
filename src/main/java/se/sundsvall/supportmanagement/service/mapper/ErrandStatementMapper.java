@@ -39,8 +39,7 @@ public final class ErrandStatementMapper {
 	}
 
 	/**
-	 * Applies the fields the patch carries. A null says nothing about the field, which is what makes a patch able to
-	 * leave everything it does not mention alone.
+	 * Applies the fields the patch carries. A null field leaves the stored value as it is.
 	 */
 	public static StatementEntity updateStatementEntity(final StatementEntity entity, final Statement statement) {
 		ofNullable(statement.getType()).ifPresent(entity::setType);

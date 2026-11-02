@@ -31,6 +31,7 @@
 					"historyReference": "${json-unit.any-string}",
 					"sourceType": "Errand",
 					"created": "${json-unit.any-string}",
+					"requestGroupId": "${json-unit.any-string}",
 					"type": "UPDATE",
 					"message": "En bilaga har lagts till i ärendet.",
 					"subType": "ATTACHMENT"

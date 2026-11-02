@@ -1,0 +1,9 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "FAILED",
+	"error": {
+		"code": "START_FAILED",
+		"message": "Timeout against the process engine"
+	}
+}

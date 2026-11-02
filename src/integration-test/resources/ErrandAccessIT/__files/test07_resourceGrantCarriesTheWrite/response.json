@@ -18,6 +18,10 @@
 			"level": "R"
 		},
 		{
+			"field": "lifecycle",
+			"level": "R"
+		},
+		{
 			"field": "resolution",
 			"level": "R"
 		},
@@ -103,6 +107,10 @@
 		},
 		{
 			"field": "actions",
+			"level": "R"
+		},
+		{
+			"field": "process",
 			"level": "R"
 		},
 		{

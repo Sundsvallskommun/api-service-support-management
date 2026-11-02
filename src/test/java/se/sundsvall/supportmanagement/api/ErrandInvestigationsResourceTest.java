@@ -1,43 +1,39 @@
 package se.sundsvall.supportmanagement.api;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
-import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.service.ErrandInvestigationService;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 import tools.jackson.databind.node.JsonNodeFactory;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandInvestigationsResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/errands/{errandId}/investigations";
@@ -57,11 +53,8 @@ class ErrandInvestigationsResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandInvestigationService serviceMock;
-
-	@MockitoBean
-	private JsonSchemaClient jsonSchemaClientMock;
 
 	@Test
 	void createErrandInvestigation() {
@@ -140,6 +133,22 @@ class ErrandInvestigationsResourceTest {
 			.expectHeader().valueEquals("ETag", "\"4\"");
 
 		verify(serviceMock).updateErrandInvestigation(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(INVESTIGATION_ID), eq("\"3\""), any(Investigation.class));
+	}
+
+	@Test
+	void createErrandInvestigationWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Investigation.create().withStatus("ACTIVE").withParameters(invalidParameters())));
+	}
+
+	@Test
+	void updateErrandInvestigationWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.patch()
+			.uri(builder -> builder.path(PATH_WITH_ID).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(Investigation.create().withParameters(invalidParameters())));
 	}
 
 	@Test
@@ -228,6 +237,22 @@ class ErrandInvestigationsResourceTest {
 	}
 
 	@Test
+	void createInvestigationSectionWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.post()
+			.uri(builder -> builder.path(PATH_WITH_ID + "/sections").build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(InvestigationSection.create().withSectionKey("financial").withAssessment("APPROVED").withParameters(invalidParameters())));
+	}
+
+	@Test
+	void updateInvestigationSectionWithInvalidParameters() {
+		assertInvalidParametersAreRejected(webTestClient.patch()
+			.uri(builder -> builder.path(SECTION_PATH).build(PATH_VARIABLES))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(InvestigationSection.create().withParameters(invalidParameters())));
+	}
+
+	@Test
 	void deleteInvestigationSection() {
 
 		// Act & Verify
@@ -264,7 +289,7 @@ class ErrandInvestigationsResourceTest {
 	}
 
 	/**
-	 * A link carries nothing of its own, so there is no body to send.
+	 * Verifies that an attachment is linked to the investigation by a request without a body.
 	 */
 	@Test
 	void linkInvestigationAttachment() {
@@ -485,5 +510,46 @@ class ErrandInvestigationsResourceTest {
 			.expectStatus().isNoContent();
 
 		verify(serviceMock).deleteSectionJsonParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, INVESTIGATION_ID, SECTION_ID, KEY, "\"3\"");
+	}
+
+	/**
+	 * Parameters breaking one rule each: a blank key, a missing key, a value too long, a key, display name and group too
+	 * long, a parameter that is null, and values that are null or blank.
+	 */
+	private static List<Parameter> invalidParameters() {
+		return Arrays.asList(
+			Parameter.create().withKey(" "),
+			Parameter.create().withValues(List.of("value")),
+			Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
+			Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
+			null,
+			Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")));
+	}
+
+	/**
+	 * Sends a request carrying {@link #invalidParameters()} and verifies that it is rejected with one violation per broken
+	 * rule, before the service is reached.
+	 */
+	private void assertInvalidParametersAreRejected(final WebTestClient.RequestHeadersSpec<?> request) {
+		final var response = request.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("parameters[0].key", "must not be blank"),
+				tuple("parameters[1].key", "must not be blank"),
+				tuple("parameters[2].values[0]", "size must be between 0 and 3000"),
+				tuple("parameters[3].key", "size must be between 0 and 255"),
+				tuple("parameters[3].displayName", "size must be between 0 and 255"),
+				tuple("parameters[3].group", "size must be between 0 and 255"),
+				tuple("parameters[4]", "must not be null"),
+				tuple("parameters[5].values[1]", "must not be blank"),
+				tuple("parameters[5].values[2]", "must not be blank"));
+		verifyNoInteractions(serviceMock);
 	}
 }

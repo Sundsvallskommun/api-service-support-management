@@ -1,0 +1,8 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "RUNNING",
+	"currentActivityId": "granska-ansokan",
+	"currentActivityName": "Granska ansokan",
+	"externalTaskId": "task-branch-one"
+}

@@ -9,9 +9,8 @@ import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
  * a
  * key, which allows a namespace to expose individual entries instead of the whole collection.
  * <p>
- * Each constant carries the property it names on the errand, which is what the API reports rather than the constant
- * itself. A client matches the answer against the payload it is rendering, and adding a field here then leaves the
- * published contract alone instead of widening an enum in it.
+ * Each constant carries the property it names on the errand, which is what the API reports in place of the constant
+ * itself.
  */
 public enum ErrandField {
 
@@ -19,6 +18,7 @@ public enum ErrandField {
 	ERRAND_NUMBER("errandNumber", false, null, IndexBinding.of(ErrandIndex.ERRAND_NUMBER).sortedBy(ErrandIndex.ERRAND_NUMBER)),
 	TITLE("title", false, null, IndexBinding.of(ErrandIndex.TITLE).sortedBy(ErrandIndex.TITLE_SORT)),
 	STATUS("status", false, null, IndexBinding.of(ErrandIndex.STATUS).sortedBy(ErrandIndex.STATUS).groupedBy(ErrandIndex.STATUS)),
+	LIFECYCLE("lifecycle", false, null, IndexBinding.of(ErrandIndex.LIFECYCLE)),
 	RESOLUTION("resolution", false, null, IndexBinding.of(ErrandIndex.RESOLUTION).sortedBy(ErrandIndex.RESOLUTION).groupedBy(ErrandIndex.RESOLUTION)),
 	CHANNEL("channel", false, null, IndexBinding.of(ErrandIndex.CHANNEL).sortedBy(ErrandIndex.CHANNEL).groupedBy(ErrandIndex.CHANNEL)),
 	CREATED("created", false, null, IndexBinding.of(ErrandIndex.CREATED).sortedBy(ErrandIndex.CREATED)),
@@ -47,6 +47,7 @@ public enum ErrandField {
 	ACTIVE_NOTIFICATIONS("activeNotifications", false, null, IndexBinding.none()),
 	PHASES("phases", false, null, IndexBinding.of(ErrandIndex.under(ErrandIndex.PHASES))),
 	ACTIONS("actions", false, null, IndexBinding.none()),
+	PROCESS("process", false, null, IndexBinding.none()),
 	VERSION("version", false, null, IndexBinding.none()),
 	PARAMETERS("parameters", true, ProtectedResource.PARAMETER, IndexBinding.of(ErrandIndex.under(ErrandIndex.PARAMETERS))),
 	JSON_PARAMETERS("jsonParameters", true, ProtectedResource.JSON_PARAMETER, IndexBinding.of(ErrandIndex.under(ErrandIndex.JSON_PARAMETERS), ErrandIndex.JSON_PARAMETERS_TEXT).withKeysAsPaths()),
@@ -77,8 +78,8 @@ public enum ErrandField {
 
 	/**
 	 * The resource a write to this field is guarded on where it has an endpoint of its own, null for the fields only
-	 * ever written through the errand. What the caller may do with such a field follows that resource rather than the
-	 * errand, since that is what the endpoint accepting the write is guarded on.
+	 * ever written through the errand. Such a field is writable to a caller holding either the errand or that resource at
+	 * read/write.
 	 */
 	public ProtectedResource getWriteResource() {
 		return writeResource;

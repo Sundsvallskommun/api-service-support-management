@@ -42,7 +42,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * The attachment and JSON parameter side of the measure service - the part that hands the work to the two services
- * written once for all the handling artefacts.
+ * shared by all the handling artefacts.
  */
 @ExtendWith(MockitoExtension.class)
 class ErrandMeasureServiceArtefactTest {
@@ -233,8 +233,8 @@ class ErrandMeasureServiceArtefactTest {
 	}
 
 	/**
-	 * Where the measure comes from is resolved through the errand rather than taken as an id and trusted, so a decision
-	 * belonging to another errand finds nothing.
+	 * Where the measure comes from is resolved through the errand, so a decision belonging to another errand finds
+	 * nothing.
 	 */
 	@Test
 	void aDecisionOfAnotherErrandIsNotFound() {

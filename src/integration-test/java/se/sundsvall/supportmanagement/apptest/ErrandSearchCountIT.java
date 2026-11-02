@@ -6,6 +6,7 @@ import org.hibernate.search.mapper.orm.Search;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -49,6 +50,9 @@ class ErrandSearchCountIT extends AbstractAppTest {
 
 	@Autowired
 	private SearchProperties searchProperties;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@BeforeEach
 	void reindex() throws InterruptedException {
@@ -195,6 +199,21 @@ class ErrandSearchCountIT extends AbstractAppTest {
 		} finally {
 			ReflectionTestUtils.setField(service, "properties", searchProperties);
 		}
+	}
+
+	/**
+	 * A draft is counted, and divided up, only by a query naming the life cycle, as the search finds it.
+	 */
+	@Test
+	void test07_aDraftIsCountedOnlyByAQueryNamingTheLifecycle() throws InterruptedException {
+		jdbcTemplate.update("UPDATE errand SET lifecycle = 'DRAFT' WHERE errand_number = ?", "NS3-25020001");
+		reindex();
+
+		assertThat(count(PATH, "")).isEqualTo(2);
+		assertThat(count(PATH, "status:ongoing")).isZero();
+		assertThat(count(PATH, "lifecycle:draft")).isEqualTo(1);
+		assertThat(bucketsOf(group(PATH, "", "status"))).containsExactly("NEW=2");
+		assertThat(bucketsOf(group(PATH, "lifecycle:*", "status"))).containsExactly("NEW=2", "ONGOING=1");
 	}
 
 	private long count(final String path, final String query) {

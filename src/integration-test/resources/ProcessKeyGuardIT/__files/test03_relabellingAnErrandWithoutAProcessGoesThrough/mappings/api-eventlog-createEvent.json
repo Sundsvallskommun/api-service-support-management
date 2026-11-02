@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-eventlog/2281/aa000000-0000-0000-0000-0000000000a2"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

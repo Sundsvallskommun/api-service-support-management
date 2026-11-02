@@ -9,6 +9,7 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
+import se.sundsvall.supportmanagement.service.scheduler.smsdispatch.SubscriberSmsService;
 
 @Service
 public class NotificationDispatchScheduler {
@@ -17,14 +18,16 @@ public class NotificationDispatchScheduler {
 
 	private final NotificationDispatchWorker worker;
 	private final SubscriberEmailService subscriberEmailService;
+	private final SubscriberSmsService subscriberSmsService;
 	private final Dept44HealthUtility healthUtility;
 
 	@Value("${scheduler.notification-dispatch.name}")
 	private String jobName;
 
-	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final SubscriberEmailService subscriberEmailService, final Dept44HealthUtility healthUtility) {
+	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final SubscriberEmailService subscriberEmailService, final SubscriberSmsService subscriberSmsService, final Dept44HealthUtility healthUtility) {
 		this.worker = worker;
 		this.subscriberEmailService = subscriberEmailService;
+		this.subscriberSmsService = subscriberSmsService;
 		this.healthUtility = healthUtility;
 	}
 
@@ -56,6 +59,15 @@ public class NotificationDispatchScheduler {
 			} catch (final Exception e) {
 				LOG.error("Error sending email dispatch to subscriber: {}", subscriberId, e);
 				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error sending email dispatch: " + e.getMessage());
+			}
+		});
+
+		subscriberSmsService.findPendingSubscriberIds().forEach(subscriberId -> {
+			try {
+				subscriberSmsService.sendPending(subscriberId);
+			} catch (final Exception e) {
+				LOG.error("Error sending sms dispatch to subscriber: {}", subscriberId, e);
+				healthUtility.setHealthIndicatorUnhealthy(jobName, "Error sending sms dispatch: " + e.getMessage());
 			}
 		});
 	}

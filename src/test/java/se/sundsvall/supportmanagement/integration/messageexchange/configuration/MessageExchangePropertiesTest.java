@@ -2,15 +2,12 @@ package se.sundsvall.supportmanagement.integration.messageexchange.configuration
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.ApplicationTest;
 import se.sundsvall.supportmanagement.integration.messaging.configuration.MessagingProperties;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-@SpringBootTest(classes = Application.class)
-@ActiveProfiles("junit")
+@ApplicationTest
 class MessageExchangePropertiesTest {
 
 	@Autowired

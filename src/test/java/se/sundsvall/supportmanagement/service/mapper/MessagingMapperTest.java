@@ -12,7 +12,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mockito;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.communication.BulkEmailRequest;
 import se.sundsvall.supportmanagement.api.model.communication.EmailAttachment;
@@ -33,6 +32,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -140,9 +140,9 @@ class MessagingMapperTest {
 		final var reporterSupportText = "Hi %s, you have received a new message in errand %s. Click %s/suffix/%s to read.";
 		final var katlaUrl = "katlaUrl";
 
-		final var errandEntityMock = Mockito.mock(ErrandEntity.class);
-		final var stakeholderMock = Mockito.mock(StakeholderEntity.class);
-		final var messagingsettingsMock = Mockito.mock(MessagingSettings.class);
+		final var errandEntityMock = mock(ErrandEntity.class);
+		final var stakeholderMock = mock(StakeholderEntity.class);
+		final var messagingsettingsMock = mock(MessagingSettings.class);
 
 		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
 		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
@@ -191,9 +191,9 @@ class MessagingMapperTest {
 		final var originalContent = "This is a test";
 		final var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
 		final var inputStream = new ByteArrayInputStream(contentBytes);
-		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
-		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		final var mockFile = Mockito.mock(Blob.class);
+		final var mockAttachment = mock(AttachmentEntity.class);
+		final var mockAttachmentData = mock(AttachmentDataEntity.class);
+		final var mockFile = mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);
@@ -241,9 +241,9 @@ class MessagingMapperTest {
 		final var originalContent = "This is a test";
 		final var contentBytes = originalContent.getBytes(StandardCharsets.UTF_8);
 		final var inputStream = new ByteArrayInputStream(contentBytes);
-		final var mockAttachment = Mockito.mock(AttachmentEntity.class);
-		final var mockAttachmentData = Mockito.mock(AttachmentDataEntity.class);
-		final var mockFile = Mockito.mock(Blob.class);
+		final var mockAttachment = mock(AttachmentEntity.class);
+		final var mockAttachmentData = mock(AttachmentDataEntity.class);
+		final var mockFile = mock(Blob.class);
 
 		when(mockAttachment.getAttachmentData()).thenReturn(mockAttachmentData);
 		when(mockAttachmentData.getFile()).thenReturn(mockFile);

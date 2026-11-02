@@ -1,33 +1,55 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @Schema(description = "Parameter model")
 public class Parameter {
 
-	@Schema(description = "Parameter key")
-	@NotBlank
+	/** How the parameters of a handling artefact are written and read, for the description of the list on the artefact. */
+	public static final String ARTEFACT_PARAMETERS_DESCRIPTION = "unstructured metadata as keys with lists of values, returned in the order of their keys. "
+		+ "Keys are trimmed, and parameters sent for the same key are merged: their values are joined in the order sent, and the display name and group "
+		+ "are those of the first. On update the sent list replaces the stored one; an omitted list leaves them as they are and an empty list removes them all";
+
+	@Schema(description = "Parameter key", minLength = 1, maxLength = 255, requiredMode = REQUIRED)
+	@NotBlank(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String key;
 
-	@Schema(description = "Parameter display name")
+	@Schema(description = "Parameter display name", maxLength = 255)
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String displayName;
 
-	@Schema(description = "Parameter group name")
+	@Schema(description = "Parameter group name", maxLength = 255)
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	})
 	private String group;
 
-	@Schema(description = "Parameter values. Each value can have a maximum length of 3000 characters")
-	@Valid
-	private List<@Size(max = 3000) String> values;
+	@ArraySchema(schema = @Schema(minLength = 1, maxLength = 3000),
+		arraySchema = @Schema(description = "Parameter values. Each value must not be blank, and can have a maximum length of 3000 characters"))
+	private List<@NotBlank(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) @Size(max = 3000, groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) String> values;
 
 	@Schema(description = "Optimistic locking version of the parameter", accessMode = READ_ONLY)
 	@Null(groups = {

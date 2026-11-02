@@ -20,17 +20,16 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toJsonS
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
 
 /**
- * The JSON parameters of the handling artefacts, written once for all five owners that can hold them: statement,
+ * Reads and writes the JSON parameters of the handling artefacts, for all five owners that can hold them: statement,
  * investigation, investigation section, decision and measure.
  * <p>
  * The owner hands over its own collection, and the collection is what holds the parameters: one added to it is
- * persisted with the owner, one taken out of it is removed. Whether the caller may reach the artefact at all is settled
- * by the calling service before it gets here, by the protected resource of the artefact - nothing here asks about the
- * errand, since the parameters are not the errand's.
+ * persisted with the owner, one taken out of it is removed. Whether the caller may reach the artefact at all is to be
+ * settled by the calling service, by the protected resource of the artefact; nothing here checks access to the errand.
  * <p>
  * Keys are unique per owner, which the database enforces without regard to case, and they are looked up the same way.
- * Every write is flushed before it is answered, so that the version the response carries - which its ETag is taken
- * from - is the one just written.
+ * Every write is flushed before it returns, so the version the response carries, and its ETag, is the one just
+ * written.
  */
 @Service
 public class ArtefactJsonParameterService {

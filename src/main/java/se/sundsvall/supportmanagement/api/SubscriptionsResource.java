@@ -113,8 +113,6 @@ class SubscriptionsResource {
 		@Parameter(name = "subscriberId", description = "Subscriber ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriberId,
 		@Parameter(name = "subscriptionId", description = "Subscription ID", example = "123e4567-e89b-12d3-a456-426614174000") @ValidUuid @PathVariable final String subscriptionId) {
 
-		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.SUBSCRIPTION, RW);
-
 		service.deleteSubscription(municipalityId, namespace, subscriberId, subscriptionId);
 		return noContent()
 			.header(CONTENT_TYPE, ALL_VALUE)

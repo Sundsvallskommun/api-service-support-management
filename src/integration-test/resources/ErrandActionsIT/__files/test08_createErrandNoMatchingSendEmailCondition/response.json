@@ -1,6 +1,7 @@
 {
 	"id": "${json-unit.any-string}",
 	"errandNumber": "${json-unit.any-string}",
+	"lifecycle": "ACTIVE",
 	"title": "Errand with no matching email condition",
 	"reporterUserId": "joe01doe",
 	"priority": "LOW",

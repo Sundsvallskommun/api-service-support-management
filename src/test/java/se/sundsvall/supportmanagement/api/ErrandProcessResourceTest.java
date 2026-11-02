@@ -1,0 +1,262 @@
+package se.sundsvall.supportmanagement.api;
+
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcess;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessOverview;
+import se.sundsvall.supportmanagement.api.model.process.ErrandProcessReport;
+import se.sundsvall.supportmanagement.api.model.process.ProcessActivity;
+import se.sundsvall.supportmanagement.api.model.process.ProcessSignalRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartRequest;
+import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
+import se.sundsvall.supportmanagement.service.ErrandProcessService;
+import se.sundsvall.supportmanagement.service.ProcessCommandService;
+import se.sundsvall.supportmanagement.service.model.ErrandProcessResult;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+
+@ResourceTest
+class ErrandProcessResourceTest {
+
+	private static final String PROCESSES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/processes";
+	private static final String PROCESS_PATH = PROCESSES_PATH + "/{processInstanceId}";
+	private static final String ACTIVITIES_PATH = "/{municipalityId}/{namespace}/errands/{errandId}/process-activities";
+	private static final String NAMESPACE = "namespace";
+	private static final String MUNICIPALITY_ID = "2281";
+	private static final String ERRAND_ID = randomUUID().toString();
+	private static final String PROCESS_INSTANCE_ID = "8f1c2b6e-1f4a-4d61-9a0e-2b7c1f0a5e33";
+
+	@Autowired
+	private WebTestClient webTestClient;
+
+	@Autowired
+	private ErrandProcessService serviceMock;
+
+	@Autowired
+	private ProcessCommandService commandServiceMock;
+
+	private static Map<String, Object> errandVariables() {
+		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID);
+	}
+
+	private static Map<String, Object> instanceVariables() {
+		return Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "processInstanceId", PROCESS_INSTANCE_ID);
+	}
+
+	private static ErrandProcessReport report() {
+		return ErrandProcessReport.create()
+			.withProcessService("pw-alkt")
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(RUNNING);
+	}
+
+	private static ErrandProcess process() {
+		return ErrandProcess.create()
+			.withProcessService("pw-alkt")
+			.withProcessKey("alkt-ansokan")
+			.withProcessStatus(RUNNING);
+	}
+
+	@Test
+	void reportProcessCreatingTheRowAnswersWithItsLocation() {
+		when(serviceMock.reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcessReport.class)))
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report())
+			.exchange()
+			.expectStatus().isCreated()
+			.expectBody(ErrandProcess.class)
+			.returnResult();
+
+		assertThat(response.getResponseHeaders().getLocation()).isNotNull();
+		assertThat(response.getResponseHeaders().getLocation().getPath())
+			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/processes/" + PROCESS_INSTANCE_ID);
+		assertThat(response.getResponseBody().getId()).isEqualTo("rowId");
+		verify(serviceMock).reportProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), eq(PROCESS_INSTANCE_ID), any(ErrandProcessReport.class));
+	}
+
+	@Test
+	void reportProcessUpdatingTheRowAnswersOk() {
+		when(serviceMock.reportProcess(any(), any(), any(), any(), any()))
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), false));
+
+		final var response = webTestClient.put()
+			.uri(builder -> builder.path(PROCESS_PATH).build(instanceVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report())
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(ErrandProcess.class)
+			.returnResult();
+
+		assertThat(response.getResponseHeaders().getLocation()).isNull();
+		assertThat(response.getResponseBody().getId()).isEqualTo("rowId");
+	}
+
+	@Test
+	void registerProcessAnswersWithTheLocationOfTheInstance() {
+		when(serviceMock.registerProcess(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), any(ErrandProcessReport.class)))
+			.thenReturn(new ErrandProcessResult(process().withId("rowId").withProcessInstanceId(PROCESS_INSTANCE_ID), true));
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report().withProcessInstanceId(PROCESS_INSTANCE_ID))
+			.exchange()
+			.expectStatus().isCreated()
+			.expectBody(ErrandProcess.class)
+			.returnResult();
+
+		assertThat(response.getResponseHeaders().getLocation().getPath())
+			.isEqualTo("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/processes/" + PROCESS_INSTANCE_ID);
+	}
+
+	@Test
+	void registeringAStartThatFailedAnswersCreatedWithoutALocation() {
+		when(serviceMock.registerProcess(any(), any(), any(), any()))
+			.thenReturn(new ErrandProcessResult(process().withProcessStatus(FAILED).withProcessInstanceId(null), true));
+
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report().withProcessStatus(FAILED))
+			.exchange()
+			.expectStatus().isCreated()
+			.expectBody(ErrandProcess.class)
+			.returnResult();
+
+		assertThat(response.getResponseHeaders().getLocation()).isNull();
+	}
+
+	@Test
+	void registerProcessOfAnInstanceAlreadyKnownAnswersOk() {
+		when(serviceMock.registerProcess(any(), any(), any(), any()))
+			.thenReturn(new ErrandProcessResult(process().withProcessInstanceId(PROCESS_INSTANCE_ID), false));
+
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(report().withProcessInstanceId(PROCESS_INSTANCE_ID))
+			.exchange()
+			.expectStatus().isOk();
+	}
+
+	@Test
+	void readErrandProcesses() {
+		when(serviceMock.readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(ErrandProcessOverview.create()
+				.withStartable(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()))
+				.withProcesses(List.of(process().withProcessInstanceId(PROCESS_INSTANCE_ID))));
+
+		final var response = webTestClient.get()
+			.uri(builder -> builder.path(PROCESSES_PATH).build(errandVariables()))
+			.exchange()
+			.expectStatus().isOk()
+			.expectBody(ErrandProcessOverview.class)
+			.returnResult();
+
+		assertThat(response.getResponseBody().getProcesses()).hasSize(1);
+		assertThat(response.getResponseBody().getStartable()).isEqualTo(ProcessStartable.create().withStatus(LIVE_INSTANCE).withProcessKeys(List.of()));
+		verify(serviceMock).readProcesses(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+	}
+
+	@Test
+	void signalProcessAnswersAcceptedWithoutABody() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESS_PATH + "/signals").build(instanceVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessSignalRequest.create().withSignal("granskning-godkand"))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).signalProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PROCESS_INSTANCE_ID, "granskning-godkand");
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithAKeyAnswersAcceptedWithoutABody() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(ProcessStartRequest.create().withProcessKey("alkt-tillsyn"))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, "alkt-tillsyn");
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithoutABodyStartsTheOneProcessOfTheLabels() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.exchange()
+			.expectStatus().isAccepted()
+			.expectBody().isEmpty();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
+	void startProcessWithAnEmptyBodyStartsTheOneProcessOfTheLabels() {
+		webTestClient.post()
+			.uri(builder -> builder.path(PROCESSES_PATH + "/start").build(errandVariables()))
+			.contentType(APPLICATION_JSON)
+			.bodyValue("{}")
+			.exchange()
+			.expectStatus().isAccepted();
+
+		verify(commandServiceMock).startProcess(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
+	}
+
+	@Test
+	void readErrandProcessActivitiesDefaultsToFiftyNewestFirst() {
+		final var pageable = PageRequest.of(0, 50, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "occurredAt"));
+		when(serviceMock.readProcessActivities(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), eq(pageable)))
+			.thenReturn(new PageImpl<>(List.of(ProcessActivity.create().withId("a").withOccurredAt(now(systemDefault()))), pageable, 1));
+
+		webTestClient.get()
+			.uri(builder -> builder.path(ACTIVITIES_PATH).build(errandVariables()))
+			.exchange()
+			.expectStatus().isOk();
+
+		verify(serviceMock).readProcessActivities(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), eq(pageable));
+	}
+
+	@Test
+	void readErrandProcessActivitiesPassesTheInstanceFilterOn() {
+		when(serviceMock.readProcessActivities(any(), any(), any(), eq(PROCESS_INSTANCE_ID), any()))
+			.thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 50), 0));
+
+		webTestClient.get()
+			.uri(builder -> builder.path(ACTIVITIES_PATH).queryParam("processInstanceId", PROCESS_INSTANCE_ID).build(errandVariables()))
+			.exchange()
+			.expectStatus().isOk();
+
+		verify(serviceMock).readProcessActivities(any(), any(), any(), eq(PROCESS_INSTANCE_ID), any());
+	}
+}

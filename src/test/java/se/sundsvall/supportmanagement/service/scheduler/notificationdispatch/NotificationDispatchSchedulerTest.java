@@ -13,6 +13,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
 import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
+import se.sundsvall.supportmanagement.service.scheduler.smsdispatch.SubscriberSmsService;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +37,9 @@ class NotificationDispatchSchedulerTest {
 	private SubscriberEmailService subscriberEmailServiceMock;
 
 	@Mock
+	private SubscriberSmsService subscriberSmsServiceMock;
+
+	@Mock
 	private Dept44HealthUtility healthUtilityMock;
 
 	@InjectMocks
@@ -48,23 +52,27 @@ class NotificationDispatchSchedulerTest {
 
 	@AfterEach
 	void verifyNoMoreMockInteractions() {
-		verifyNoMoreInteractions(workerMock, subscriberEmailServiceMock, healthUtilityMock);
+		verifyNoMoreInteractions(workerMock, subscriberEmailServiceMock, subscriberSmsServiceMock, healthUtilityMock);
 	}
 
 	@Test
-	void processDispatch_delegatesToWorkerAndThenSendsPendingEmails() {
+	void processDispatch_delegatesToWorkerAndThenSendsPendingEmailsAndSms() {
 		final var entry = NotificationDispatchEntity.create().withId("some-id").withErrandId("errand-1");
 		when(workerMock.fetchProcessable()).thenReturn(List.of(entry));
 		when(subscriberEmailServiceMock.findPendingSubscriberIds()).thenReturn(List.of("subscriber-1", "subscriber-2"));
+		when(subscriberSmsServiceMock.findPendingSubscriberIds()).thenReturn(List.of("subscriber-1", "subscriber-3"));
 
 		scheduler.processDispatch();
 
-		final InOrder inOrder = inOrder(workerMock, subscriberEmailServiceMock);
+		final InOrder inOrder = inOrder(workerMock, subscriberEmailServiceMock, subscriberSmsServiceMock);
 		inOrder.verify(workerMock).fetchProcessable();
 		inOrder.verify(workerMock).processGroup(List.of(entry));
 		inOrder.verify(subscriberEmailServiceMock).findPendingSubscriberIds();
 		inOrder.verify(subscriberEmailServiceMock).sendPending("subscriber-1");
 		inOrder.verify(subscriberEmailServiceMock).sendPending("subscriber-2");
+		inOrder.verify(subscriberSmsServiceMock).findPendingSubscriberIds();
+		inOrder.verify(subscriberSmsServiceMock).sendPending("subscriber-1");
+		inOrder.verify(subscriberSmsServiceMock).sendPending("subscriber-3");
 	}
 
 	@Test
@@ -81,6 +89,7 @@ class NotificationDispatchSchedulerTest {
 		verify(workerMock).processGroup(List.of(entry1, entry2, entry3));
 		verify(workerMock).processGroup(List.of(entry4));
 		verify(subscriberEmailServiceMock).findPendingSubscriberIds();
+		verify(subscriberSmsServiceMock).findPendingSubscriberIds();
 	}
 
 	@Test
@@ -100,6 +109,7 @@ class NotificationDispatchSchedulerTest {
 		verify(healthUtilityMock).setHealthIndicatorUnhealthy(eq(JOB_NAME), any(String.class));
 		verify(subscriberEmailServiceMock).findPendingSubscriberIds();
 		verify(subscriberEmailServiceMock).sendPending("subscriber-1");
+		verify(subscriberSmsServiceMock).findPendingSubscriberIds();
 	}
 
 	@Test
@@ -114,7 +124,24 @@ class NotificationDispatchSchedulerTest {
 		verify(subscriberEmailServiceMock).findPendingSubscriberIds();
 		verify(subscriberEmailServiceMock).sendPending("subscriber-1");
 		verify(subscriberEmailServiceMock).sendPending("subscriber-2");
+		verify(subscriberSmsServiceMock).findPendingSubscriberIds();
 		verify(healthUtilityMock).setHealthIndicatorUnhealthy(JOB_NAME, "Error sending email dispatch: messaging error");
+	}
+
+	@Test
+	void processDispatch_sendPendingSmsThrows_setsUnhealthyAndContinuesWithOtherSubscribers() {
+		when(workerMock.fetchProcessable()).thenReturn(List.of());
+		when(subscriberSmsServiceMock.findPendingSubscriberIds()).thenReturn(List.of("subscriber-1", "subscriber-2"));
+		doThrow(new RuntimeException("messaging error")).when(subscriberSmsServiceMock).sendPending("subscriber-1");
+
+		scheduler.processDispatch();
+
+		verify(workerMock).fetchProcessable();
+		verify(subscriberEmailServiceMock).findPendingSubscriberIds();
+		verify(subscriberSmsServiceMock).findPendingSubscriberIds();
+		verify(subscriberSmsServiceMock).sendPending("subscriber-1");
+		verify(subscriberSmsServiceMock).sendPending("subscriber-2");
+		verify(healthUtilityMock).setHealthIndicatorUnhealthy(JOB_NAME, "Error sending sms dispatch: messaging error");
 	}
 
 	@Test

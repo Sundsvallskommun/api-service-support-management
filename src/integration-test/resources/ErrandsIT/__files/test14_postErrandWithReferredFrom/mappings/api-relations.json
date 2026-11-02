@@ -1,7 +1,26 @@
 {
 	"request": {
 		"method": "POST",
-		"urlPathPattern": "/api-relation/2281/relations"
+		"urlPathPattern": "/api-relation/2281/relations",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "REFERRED_FROM",
+					"source": {
+						"resourceId": "originalErrandId",
+						"type": "case",
+						"service": "someservice",
+						"namespace": "someNamespace"
+					},
+					"target": {
+						"type": "case",
+						"service": "supportmanagement",
+						"namespace": "CONTACTCENTER"
+					}
+				},
+				"ignoreExtraElements": true
+			}
+		]
 	},
 	"response": {
 		"status": 201,

@@ -17,11 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
-import se.sundsvall.supportmanagement.integration.db.EmailDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.EmailDispatchOutboxEventEmbeddable;
+import se.sundsvall.supportmanagement.integration.db.NotificationDispatchOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEntity;
+import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEventEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.messaging.MessagingClient;
@@ -46,10 +46,9 @@ public class SubscriberEmailService {
 	private static final String ERRAND_HEADING_TEMPLATE = "Ärende %s:";
 	private static final String EVENT_LINE_TEMPLATE = "    - %s";
 	private static final String LINK_LINE_TEMPLATE = "    Länk: %s/%s";
-	private static final String ERRANDS_URL_TEMPLATE = "%s/%s/%s/errands";
 	private static final boolean ASYNCHRONOUSLY = true;
 
-	private final EmailDispatchOutboxRepository outboxRepository;
+	private final NotificationDispatchOutboxRepository outboxRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
 	private final NamespaceConfigMapper namespaceConfigMapper;
 	private final MessagingClient messagingClient;
@@ -59,7 +58,7 @@ public class SubscriberEmailService {
 	private final Duration maxAge;
 
 	public SubscriberEmailService(
-		final EmailDispatchOutboxRepository outboxRepository,
+		final NotificationDispatchOutboxRepository outboxRepository,
 		final NamespaceConfigRepository namespaceConfigRepository,
 		final NamespaceConfigMapper namespaceConfigMapper,
 		final MessagingClient messagingClient,
@@ -82,19 +81,20 @@ public class SubscriberEmailService {
 	 * row is written together with the internal notifications of the same dispatch or not at all.
 	 */
 	public void enqueue(final String errandId, final String errandNumber, final SubscriberEntity subscriber, final List<NotificationDispatchEntity> events) {
-		outboxRepository.save(EmailDispatchOutboxEntity.create()
+		outboxRepository.save(NotificationDispatchOutboxEntity.create()
 			.withSubscriber(subscriber)
+			.withChannel(EMAIL)
 			.withErrandId(errandId)
 			.withErrandNumber(errandNumber)
 			.withEvents(events.stream()
-				.map(event -> EmailDispatchOutboxEventEmbeddable.create()
+				.map(event -> NotificationDispatchOutboxEventEmbeddable.create()
 					.withEventId(event.getEventId())
 					.withDescription(event.getDescription()))
 				.toList()));
 	}
 
 	public List<String> findPendingSubscriberIds() {
-		return outboxRepository.findDistinctSubscriberIds();
+		return outboxRepository.findDistinctSubscriberIdsByChannel(EMAIL);
 	}
 
 	/**
@@ -105,7 +105,7 @@ public class SubscriberEmailService {
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public void sendPending(final String subscriberId) {
-		final var allEntries = outboxRepository.findBySubscriberIdOrderByCreatedAsc(subscriberId);
+		final var allEntries = outboxRepository.findBySubscriberIdAndChannelOrderByCreatedAsc(subscriberId, EMAIL);
 		if (allEntries.isEmpty()) {
 			return;
 		}
@@ -140,9 +140,10 @@ public class SubscriberEmailService {
 		final boolean excludeDescriptions = namespaceConfig
 			.map(NamespaceConfig::isExcludeEventDescriptionsInEmail)
 			.orElse(false);
+		// The base url is the address of an errand short of its number, so the number is all that is appended
 		final var errandsUrl = namespaceConfig
 			.map(NamespaceConfig::getBaseUrl)
-			.map(baseUrl -> ERRANDS_URL_TEMPLATE.formatted(Strings.CS.removeEnd(baseUrl, "/"), municipalityId, namespace));
+			.map(baseUrl -> Strings.CS.removeEnd(baseUrl, "/"));
 
 		final var subject = SUBJECT_TEMPLATE.formatted(displayName);
 
@@ -158,9 +159,9 @@ public class SubscriberEmailService {
 		outboxRepository.deleteAll(allEntries);
 	}
 
-	private String buildBody(final String heading, final List<EmailDispatchOutboxEntity> entries, final boolean excludeDescriptions, final Optional<String> errandsUrl) {
+	private String buildBody(final String heading, final List<NotificationDispatchOutboxEntity> entries, final boolean excludeDescriptions, final Optional<String> errandsUrl) {
 		final var sections = entries.stream()
-			.collect(Collectors.groupingBy(EmailDispatchOutboxEntity::getErrandId, LinkedHashMap::new, Collectors.toList()))
+			.collect(Collectors.groupingBy(NotificationDispatchOutboxEntity::getErrandId, LinkedHashMap::new, Collectors.toList()))
 			.values().stream()
 			.map(errandEntries -> toSection(errandEntries, excludeDescriptions, errandsUrl))
 			.collect(Collectors.joining("\n\n"));
@@ -168,9 +169,9 @@ public class SubscriberEmailService {
 		return heading + "\n\n" + sections;
 	}
 
-	private String toSection(final List<EmailDispatchOutboxEntity> errandEntries, final boolean excludeDescriptions, final Optional<String> errandsUrl) {
+	private String toSection(final List<NotificationDispatchOutboxEntity> errandEntries, final boolean excludeDescriptions, final Optional<String> errandsUrl) {
 		final var errandNumber = errandEntries.stream()
-			.map(EmailDispatchOutboxEntity::getErrandNumber)
+			.map(NotificationDispatchOutboxEntity::getErrandNumber)
 			.filter(Objects::nonNull)
 			.findFirst()
 			.orElse(errandEntries.getFirst().getErrandId());
@@ -179,8 +180,10 @@ public class SubscriberEmailService {
 		final var descriptions = errandEntries.stream()
 			.filter(_ -> !excludeDescriptions)
 			.flatMap(entry -> ofNullable(entry.getEvents()).orElse(emptyList()).stream())
-			.map(EmailDispatchOutboxEventEmbeddable::getDescription)
+			.map(NotificationDispatchOutboxEventEmbeddable::getDescription)
 			.filter(Objects::nonNull)
+			// Several events of an errand often tell the same thing, such as each update telling the errand was updated
+			.distinct()
 			.map(EVENT_LINE_TEMPLATE::formatted);
 
 		return Stream.of(Stream.of(ERRAND_HEADING_TEMPLATE.formatted(errandNumber)), link, descriptions)
@@ -189,17 +192,17 @@ public class SubscriberEmailService {
 	}
 
 	/**
-	 * The addresses of the subscriber's email channels as they are now, so a subscriber who has since dropped email gets
-	 * nothing. An email channel without an address stands for the subscriber's own address in the employee directory.
+	 * The addresses of the subscriber's email channels as they are now. An email channel without an address stands for
+	 * the subscriber's own address in the employee directory, and so does having no email channel at all: email is then
+	 * only enqueued because a subscription profile routes events to it, and a profile carries no addresses of its own.
 	 */
 	private List<String> resolveRecipients(final SubscriberEntity subscriber) {
 		final var emailChannels = ofNullable(subscriber.getChannels()).orElse(emptyList()).stream()
 			.filter(channel -> channel.getType() == EMAIL)
 			.toList();
 
-		final var employeeEmail = emailChannels.stream()
-			.filter(channel -> isNull(channel.getDestination()))
-			.findAny()
+		final var employeeEmail = Optional.of(emailChannels)
+			.filter(channels -> channels.isEmpty() || channels.stream().anyMatch(channel -> isNull(channel.getDestination())))
 			.flatMap(_ -> ofNullable(subscriber.getIdentifier()))
 			.filter(identifier -> AD_ACCOUNT.equals(identifier.getType()))
 			.map(identifier -> employeeService.getEmployeeByLoginName(subscriber.getMunicipalityId(), identifier.getValue()))

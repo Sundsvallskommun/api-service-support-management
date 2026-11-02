@@ -259,6 +259,38 @@ class ValidJsonParametersConstraintValidatorTest {
 		}
 	}
 
+	@Test
+	void invalidWithDuplicateMissingKeys() {
+		final var attributes = Map.of(PATHVARIABLE_MUNICIPALITY_ID, MUNICIPALITY_ID);
+		final var jsonValue1 = createJsonNode();
+		final var jsonValue2 = createJsonNode();
+		final var jsonValue3 = createJsonNode();
+
+		final var jsonParameter1 = JsonParameter.create()
+			.withSchemaId("schema1")
+			.withValue(jsonValue1);
+
+		final var jsonParameter2 = JsonParameter.create()
+			.withKey("uniqueKey")
+			.withSchemaId("schema2")
+			.withValue(jsonValue2);
+
+		final var jsonParameter3 = JsonParameter.create()
+			.withSchemaId("schema3")
+			.withValue(jsonValue3);
+
+		try (MockedStatic<RequestContextHolder> requestContextHolderMock = Mockito.mockStatic(RequestContextHolder.class)) {
+			requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributesMock);
+			when(requestAttributesMock.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST)).thenReturn(attributes);
+
+			assertThat(validator.isValid(List.of(jsonParameter1, jsonParameter2, jsonParameter3), constraintValidatorContextMock)).isFalse();
+
+			verify(jsonSchemaClientMock).validateJson(MUNICIPALITY_ID, "schema2", jsonValue2);
+			verifyNoMoreInteractions(jsonSchemaClientMock);
+			verify(constraintValidatorContextMock, times(2)).buildConstraintViolationWithTemplate("duplicate key 'null'");
+		}
+	}
+
 	private ObjectNode createJsonNode() {
 		return OBJECT_MAPPER
 			.createObjectNode()

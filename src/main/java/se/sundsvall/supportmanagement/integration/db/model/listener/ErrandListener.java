@@ -16,6 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
 
 public class ErrandListener {
 
@@ -29,13 +30,14 @@ public class ErrandListener {
 		final var now = now(systemDefault()).truncatedTo(MILLIS);
 		errandEntity.setCreated(now);
 		errandEntity.setTouched(now);
+		errandEntity.setLifecycle(Optional.ofNullable(errandEntity.getLifecycle()).orElse(ACTIVE));
 		Optional.ofNullable(errandEntity.getStakeholders())
 			.ifPresent(st -> st.forEach(s -> s.setErrandEntity(errandEntity)));
 
 		Optional.ofNullable(errandEntity.getTimeMeasures())
 			.ifPresentOrElse(
-				list -> list.add(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))),
-				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now(ZoneId.systemDefault()))))));
+				list -> list.add(startTimeEntry(errandEntity, now)),
+				() -> errandEntity.setTimeMeasures(new ArrayList<>(List.of(startTimeEntry(errandEntity, now)))));
 	}
 
 	@PreUpdate

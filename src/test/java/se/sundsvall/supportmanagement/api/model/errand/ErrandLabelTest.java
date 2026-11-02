@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.api.model.errand;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -26,6 +28,7 @@ class ErrandLabelTest {
 	@Test
 	void testCreatePattern() {
 
+		final var attributes = List.of(LabelAttribute.create().withKey("key").withValue("value"));
 		final var classification = "classification";
 		final var classificationDisplayName = "classificationDisplayName";
 		final var displayName = "displayName";
@@ -35,6 +38,7 @@ class ErrandLabelTest {
 		final var version = 1L;
 
 		final var bean = ErrandLabel.create()
+			.withAttributes(attributes)
 			.withClassification(classification)
 			.withClassificationDisplayName(classificationDisplayName)
 			.withDisplayName(displayName)
@@ -44,6 +48,7 @@ class ErrandLabelTest {
 			.withVersion(version);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
+		assertThat(bean.getAttributes()).isEqualTo(attributes);
 		assertThat(bean.getClassification()).isEqualTo(classification);
 		assertThat(bean.getClassificationDisplayName()).isEqualTo(classificationDisplayName);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);

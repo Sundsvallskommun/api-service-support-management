@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -45,6 +46,7 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSub
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachment;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.updateAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.computeSha256Hex;
 
 @Service
@@ -67,13 +69,16 @@ public class ErrandAttachmentService {
 	private final EntityManager entityManager;
 	private final Semaphore semaphore;
 	private final AttachmentPurposeRepository attachmentPurposeRepository;
+	private final DecisionValidator decisionValidator;
+	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
 
 	public ErrandAttachmentService(
 		final ErrandsRepository errandsRepository,
 		final AccessControlService accessControlService,
 		final RevisionService revisionService, final EventService eventService,
 		final AttachmentRepository attachmentRepository, final EntityManager entityManager, final Semaphore semaphore,
-		final AttachmentPurposeRepository attachmentPurposeRepository) {
+		final AttachmentPurposeRepository attachmentPurposeRepository, final DecisionValidator decisionValidator,
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
 		this.errandsRepository = errandsRepository;
 		this.accessControlService = accessControlService;
 		this.revisionService = revisionService;
@@ -82,13 +87,28 @@ public class ErrandAttachmentService {
 		this.entityManager = entityManager;
 		this.semaphore = semaphore;
 		this.attachmentPurposeRepository = attachmentPurposeRepository;
+		this.decisionValidator = decisionValidator;
+		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
 	}
 
+	/**
+	 * Adds a file to the errand as its next attachment in number.
+	 * <p>
+	 * Only the channel and the received date are read from {@code errandAttachment}; the name, type and size come from
+	 * the file. The channel defaults to WEB_UI and the received date to the time of creation.
+	 *
+	 * @param  namespace        namespace of the errand.
+	 * @param  municipalityId   municipality of the errand.
+	 * @param  errandId         id of the errand.
+	 * @param  file             the file to add.
+	 * @param  errandAttachment channel and received date of the attachment, or null for the defaults.
+	 * @return                  the id of the created attachment.
+	 */
 	@Transactional
-	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile errandAttachment, final String channel) {
+	public String createErrandAttachment(final String namespace, final String municipalityId, final String errandId, final MultipartFile file, final ErrandAttachment errandAttachment) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 
-		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, errandAttachment, channel));
+		return createErrandAttachmentInternal(errandEntity, () -> toAttachmentEntity(errandEntity, file, errandAttachment));
 	}
 
 	@Transactional
@@ -100,6 +120,7 @@ public class ErrandAttachmentService {
 		final Supplier<AttachmentEntity> attachmentEntitySupplier) {
 		var attachmentEntity = ofNullable(attachmentEntitySupplier.get())
 			.orElseThrow(() -> Problem.valueOf(BAD_GATEWAY, ATTACHMENT_ENTITY_NOT_CREATED));
+		attachmentEntity.setSequenceNumber(attachmentSequenceNumberGenerator.nextSequenceNumber(errandEntity));
 
 		// Save
 		attachmentEntity = attachmentRepository.saveAndFlush(attachmentEntity);
@@ -143,10 +164,10 @@ public class ErrandAttachmentService {
 	/**
 	 * Writes what the attachment is for, named by the id of an attachment purpose of the namespace.
 	 * <p>
-	 * The only way to set it. What a file is for belongs to the file rather than to any one link to it, which is what lets
-	 * the errand show it in its own attachment list and what lets an attachment belonging to no handling artefact carry one
-	 * at all. A request without a purpose leaves the stored one standing; clearing it is
-	 * {@link #deleteErrandAttachmentPurpose}.
+	 * The only way to set it. The purpose belongs to the attachment itself, not to any one link to it. A request without
+	 * a purpose leaves the stored one standing; clearing it is {@link #deleteErrandAttachmentPurpose}.
+	 * <p>
+	 * Also writes when the attachment came in. A request without it leaves the stored one standing.
 	 */
 	@Transactional
 	public ErrandAttachment updateErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId,
@@ -155,10 +176,11 @@ public class ErrandAttachmentService {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 		final var purpose = ofNullable(request.getPurpose())
 			.map(ErrandAttachmentPurpose::getId)
-			.map(purposeId -> findPurposeOrElseThrow(namespace, municipalityId, purposeId));
+			.map(purposeId -> findPurposeOrElseThrow(namespace, municipalityId, purposeId))
+			.orElse(null);
 		final var attachmentEntity = findAttachmentOrElseThrow(errandEntity, errandId, attachmentId);
 
-		purpose.ifPresent(attachmentEntity::setPurpose);
+		updateAttachmentEntity(attachmentEntity, request, purpose);
 		recordChange(errandEntity);
 
 		return toErrandAttachment(attachmentEntity);
@@ -179,6 +201,7 @@ public class ErrandAttachmentService {
 	public void deleteErrandAttachment(final String namespace, final String municipalityId, final String errandId, final String attachmentId) {
 		final var errandEntity = accessControlService.getErrand(namespace, municipalityId, errandId, true, ProtectedResource.ATTACHMENT, RW);
 		final var attachmentEntity = findAttachmentOrElseThrow(errandEntity, errandId, attachmentId);
+		decisionValidator.validateAttachmentRemovable(namespace, municipalityId, errandId, attachmentEntity.getId());
 
 		final ErrandEntity entity;
 		try {
@@ -201,6 +224,7 @@ public class ErrandAttachmentService {
 
 	@Transactional
 	public void createErrandAttachment(final AttachmentEntity attachmentEntity, final ErrandEntity errandEntity) {
+		attachmentEntity.setSequenceNumber(attachmentSequenceNumberGenerator.nextSequenceNumber(errandEntity));
 		attachmentRepository.saveAndFlush(attachmentEntity);
 
 		// Compute hash by streaming from the persisted database blob
@@ -254,9 +278,8 @@ public class ErrandAttachmentService {
 	}
 
 	/**
-	 * The purpose is part of the errand as its revisions record it, so a change gets a revision and an event of its own -
-	 * otherwise it would surface in the next unrelated revision, attributed to whoever made that one. Flushed before the
-	 * snapshot, which would otherwise hold a modified timestamp the commit then replaces.
+	 * Gives a change of the purpose a revision and an event of its own. The attachments are flushed before the revision
+	 * snapshot is taken, so the snapshot holds the modified timestamp that is committed.
 	 */
 	private void recordChange(final ErrandEntity errandEntity) {
 		attachmentRepository.flush();
@@ -278,7 +301,7 @@ public class ErrandAttachmentService {
 	}
 
 	/**
-	 * Looked up within the namespace, so a purpose of another namespace is refused rather than borrowed.
+	 * Looks the purpose up within the namespace. A purpose of another namespace is refused with 400.
 	 */
 	private AttachmentPurposeEntity findPurposeOrElseThrow(final String namespace, final String municipalityId, final String purposeId) {
 		return attachmentPurposeRepository.findByIdAndNamespaceAndMunicipalityId(purposeId, namespace, municipalityId)

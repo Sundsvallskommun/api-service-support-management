@@ -1,0 +1,19 @@
+{
+	"startable": {
+		"status": "PROCESS_COMPLETED",
+		"processKeys": []
+	},
+	"processes": [
+		{
+			"id": "ep-start-done",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-start-done",
+			"processStatus": "COMPLETED",
+			"started": "2026-01-01T10:00:00+01:00",
+			"ended": "2026-01-01T12:00:00+01:00",
+			"awaitingSignals": [],
+			"created": "2026-01-01T10:00:00+01:00"
+		}
+	]
+}

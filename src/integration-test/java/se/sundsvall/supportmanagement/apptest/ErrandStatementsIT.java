@@ -44,7 +44,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 	private static final String STATEMENT_ID = "f1000000-0000-0000-0000-000000000001";
 	private static final String DRAFT_STATEMENT_ID = "f1000000-0000-0000-0000-000000000002";
 	private static final String MEASURE_ID = "ee000000-0000-0000-0000-000000000200";
-	private static final String LINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000001";
 	private static final String UNLINKED_ATTACHMENT_ID = "a5000000-0000-0000-0000-000000000002";
 
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + ERRAND_ID + "/statements";
@@ -136,9 +135,6 @@ class ErrandStatementsIT extends AbstractAppTest {
 			.as("the measure stayed, without the reference").isNull();
 	}
 
-	/**
-	 * A statement of another errand is not this errand's to reach. The lookup names both, so it finds nothing.
-	 */
 	@Test
 	void test06_readingStatementOfAnotherErrandGives404() {
 		setupCall()
@@ -149,7 +145,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The life cycle has to add up: a statement cannot be out with the counterparty without having been sent.
+	 * A statement cannot be out with the counterparty without having been sent.
 	 */
 	@Test
 	void test07_activeWithoutSentAtIsRejected() {
@@ -175,7 +171,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An ETag that has moved on says so rather than overwriting what somebody else wrote.
+	 * A patch with an ETag that has moved on is answered with 412 and overwrites nothing.
 	 */
 	@Test
 	void test09_staleIfMatchIsRejected() {
@@ -257,7 +253,7 @@ class ErrandStatementsIT extends AbstractAppTest {
 	}
 
 	/**
-	 * The outcomes are the namespace's to register, and one it has not registered is refused rather than written.
+	 * The outcomes are the namespace's to register, and one it has not registered is refused and not written.
 	 */
 	@Test
 	void test16_anOutcomeTheNamespaceHasNotRegisteredIsRejected() {

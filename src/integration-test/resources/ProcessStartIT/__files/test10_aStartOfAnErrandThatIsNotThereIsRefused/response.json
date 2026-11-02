@@ -1,0 +1,5 @@
+{
+	"title": "Not Found",
+	"status": 404,
+	"detail": "An errand with id 'ab000000-0000-0000-0000-00000000dead' could not be found in namespace 'PROCESS-NAMESPACE' for municipality with id '2281'"
+}

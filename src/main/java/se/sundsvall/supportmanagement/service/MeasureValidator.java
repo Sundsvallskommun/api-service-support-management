@@ -14,13 +14,11 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 /**
  * Validates the metadata a measure refers to against the namespace it belongs to.
  * <p>
- * Measures reach the service through two entry points, on their own resource and as part of the errand, and both must
- * reach the same verdict on the same data. Keeping the rules here rather than in either service is what stops the two
- * from drifting apart, which is how an unknown role once got in through the errand while being rejected on the measure
- * resource.
+ * Used by both entry points of a measure, its own resource and the errand, so that both reach the same verdict on the
+ * same data.
  * <p>
- * A null field is left alone, since a patch says nothing about the fields it omits. Whether a field may be absent
- * altogether is a bean validation concern and is declared on {@link Measure}.
+ * A null field is left alone. Whether a field may be absent altogether is declared as bean validation on
+ * {@link Measure}.
  */
 @Component
 public class MeasureValidator {

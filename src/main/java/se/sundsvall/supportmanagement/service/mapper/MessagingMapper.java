@@ -357,8 +357,7 @@ public class MessagingMapper {
 
 	/**
 	 * Parses the provided value into a UUID. Returns null instead of throwing if the value is not a valid UUID (e.g. an
-	 * organisationsnummer, personnummer or any other arbitrary string), so that a non-UUID externalId does not abort the
-	 * notification flow.
+	 * organisationsnummer, personnummer or any other arbitrary string).
 	 *
 	 * @param  value the value to parse
 	 * @return       the parsed UUID, or null if the value is not a valid UUID

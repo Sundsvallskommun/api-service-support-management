@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.config.SearchProperties;
 import se.sundsvall.supportmanagement.service.AccessControlService;
+import se.sundsvall.supportmanagement.service.ErrandProcessService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
 import se.sundsvall.supportmanagement.service.search.index.SearchAvailability;
 
@@ -46,9 +47,12 @@ class ErrandSearchServiceTest {
 	@Mock
 	private CountGroupMapper countGroupsMock;
 
+	@Mock
+	private ErrandProcessService errandProcessServiceMock;
+
 	private ErrandSearchService service(final boolean enabled) {
 		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, Duration.ofSeconds(10), 100, new SearchProperties.Reindex(Duration.ofHours(6))), countGroupsMock);
+			new SearchProperties(10000, Duration.ofSeconds(10), 100, new SearchProperties.Reindex(Duration.ofHours(6))), countGroupsMock, errandProcessServiceMock);
 	}
 
 	@Test
@@ -56,7 +60,7 @@ class ErrandSearchServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service(false).search(NAMESPACE, MUNICIPALITY_ID, "query", PageRequest.of(0, 20)));
 
 		assertThat(e.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, errandProcessServiceMock);
 	}
 
 	@Test
@@ -65,7 +69,7 @@ class ErrandSearchServiceTest {
 
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Page 500 of size 100 reaches beyond the 10000 results a search can page through. Narrow the search instead");
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, errandProcessServiceMock);
 	}
 
 	@Test
@@ -77,7 +81,7 @@ class ErrandSearchServiceTest {
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Sorting on 'description' is not supported by search. Sortable properties are: " +
 			"[assignedGroupId, assignedUserId, category, channel, created, errandNumber, modified, priority, reporterUserId, resolution, status, suspendedFrom, suspendedTo, title, touched, type]");
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, errandProcessServiceMock);
 	}
 
 	@Test
@@ -85,7 +89,7 @@ class ErrandSearchServiceTest {
 		final var e = assertThrows(ThrowableProblem.class, () -> service(false).count(NAMESPACE, MUNICIPALITY_ID, "query", "status"));
 
 		assertThat(e.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock, errandProcessServiceMock);
 	}
 
 	/**
@@ -98,7 +102,7 @@ class ErrandSearchServiceTest {
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Grouping on 'description' is not supported by search. Groupable properties are: " +
 			"[assignedGroupId, assignedUserId, category, channel, priority, reporterUserId, resolution, status, type]");
-		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock);
+		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, countGroupsMock, errandProcessServiceMock);
 	}
 
 	/** The multi valued columns are refused too, which is what keeps the buckets from adding up to more than the count. */

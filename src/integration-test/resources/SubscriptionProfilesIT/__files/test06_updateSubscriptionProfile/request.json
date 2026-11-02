@@ -1,0 +1,7 @@
+{
+	"description": "Används av enhetschefer och verksamhetschefer",
+	"channels": [
+		"EMAIL",
+		"INTERNAL"
+	]
+}

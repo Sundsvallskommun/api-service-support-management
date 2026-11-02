@@ -201,4 +201,38 @@ class SubscriptionsIT extends AbstractAppTest {
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
 	}
+
+	@Test
+	void test13_createProfileSubscriptionNextToOwnNamespaceSubscription() {
+		// The servicedesk subscriber already holds a namespace subscription of its own; one pointing at a profile is
+		// still allowed alongside it, and shows up with its profile id when listed
+		setupCall()
+			.withServicePath(PATH)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of("^" + PATH + "/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
+			.sendRequestAndVerifyResponse();
+
+		setupCall()
+			.withServicePath(PATH)
+			.withHeader(HEADER_NAME, "joe01doe; type=adAccount")
+			.withHttpMethod(GET)
+			.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test14_createProfileSubscriptionWithEventFilters() {
+		setupCall()
+			.withServicePath(TICKETS_PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

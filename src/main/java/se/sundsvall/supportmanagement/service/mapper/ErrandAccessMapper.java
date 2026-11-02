@@ -37,8 +37,8 @@ public final class ErrandAccessMapper {
 	}
 
 	/**
-	 * Reports the field by the property it names on the errand rather than by the constant, so that a client matches it
-	 * against the payload it renders and adding a field does not widen an enum of this API.
+	 * Reports the field by the property it names on the errand, so that a client can match it against the payload it
+	 * renders.
 	 */
 	private static ErrandFieldAccess toErrandFieldAccess(final ErrandField field, final FieldGrant grant) {
 		return ErrandFieldAccess.create()
@@ -61,8 +61,8 @@ public final class ErrandAccessMapper {
 	}
 
 	/**
-	 * Translates a level of the access mapper contract into the level this API publishes. The two carry the same names,
-	 * and are kept apart so that a change to the access mapper contract cannot alter this API.
+	 * Translates a level of the access mapper contract into the level of the same name this API publishes, and null
+	 * into null.
 	 */
 	private static AccessLevel toAccessLevel(final Access.AccessLevelEnum level) {
 		return ofNullable(level)

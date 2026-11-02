@@ -10,7 +10,9 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
+import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.RevisionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -25,6 +27,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
@@ -44,6 +47,8 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String PATH = "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands";
 	private static final String REQUEST_FILE = "request.json";
 	private static final String RESPONSE_FILE = "response.json";
+	private static final String REVISIONS_RESPONSE_FILE = "response-revisions.json";
+	private static final String REPORTER_PROFILE_ID = "ccddeeff-0000-0000-0000-000000000099";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
 
 	@Autowired
@@ -51,6 +56,9 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Autowired
 	private RevisionRepository revisionRepository;
+
+	@Autowired
+	private SubscriptionRepository subscriptionRepository;
 
 	@Test
 	void test01_getAllErrandsSortedByTouched() {
@@ -97,12 +105,22 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequest()
 			.getResponseHeaders();
 
+		final var location = headers.get(LOCATION).stream().findFirst().get();
 		setupCall()
-			.withServicePath(headers.get(LOCATION).stream().findFirst().get())
+			.withServicePath(location)
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+
+		// CONTACTCENTER has a reporter profile, so the reporter is subscribed to the new errand with it
+		final var errandId = location.substring(location.lastIndexOf('/') + 1);
+		assertThat(subscriptionRepository.findAllByProfileIdAndTargetType(REPORTER_PROFILE_ID, DbSubscriptionTargetType.ERRAND))
+			.singleElement()
+			.satisfies(subscription -> {
+				assertThat(subscription.getErrand().getId()).isEqualTo(errandId);
+				assertThat(subscription.getSubscriber().getIdentifier().getValue()).isEqualTo("joe01doe");
+			});
 	}
 
 	@Test
@@ -581,12 +599,82 @@ class ErrandsIT extends AbstractAppTest {
 			.sendRequest();
 	}
 
+	@Test
+	void test38_patchErrandWithAStaleIfMatch() {
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6")
+			.withHttpMethod(PATCH)
+			.withHeader("If-Match", "\"999\"")
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(PRECONDITION_FAILED)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
 	/**
-	 * The other half of the pair {@code ErrandCommunicationIT} holds: a resource grant carrying the write of one resource
-	 * of an errand leaves the errand itself refused, since no grant vouches for writing what the labels are held against.
+	 * A label is referred to by its id alone. This one lives in NAMESPACE-1 of another municipality, and a patch naming
+	 * it is refused without writing a revision.
 	 */
 	@Test
-	void test38_patchErrandOnAnErrandHeldAtReadIsNotAllowed() {
+	void test39_patchErrandWithALabelOfAnotherMunicipalityIsRefused() {
+		final var id = "1be673c0-6ba3-4fb0-af4a-43acf23389f6";
+
+		setupCall()
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "/" + id + "/revisions")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(REVISIONS_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A patch changing nothing, sent right after the errand was created, writes no revision. The label is a leaf, so an
+	 * ancestor is added when the errand is created and the labels are read back in another order than they were written.
+	 */
+	@Test
+	void test40_aPatchChangingNothingRightAfterACreationWritesNoRevision() {
+		final var location = setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest("request-create.json")
+			.withExpectedResponseStatus(CREATED)
+			.sendRequest()
+			.getResponseHeaders()
+			.getLocation()
+			.getPath();
+		final var id = location.substring(location.lastIndexOf('/') + 1);
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH + "/" + id)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		setupCall()
+			.withHeader(SENT_BY_HEADER, "joe01doe; type=adAccount")
+			.withServicePath(PATH + "/" + id + "/revisions")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(REVISIONS_RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A resource grant carrying the write of one resource of an errand leaves a patch of the errand itself refused.
+	 */
+	@Test
+	void test41_patchErrandOnAnErrandHeldAtReadIsNotAllowed() {
 		setupCall()
 			.withServicePath("/2506/NAMESPACE-2507/errands/9b2a7c14-3d5e-4f60-8a91-2c3d4e5f6a7b")
 			.withHeader(SENT_BY_HEADER, "fro01lin; type=adAccount")

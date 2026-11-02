@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "A start of the process 'alkt-ansokan' is already on its way for the errand 'ab000000-0000-0000-0000-0000000000b2', so 'alkt-tillsyn' is not started. Wait for the process to be registered, and read the errand again"
+}

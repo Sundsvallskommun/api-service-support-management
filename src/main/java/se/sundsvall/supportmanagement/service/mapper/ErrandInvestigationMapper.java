@@ -3,22 +3,28 @@ package se.sundsvall.supportmanagement.service.mapper;
 import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Investigation;
 import se.sundsvall.supportmanagement.api.model.errand.InvestigationSection;
+import se.sundsvall.supportmanagement.api.model.errand.Parameter;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.replaceArtefactParameters;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameterEntities;
+import static se.sundsvall.supportmanagement.service.mapper.ErrandParameterMapper.toArtefactParameters;
 
 public final class ErrandInvestigationMapper {
 
 	private ErrandInvestigationMapper() {}
 
 	public static InvestigationEntity toInvestigationEntity(final Investigation investigation, final ErrandEntity errandEntity, final String namespace, final String municipalityId) {
-		return InvestigationEntity.create()
+		final var entity = InvestigationEntity.create()
 			.withErrandEntity(errandEntity)
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
@@ -34,8 +40,13 @@ public final class ErrandInvestigationMapper {
 			.withConclusion(investigation.getConclusion())
 			.withRecommendation(investigation.getRecommendation())
 			.withRecommendationMotivation(investigation.getRecommendationMotivation());
+		return entity.withParameters(toInvestigationParameterEntities(investigation.getParameters(), entity));
 	}
 
+	/**
+	 * Applies the fields the investigation carries to the entity. Sent in parameters replace the stored ones, and leave
+	 * them untouched when they come out the same.
+	 */
 	public static InvestigationEntity updateInvestigationEntity(final InvestigationEntity entity, final Investigation investigation) {
 		ofNullable(investigation.getType()).ifPresent(entity::setType);
 		ofNullable(investigation.getStatus()).map(ItemStatus::valueOf).ifPresent(entity::setStatus);
@@ -49,6 +60,7 @@ public final class ErrandInvestigationMapper {
 		ofNullable(investigation.getConclusion()).ifPresent(entity::setConclusion);
 		ofNullable(investigation.getRecommendation()).ifPresent(entity::setRecommendation);
 		ofNullable(investigation.getRecommendationMotivation()).ifPresent(entity::setRecommendationMotivation);
+		ofNullable(investigation.getParameters()).ifPresent(parameters -> replaceParameters(entity, parameters));
 		return entity;
 	}
 
@@ -70,6 +82,7 @@ public final class ErrandInvestigationMapper {
 				.withRecommendationMotivation(e.getRecommendationMotivation())
 				.withSections(toInvestigationSections(e.getSections()))
 				.withAttachments(toErrandAttachments(e.getAttachments()))
+				.withParameters(toArtefactParameters(e.getParameters()))
 				.withCreatedBy(e.getCreatedBy())
 				.withModifiedBy(e.getModifiedBy())
 				.withCreated(e.getCreated())
@@ -84,8 +97,28 @@ public final class ErrandInvestigationMapper {
 			.toList();
 	}
 
+	/**
+	 * Maps parameters to entities of the investigation, one per key with the values of every parameter sent for it, in the
+	 * order of the keys. Keys are trimmed before they are compared, and the display name and group are those of the first
+	 * parameter sent for a key.
+	 */
+	public static List<InvestigationParameterEntity> toInvestigationParameterEntities(final List<Parameter> parameters, final InvestigationEntity investigationEntity) {
+		return toArtefactParameterEntities(parameters, () -> InvestigationParameterEntity.create().withInvestigationEntity(investigationEntity));
+	}
+
+	/**
+	 * Replaces the parameters of the investigation in place and marks the investigation modified so that its version
+	 * moves. Parameters that come out the same as the stored ones, in whatever order they are sent, leave the
+	 * investigation untouched.
+	 */
+	private static void replaceParameters(final InvestigationEntity entity, final List<Parameter> parameters) {
+		if (replaceArtefactParameters(entity.getParameters(), entity::setParameters, toInvestigationParameterEntities(parameters, entity))) {
+			entity.markModified();
+		}
+	}
+
 	public static InvestigationSectionEntity toInvestigationSectionEntity(final InvestigationSection section, final InvestigationEntity investigationEntity) {
-		return InvestigationSectionEntity.create()
+		final var entity = InvestigationSectionEntity.create()
 			.withInvestigationEntity(investigationEntity)
 			.withSectionKey(section.getSectionKey())
 			.withHeading(section.getHeading())
@@ -94,8 +127,14 @@ public final class ErrandInvestigationMapper {
 			.withText(section.getText())
 			.withCompletedBy(section.getCompletedBy())
 			.withCompletedAt(section.getCompletedAt());
+		return entity.withParameters(toInvestigationSectionParameterEntities(section.getParameters(), entity));
 	}
 
+	/**
+	 * Applies the fields the section carries to the entity. Sent in parameters replace the stored ones, and leave them
+	 * untouched when they come out the same. Nothing is marked modified: moving the version of the investigation the
+	 * section belongs to is left to the caller.
+	 */
 	public static InvestigationSectionEntity updateInvestigationSectionEntity(final InvestigationSectionEntity entity, final InvestigationSection section) {
 		ofNullable(section.getSectionKey()).ifPresent(entity::setSectionKey);
 		ofNullable(section.getHeading()).ifPresent(entity::setHeading);
@@ -104,7 +143,13 @@ public final class ErrandInvestigationMapper {
 		ofNullable(section.getText()).ifPresent(entity::setText);
 		ofNullable(section.getCompletedBy()).ifPresent(entity::setCompletedBy);
 		ofNullable(section.getCompletedAt()).ifPresent(entity::setCompletedAt);
+		ofNullable(section.getParameters())
+			.ifPresent(parameters -> replaceArtefactParameters(entity.getParameters(), entity::setParameters, toInvestigationSectionParameterEntities(parameters, entity)));
 		return entity;
+	}
+
+	private static List<InvestigationSectionParameterEntity> toInvestigationSectionParameterEntities(final List<Parameter> parameters, final InvestigationSectionEntity sectionEntity) {
+		return toArtefactParameterEntities(parameters, () -> InvestigationSectionParameterEntity.create().withInvestigationSectionEntity(sectionEntity));
 	}
 
 	public static InvestigationSection toInvestigationSection(final InvestigationSectionEntity entity) {
@@ -117,7 +162,8 @@ public final class ErrandInvestigationMapper {
 				.withAssessment(ofNullable(e.getAssessment()).map(Enum::name).orElse(null))
 				.withText(e.getText())
 				.withCompletedBy(e.getCompletedBy())
-				.withCompletedAt(e.getCompletedAt()))
+				.withCompletedAt(e.getCompletedAt())
+				.withParameters(toArtefactParameters(e.getParameters())))
 			.orElse(null);
 	}
 

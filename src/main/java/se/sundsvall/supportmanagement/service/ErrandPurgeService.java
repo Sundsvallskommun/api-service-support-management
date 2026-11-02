@@ -27,10 +27,9 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.
 /**
  * Entry point for purging errands that have passed their retention period.
  * <p>
- * A run is answered with a job and carried out on a thread of its own, since walking a namespace one errand at a time
- * can take hours and no caller should be held open for that. Progress is kept in the job table, which the service
- * shares with every other long running piece of work, so a run survives a restart of the instance that started it and
- * can be followed and stopped from any instance.
+ * A run is answered with a job and carried out on a thread of its own. Progress is kept in the job table, so a run can
+ * be followed and stopped from any instance. A run whose instance goes away is marked as failed once its job has gone
+ * unwritten for {@link se.sundsvall.supportmanagement.config.JobProperties#staleAfter()}.
  */
 @Service
 public class ErrandPurgeService {
@@ -114,9 +113,7 @@ public class ErrandPurgeService {
 	/**
 	 * Asks a purge run to stop. The run finishes the errand it is on before it does.
 	 * <p>
-	 * Only a purge is reached from here. The job table is shared with every other long running piece of work, and an id
-	 * that belongs to a job of another kind is answered as not found rather than quietly stopping work this resource has
-	 * nothing to do with.
+	 * Only a purge is reached from here: an id that belongs to a job of another kind is answered as not found.
 	 *
 	 * @param  namespace      namespace the run belongs to.
 	 * @param  municipalityId id of the municipality the run belongs to.
@@ -131,12 +128,11 @@ public class ErrandPurgeService {
 	}
 
 	/**
-	 * The caller a run is recorded against. Read here, on the request thread, since the thread carrying out the run has
-	 * no identifier of its own to read.
+	 * The caller a run is recorded against. Must be read on the request thread, as the thread carrying out the run has
+	 * no identifier.
 	 * <p>
-	 * Carries the whole identifier - type and value, via {@link Identifier#toHeaderValue()} - rather than just the
-	 * value, for the same reason {@code MetadataService}'s own {@code startedBy()} does: it is what lets a reader tell
-	 * an AD user's account name apart from a party id instead of defaulting every kind to look the same.
+	 * Carries the whole identifier, type and value, via {@link Identifier#toHeaderValue()}, as {@code MetadataService}'s
+	 * {@code startedBy()} does, so a reader can tell an AD account name apart from a party id.
 	 */
 	private static String startedBy() {
 		return ofNullable(Identifier.get())

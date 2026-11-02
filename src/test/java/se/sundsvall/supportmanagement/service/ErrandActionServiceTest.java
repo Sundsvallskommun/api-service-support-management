@@ -19,12 +19,17 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
+import se.sundsvall.supportmanagement.service.action.ActionExecutor;
+import se.sundsvall.supportmanagement.service.action.DueAction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,11 +56,14 @@ class ErrandActionServiceTest {
 	@Mock
 	private Action actionMock;
 
+	@Mock
+	private ActionExecutor actionExecutorMock;
+
 	@Test
 	void constructorThrowsOnDuplicateActionName() {
 		final var listOfAction = List.of(createActionMock("DUPLICATE"), createActionMock("DUPLICATE"));
 
-		assertThatThrownBy(() -> new ErrandActionService(actionConfigRepositoryMock, listOfAction))
+		assertThatThrownBy(() -> new ErrandActionService(actionConfigRepositoryMock, actionExecutorMock, listOfAction))
 			.isInstanceOf(IllegalStateException.class)
 			.hasMessage("Duplicate action.name 'DUPLICATE'");
 	}
@@ -71,7 +79,7 @@ class ErrandActionServiceTest {
 		when(actionMock.getParameterDefinitions(any(), any())).thenReturn(parameterDefinitions);
 		when(actionMock.getValidOperationTypes()).thenReturn(Set.of(OperationType.CREATE, OperationType.UPDATE));
 
-		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
+		final var service = new ErrandActionService(actionConfigRepositoryMock, actionExecutorMock, List.of(actionMock));
 		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
 		verify(actionMock).getConditionDefinitions(MUNICIPALITY_ID, NAMESPACE);
@@ -88,7 +96,7 @@ class ErrandActionServiceTest {
 
 	@Test
 	void getActionDefinitionsWhenEmpty() {
-		final var service = new ErrandActionService(actionConfigRepositoryMock, List.of());
+		final var service = new ErrandActionService(actionConfigRepositoryMock, actionExecutorMock, List.of());
 		final var result = service.getActionDefinitions(MUNICIPALITY_ID, NAMESPACE);
 
 		assertThat(result).isEmpty();
@@ -224,6 +232,23 @@ class ErrandActionServiceTest {
 	// processErrandActions tests
 
 	@Test
+	void processErrandActionsLeavesADraftAlone() {
+		final var existing = ErrandActionEntity.create().withActionConfigEntity(createEntity().withId(CONFIG_ID));
+		final var errand = ErrandEntity.create()
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withNamespace(NAMESPACE)
+			.withLifecycle(ErrandLifecycle.DRAFT)
+			.withActions(new ArrayList<>(List.of(existing)));
+
+		createService().processErrandActions(errand, CREATE);
+
+		assertThat(errand.getActions()).containsExactly(existing);
+		verifyNoInteractions(actionConfigRepositoryMock);
+		verify(actionMock, never()).actionFulfilled(any(), any());
+		verify(actionMock, never()).createAction(any(), any());
+	}
+
+	@Test
 	void processErrandActionsAddsAction() {
 		final var config = createEntity().withId(CONFIG_ID);
 		final var errand = ErrandEntity.create()
@@ -305,7 +330,7 @@ class ErrandActionServiceTest {
 	}
 
 	@Test
-	void processErrandActionsExecutesImmediatelyWhenExpired() {
+	void processErrandActionsReturnsTheActionsDueAtOnceWithoutCarryingThemOut() {
 		final var config = createEntity().withId(CONFIG_ID);
 		final var errand = ErrandEntity.create()
 			.withMunicipalityId(MUNICIPALITY_ID)
@@ -322,10 +347,26 @@ class ErrandActionServiceTest {
 		when(actionMock.validForOperationType(READ)).thenReturn(true);
 
 		final var service = createService();
-		service.processErrandActions(errand, READ);
+		final var dueActions = service.processErrandActions(errand, READ);
 
+		// Left for the caller to carry out once the change that called for it has been recorded
 		assertThat(errand.getActions()).isEmpty();
-		verify(actionMock).executeAction(errand, config);
+		assertThat(dueActions).containsExactly(new DueAction(actionMock, config));
+		verify(actionMock, never()).executeAction(any(), any());
+		verifyNoInteractions(actionExecutorMock);
+	}
+
+	@Test
+	void executeDueActionsCarriesOutEachRecordedAsAChangeOfItsOwn() {
+		final var errand = ErrandEntity.create();
+		final var config = createEntity().withId(CONFIG_ID);
+		final var otherConfig = createEntity().withId("other-config-id");
+
+		createService().executeDueActions(errand, List.of(new DueAction(actionMock, config), new DueAction(actionMock, otherConfig)));
+
+		final var inOrder = inOrder(actionExecutorMock);
+		inOrder.verify(actionExecutorMock).executeAndRecord(errand, actionMock, config, ErrandActionService.EVENT_LOG_ACTION);
+		inOrder.verify(actionExecutorMock).executeAndRecord(errand, actionMock, otherConfig, ErrandActionService.EVENT_LOG_ACTION);
 	}
 
 	@Test
@@ -448,11 +489,11 @@ class ErrandActionServiceTest {
 
 	private ErrandActionService createService() {
 		when(actionMock.getName()).thenReturn(ACTION_NAME);
-		return new ErrandActionService(actionConfigRepositoryMock, List.of(actionMock));
+		return new ErrandActionService(actionConfigRepositoryMock, actionExecutorMock, List.of(actionMock));
 	}
 
 	private Action createActionMock(String name) {
-		final var mock = org.mockito.Mockito.mock(Action.class);
+		final var mock = mock(Action.class);
 		when(mock.getName()).thenReturn(name);
 		return mock;
 	}

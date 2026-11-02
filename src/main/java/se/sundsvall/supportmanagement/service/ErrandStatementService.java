@@ -33,12 +33,11 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * The statements of an errand.
  * <p>
  * A statement is reached through its errand and never past it: the errand is fetched and authorized first, and the
- * statement is then looked up by namespace, municipality, errand and id together. Belonging to the errand is therefore
- * a consequence of the lookup rather than a check that can be forgotten, and asking for a statement of another errand
- * is a 404 rather than a leak.
+ * statement is then looked up by namespace, municipality, errand and id together. Asking for a statement of another
+ * errand is answered with 404.
  * <p>
- * The version of the errand is deliberately left alone. A statement is a resource of its own with a version of its own,
- * and answering a statement should not make every held ETag for the errand stale.
+ * The version of the errand is left alone. A statement is a resource of its own with a version of its own, and a
+ * change to a statement does not make held ETags for the errand stale.
  */
 @Service
 public class ErrandStatementService {

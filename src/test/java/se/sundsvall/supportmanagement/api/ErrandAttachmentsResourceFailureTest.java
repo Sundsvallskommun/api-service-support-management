@@ -3,21 +3,17 @@ package se.sundsvall.supportmanagement.api;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
 import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.service.ErrandAttachmentService;
 
+import static java.time.OffsetDateTime.now;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -26,16 +22,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class ErrandAttachmentsResourceFailureTest {
 
 	private static final String NAMESPACE = "namespace";
@@ -49,7 +42,7 @@ class ErrandAttachmentsResourceFailureTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private ErrandAttachmentService errandAttachmentServiceMock;
 
 	@Test
@@ -418,6 +411,60 @@ class ErrandAttachmentsResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(tuple("deleteErrandAttachment.attachmentId", "not a valid UUID"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void createErrandAttachmentWithReceivedInTheFuture() {
+
+		// Parameters
+		final var multipartBodyBuilder = new MultipartBodyBuilder();
+		multipartBodyBuilder.part("errandAttachment", "file-content").filename("test.txt").contentType(TEXT_PLAIN);
+		multipartBodyBuilder.part("received", now().plusDays(1).toString());
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(MULTIPART_FORM_DATA)
+			.body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("createErrandAttachment.received", "must be a date in the past or in the present"));
+
+		// Verification
+		verifyNoInteractions(errandAttachmentServiceMock);
+	}
+
+	@Test
+	void updateErrandAttachmentWithReceivedInTheFuture() {
+
+		// Parameters
+		final var body = UpdateErrandAttachmentRequest.create().withReceived(now().plusDays(1));
+
+		// Call
+		final var response = webTestClient.patch()
+			.uri(builder -> builder.path(PATH.concat("/{attachmentId}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "attachmentId", ATTACHMENT_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(body)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(tuple("received", "must be a date in the past or in the present"));
 
 		// Verification
 		verifyNoInteractions(errandAttachmentServiceMock);

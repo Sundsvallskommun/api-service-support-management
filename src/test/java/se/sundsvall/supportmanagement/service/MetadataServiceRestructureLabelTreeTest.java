@@ -8,6 +8,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -416,17 +418,20 @@ class MetadataServiceRestructureLabelTreeTest {
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
-	@Test
+	@ParameterizedTest
+	@EnumSource(value = Identifier.Type.class, names = {
+		"AD_ACCOUNT", "CUSTOM"
+	})
 	@SuppressWarnings("unchecked")
 	@DisplayName("Verification that the run built for the launch carries the expected fields, including the deduplicated affectedErrandIds, and that the runner argument reaches the actual label-restructure runner")
-	void startLabelTreeRestructure_handsTheRunToTheWorkerWithExpectedParameters() {
+	void startLabelTreeRestructure_handsTheRunToTheWorkerWithExpectedParameters(final Identifier.Type callerType) {
 		final var jobResponse = JobResponse.create().withJobId("job-id").withType(RESTRUCTURE_LABEL_TREE).withStatus(JobStatus.PENDING);
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any())).thenReturn(true);
 		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE)).thenReturn(false);
 		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(jobResponse);
-		var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		var identifier = Identifier.create().withType(callerType).withValue("joe01doe");
 		Identifier.set(identifier);
 
 		final var steps = List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY"));
@@ -445,6 +450,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		assertThat(run.steps()).isEqualTo(steps);
 		assertThat(run.errandIds()).isEmpty();
 		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
+		assertThat(run.startedByAdAccount()).isEqualTo(callerType == Identifier.Type.AD_ACCOUNT);
 
 		((Consumer<LabelRestructureRun>) runnerCaptor.getValue()).accept(run);
 		verify(labelRestructureRunnerMock).run(run);

@@ -8,6 +8,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
 
 public final class SubscriptionMapper {
 
@@ -15,12 +16,13 @@ public final class SubscriptionMapper {
 		// Intentionally empty
 	}
 
-	public static SubscriptionEntity toSubscriptionEntity(final SubscriberEntity subscriber, final ErrandEntity errand, final Subscription subscription) {
+	public static SubscriptionEntity toSubscriptionEntity(final SubscriberEntity subscriber, final ErrandEntity errand, final SubscriptionProfileEntity profile, final Subscription subscription) {
 		return Optional.ofNullable(subscription)
 			.map(dto -> SubscriptionEntity.create()
 				.withSubscriber(subscriber)
 				.withTargetType(toDbTargetType(targetTypeOf(dto)))
 				.withErrand(errand)
+				.withProfile(profile)
 				.withEventFilters(SubscriberMapper.toEventFilterEmbeddables(dto.getEventFilters()))
 				.withExpiresAt(dto.getExpiresAt()))
 			.orElse(null);
@@ -31,6 +33,7 @@ public final class SubscriptionMapper {
 			.map(e -> Subscription.create()
 				.withId(e.getId())
 				.withTarget(toTarget(e))
+				.withProfileId(Optional.ofNullable(e.getProfile()).map(SubscriptionProfileEntity::getId).orElse(null))
 				.withEventFilters(SubscriberMapper.toEventFilters(e.getEventFilters()))
 				.withExpiresAt(e.getExpiresAt())
 				.withCreated(e.getCreated())

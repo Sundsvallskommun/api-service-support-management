@@ -17,11 +17,9 @@ import static jakarta.persistence.FetchType.LAZY;
 import static org.hibernate.Length.LONG32;
 
 /**
- * A term attached to a decision.
- * <p>
- * A permit term is a numbered line of text with a category, and it looks the same in a serving permit as in an
- * environmental permit. What is not shared - which beverages, which hours, which noise levels - stays in the text or in
- * the JSON parameters of the decision.
+ * A term attached to a decision: a numbered line of text with a category. Details specific to a line of business, such
+ * as which beverages, which hours or which noise levels, are held in the text or in the JSON parameters of the
+ * decision.
  */
 @Entity
 @Table(name = "decision_term",

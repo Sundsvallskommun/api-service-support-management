@@ -31,10 +31,16 @@ class ConfigTest {
 	}
 
 	@Test
+	void testNotifyDefaultValue() {
+		assertThat(new Config().getNotify()).isTrue();
+	}
+
+	@Test
 	void testBuilderMethods() {
 		final var id = "id";
 		final var name = "name";
 		final var active = true;
+		final var notify = false;
 		final var conditions = List.of(Parameter.create().withKey("conditionKey"));
 		final var parameters = List.of(Parameter.create().withKey("parameterKey"));
 		final var displayValue = "displayValue";
@@ -44,6 +50,7 @@ class ConfigTest {
 			.withId(id)
 			.withName(name)
 			.withActive(active)
+			.withNotify(notify)
 			.withConditions(conditions)
 			.withParameters(parameters)
 			.withDisplayValue(displayValue)
@@ -53,6 +60,7 @@ class ConfigTest {
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getActive()).isEqualTo(active);
+		assertThat(bean.getNotify()).isEqualTo(notify);
 		assertThat(bean.getConditions()).isEqualTo(conditions);
 		assertThat(bean.getParameters()).isEqualTo(parameters);
 		assertThat(bean.getDisplayValue()).isEqualTo(displayValue);
@@ -61,7 +69,7 @@ class ConfigTest {
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(Config.create()).hasAllNullFieldsOrPropertiesExcept("active");
-		assertThat(new Config()).hasAllNullFieldsOrPropertiesExcept("active");
+		assertThat(Config.create()).hasAllNullFieldsOrPropertiesExcept("active", "notify");
+		assertThat(new Config()).hasAllNullFieldsOrPropertiesExcept("active", "notify");
 	}
 }

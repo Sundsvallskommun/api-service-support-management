@@ -4,5 +4,21 @@
 	"heading": "Lokalen",
 	"sortOrder": 2,
 	"assessment": "DEFICIENCY",
-	"text": "Lokalen saknar godkänd ventilation."
+	"text": "Lokalen saknar godkänd ventilation.",
+	"parameters": [
+		{
+			"key": "checklist",
+			"displayName": "Checklista",
+			"group": "lokal",
+			"values": [
+				"ventilation"
+			]
+		},
+		{
+			"key": "deficiencies",
+			"values": [
+				"ventilation"
+			]
+		}
+	]
 }

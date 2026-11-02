@@ -18,6 +18,7 @@ class ErrandActionMapperTest {
 		final var entity = ActionConfigEntity.create()
 			.withId("id")
 			.withActive(true)
+			.withNotify(false)
 			.withName("ACTION_NAME")
 			.withDisplayValue("Display value");
 
@@ -35,6 +36,7 @@ class ErrandActionMapperTest {
 
 		assertThat(result.getId()).isEqualTo("id");
 		assertThat(result.getActive()).isTrue();
+		assertThat(result.getNotify()).isFalse();
 		assertThat(result.getName()).isEqualTo("ACTION_NAME");
 		assertThat(result.getDisplayValue()).isEqualTo("Display value");
 		assertThat(result.getConditions()).hasSize(1);
@@ -105,6 +107,7 @@ class ErrandActionMapperTest {
 
 		final var config = Config.create()
 			.withActive(true)
+			.withNotify(false)
 			.withName("NEW_NAME")
 			.withDisplayValue("New display")
 			.withConditions(List.of(Parameter.create().withKey("newCondKey").withValues(List.of("newCondVal"))))
@@ -117,6 +120,7 @@ class ErrandActionMapperTest {
 		assertThat(result.getMunicipalityId()).isEqualTo("2281");
 		assertThat(result.getNamespace()).isEqualTo("NS");
 		assertThat(result.getActive()).isTrue();
+		assertThat(result.getNotify()).isFalse();
 		assertThat(result.getName()).isEqualTo("NEW_NAME");
 		assertThat(result.getDisplayValue()).isEqualTo("New display");
 		assertThat(result.getConditions()).hasSize(1);

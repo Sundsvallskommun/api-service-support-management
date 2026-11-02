@@ -1,0 +1,24 @@
+{
+	"parameters": [
+		{
+			"key": "servingArea",
+			"displayName": "Serveringsyta",
+			"group": "lokal",
+			"values": [
+				"inomhus"
+			]
+		},
+		{
+			"key": "maxGuests",
+			"values": [
+				"120"
+			]
+		},
+		{
+			"key": "servingArea",
+			"values": [
+				"uteservering"
+			]
+		}
+	]
+}

@@ -1,6 +1,7 @@
 {
 	"id": "${json-unit.any-string}",
 	"errandNumber": "${json-unit.regex}(KC-\\d{8})",
+	"lifecycle": "ACTIVE",
 	"title": "test21_postErrandWithPhase",
 	"priority": "MEDIUM",
 	"classification": {

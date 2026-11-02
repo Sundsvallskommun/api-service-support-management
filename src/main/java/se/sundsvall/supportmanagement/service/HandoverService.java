@@ -29,6 +29,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
@@ -36,15 +37,20 @@ import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsLast;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 
 @Service
 public class HandoverService {
@@ -53,7 +59,6 @@ public class HandoverService {
 
 	private static final String RELATION_TYPE_HANDOVER = "HANDOVER";
 	private static final String RELATION_RESOURCE_TYPE = "case";
-	private static final String RELATION_SERVICE = "support-management";
 	private static final String EVENT_HANDOVER_OUT = "Ärendet har överlåtits till ett annat namespace.";
 	private static final String EVENT_HANDOVER_IN = "Ärendet har mottagits via överlåtelse.";
 
@@ -68,6 +73,7 @@ public class HandoverService {
 	private final EventService eventService;
 	private final RelationClient relationClient;
 	private final HandoverIdempotencyRepository idempotencyRepository;
+	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
 
 	public HandoverService(
 		final AccessControlService accessControlService,
@@ -80,7 +86,8 @@ public class HandoverService {
 		final RevisionService revisionService,
 		final EventService eventService,
 		final RelationClient relationClient,
-		final HandoverIdempotencyRepository idempotencyRepository) {
+		final HandoverIdempotencyRepository idempotencyRepository,
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
 
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
@@ -93,6 +100,7 @@ public class HandoverService {
 		this.eventService = eventService;
 		this.relationClient = relationClient;
 		this.idempotencyRepository = idempotencyRepository;
+		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
 	}
 
 	@Transactional
@@ -138,6 +146,7 @@ public class HandoverService {
 			.withTargetMunicipalityId(request.getTarget().getMunicipalityId()));
 
 		final var source = accessControlService.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.ERRAND, RW);
+		requireActive(source);
 
 		final var targetErrand = HandoverMapper.buildTargetErrand(source, request);
 
@@ -179,50 +188,69 @@ public class HandoverService {
 	private void validateMappings(final String targetNamespace, final String targetMunicipalityId, final HandoverErrandRequest request) {
 		final var mapping = request.getMapping();
 
+		validateStatusMapping(targetNamespace, targetMunicipalityId, mapping);
+		validateClassificationMapping(targetNamespace, targetMunicipalityId, mapping);
+		validateLabelsMapping(targetNamespace, targetMunicipalityId, mapping);
+		validateContactReasonMapping(targetNamespace, targetMunicipalityId, mapping);
+	}
+
+	private void validateStatusMapping(final String targetNamespace, final String targetMunicipalityId, final HandoverMapping mapping) {
 		if (isBlank(mapping.getStatus())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'status' is missing");
 		}
-		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.STATUS)) {
-			final var validStatus = metadataService.findStatuses(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
-				.anyMatch(s -> s.getName().equals(mapping.getStatus()));
-			if (!validStatus) {
-				throw Problem.valueOf(BAD_REQUEST, "Status '%s' does not exist in target namespace '%s'".formatted(mapping.getStatus(), targetNamespace));
+		if (!metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.STATUS)) {
+			return;
+		}
+		final var validStatus = metadataService.findStatuses(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
+			.anyMatch(s -> s.getName().equals(mapping.getStatus()));
+		if (!validStatus) {
+			throw Problem.valueOf(BAD_REQUEST, "Status '%s' does not exist in target namespace '%s'".formatted(mapping.getStatus(), targetNamespace));
+		}
+	}
+
+	private void validateClassificationMapping(final String targetNamespace, final String targetMunicipalityId, final HandoverMapping mapping) {
+		final var classification = mapping.getClassification();
+		final var categoryValidated = metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CATEGORY);
+		final var typeValidated = metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.TYPE);
+
+		if (isNull(classification)) {
+			if (categoryValidated || typeValidated) {
+				throw Problem.valueOf(BAD_REQUEST, "Required mapping 'classification' is missing (target namespace '%s' validates classification)".formatted(targetNamespace));
 			}
+			return;
 		}
 
-		if (isNull(mapping.getClassification())) {
-			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'classification' is missing");
-		}
-		final var category = mapping.getClassification().getCategory();
-		final var type = mapping.getClassification().getType();
-		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.CATEGORY)) {
+		final var category = classification.getCategory();
+		final var type = classification.getType();
+		if (categoryValidated) {
 			final var validCategory = metadataService.findCategories(targetNamespace, targetMunicipalityId, Sort.unsorted()).stream()
 				.anyMatch(c -> c.getName().equals(category));
 			if (!validCategory) {
 				throw Problem.valueOf(BAD_REQUEST, "Classification category '%s' does not exist in target namespace '%s'".formatted(category, targetNamespace));
 			}
 		}
-		if (metadataService.isValidated(targetNamespace, targetMunicipalityId, EntityType.TYPE)) {
+		if (typeValidated) {
 			final var validType = metadataService.findTypes(targetNamespace, targetMunicipalityId, category).stream()
 				.anyMatch(t -> t.getName().equals(type));
 			if (!validType) {
 				throw Problem.valueOf(BAD_REQUEST, "Classification type '%s' does not exist under category '%s' in target namespace '%s'".formatted(type, category, targetNamespace));
 			}
 		}
+	}
 
+	private void validateLabelsMapping(final String targetNamespace, final String targetMunicipalityId, final HandoverMapping mapping) {
 		if (isNull(mapping.getLabels())) {
 			throw Problem.valueOf(BAD_REQUEST, "Required mapping 'labels' is missing (provide an empty list if the target namespace does not use labels)");
 		}
-		if (metadataService.hasLabels(targetNamespace, targetMunicipalityId)) {
-			mapping.getLabels().stream()
-				.filter(id -> !metadataService.labelExistsById(id, targetNamespace, targetMunicipalityId))
-				.findFirst()
-				.ifPresent(id -> {
-					throw Problem.valueOf(BAD_REQUEST, "Label '%s' does not exist in target namespace '%s'".formatted(id, targetNamespace));
-				});
+		if (!metadataService.hasLabels(targetNamespace, targetMunicipalityId)) {
+			return;
 		}
-
-		validateContactReasonMapping(targetNamespace, targetMunicipalityId, mapping);
+		mapping.getLabels().stream()
+			.filter(id -> !metadataService.labelExistsById(id, targetNamespace, targetMunicipalityId))
+			.findFirst()
+			.ifPresent(id -> {
+				throw Problem.valueOf(BAD_REQUEST, "Label '%s' does not exist in target namespace '%s'".formatted(id, targetNamespace));
+			});
 	}
 
 	private void validateContactReasonMapping(final String targetNamespace, final String targetMunicipalityId, final HandoverMapping mapping) {
@@ -245,7 +273,9 @@ public class HandoverService {
 	private void copyAttachments(final ErrandEntity source, final ErrandEntity target, final String targetNamespace, final String targetMunicipalityId) {
 		final var freshSource = errandsRepository.findByIdAndNamespaceAndMunicipalityId(source.getId(), source.getNamespace(), source.getMunicipalityId())
 			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, "Failed to re-fetch source errand '%s' for attachment copy".formatted(source.getId())));
-		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of());
+		final var sourceAttachments = Optional.ofNullable(freshSource.getAttachments()).orElse(List.of()).stream()
+			.sorted(comparing(AttachmentEntity::getSequenceNumber, nullsLast(naturalOrder())))
+			.toList();
 		for (final var sourceAttachment : sourceAttachments) {
 			final var sourceData = sourceAttachment.getAttachmentData();
 			if (isNull(sourceData) || isNull(sourceData.getFile())) {
@@ -262,7 +292,10 @@ public class HandoverService {
 						.withFileName(sourceAttachment.getFileName())
 						.withMimeType(sourceAttachment.getMimeType())
 						.withChannel(sourceAttachment.getChannel())
+						.withReceived(sourceAttachment.getReceived())
+						.withSequenceNumber(attachmentSequenceNumberGenerator.nextSequenceNumber(target))
 						.withFileSize(sourceAttachment.getFileSize())
+						.withHash(sourceAttachment.getHash())
 						.withAttachmentData(AttachmentDataEntity.create().withFile(newBlob));
 					attachmentRepository.saveAndFlush(newAttachment);
 					target.getAttachments().add(newAttachment);

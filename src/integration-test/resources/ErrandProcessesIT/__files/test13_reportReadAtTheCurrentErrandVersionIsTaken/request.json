@@ -1,0 +1,9 @@
+{
+	"processService": "pw-alkt",
+	"processKey": "alkt-ansokan",
+	"processStatus": "COMPLETED",
+	"currentActivityId": "avslut",
+	"currentActivityName": "Avslut",
+	"externalTaskId": "task-it-current",
+	"errandVersion": 0
+}

@@ -14,9 +14,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Everything the access mapper says about one user within one namespace, resolved from a single answer of theirs.
- * <p>
- * Access is granted from the three together, so they are held together: read one at a time and cached one at a time,
- * they could be answered from different moments and disagree with each other.
+ * Access is granted from the three together.
  *
  * @param labelsByLevel the labels the user reaches, per level granted for them
  * @param roles         the roles the user holds, upper cased
@@ -28,9 +26,8 @@ public record AccessSnapshot(
 	Map<ProtectedResource, Access.AccessLevelEnum> resources) {
 
 	/**
-	 * Copies what it is given, since one snapshot is shared by every request resolving the same user for as long as it
-	 * is cached: a caller mutating what an accessor hands back would otherwise rewrite that user's grants for all of
-	 * them.
+	 * Copies what it is given into unmodifiable collections. One snapshot is shared by every request resolving the same
+	 * user for as long as it is cached.
 	 */
 	public AccessSnapshot {
 		labelsByLevel = labelsByLevel.entrySet().stream().collect(toUnmodifiableMap(Map.Entry::getKey, entry -> Set.copyOf(entry.getValue())));

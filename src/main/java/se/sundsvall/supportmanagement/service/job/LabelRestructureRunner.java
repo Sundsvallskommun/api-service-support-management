@@ -65,7 +65,10 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LabelRestructureRunner.class);
 
-	private static final String SUMMARY = "%d step(s) applied, %d errand(s) restowed";
+	private static final String SUMMARY = "%d step(s) applied, %s";
+	private static final String ONLY_RESTOWED = "%d errand(s) restowed";
+	private static final String RESTOWED_AND_UNCHANGED = "%d errand(s) restowed, %d kept their labels";
+	private static final String MERGE_KEPT_SOURCES = "labels %s were merged away but errands still wear them";
 	private static final String MOVE_AUDIT_MESSAGE = "Label %s moved under %s by %s";
 	private static final String MERGE_AUDIT_MESSAGE = "Labels %s merged into %s by %s";
 	private static final String ROLLED_BACK_MESSAGE = "Rolled back - no changes applied. Reached %d of %d errand(s) before: %s";
@@ -161,7 +164,7 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 
 		outcome.auditEntries().forEach(entry -> entry.emit(eventService, run.municipalityId(), run.startedBy()));
 
-		jobService.complete(run.jobId(), SUMMARY.formatted(run.steps().size(), outcome.restowed()));
+		jobService.complete(run.jobId(), SUMMARY.formatted(run.steps().size(), outcome.describe()));
 	}
 
 	/**
@@ -176,13 +179,19 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 	 * {@link JobService#updateProgress}, which commits in a transaction of its own ({@code REQUIRES_NEW}) and so
 	 * survives this transaction's own eventual commit or rollback either way.
 	 *
-	 * @return how many errands were restowed, and the audit events to emit once this has committed - always the full
-	 *         affected set on success, since any failure partway through rolls the whole transaction back rather
-	 *         than leaving a partial result.
+	 * An errand whose rebuilt labels a guard refuses keeps the labels it had and is counted apart from those restowed.
+	 * A source label a MERGE step folded away that an errand still wears afterward - kept on it by a guard, or left on
+	 * an errand that has no access labels to rebuild its labels from - stops the run, as the steps were applied against
+	 * a tree in which the sources were gone.
+	 *
+	 * @return how many errands were restowed and how many kept their labels, and the audit events to emit once this has
+	 *         committed - always the full affected set on success, since any failure partway through rolls the whole
+	 *         transaction back rather than leaving a partial result.
 	 */
 	@Transactional
 	public RestructureOutcome executeRestructure(final LabelRestructureRun run) {
 		var processed = 0;
+		var unchanged = 0;
 		var total = run.errandIds().size();
 
 		try {
@@ -207,7 +216,9 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 				var chunk = ids.subList(start, Math.min(start + batchSize, ids.size()));
 
 				for (var errand : errandsRepository.findAllByIdForUpdate(chunk)) {
-					errandService.persistLabelRestructureMigration(errand, labelSubstitutions);
+					if (!errandService.persistLabelRestructureMigration(errand, labelSubstitutions, run.startedByAdAccount())) {
+						unchanged++;
+					}
 					processed++;
 
 					if (System.nanoTime() - lastReport >= progressIntervalNanos) {
@@ -229,12 +240,16 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 			}
 
 			// Only reached once every affected errand has already been restowed off whichever source labels this run
-			// merged away - no source label folded away by a MERGE step is referenced by an errand any more by now.
+			// merged away. An errand that kept its labels may still wear a source label, which must then not be deleted.
 			if (!mergedAwaySourceIds.isEmpty()) {
+				final var keptLabelIds = labelsStillWorn(mergedAwaySourceIds);
+				if (!keptLabelIds.isEmpty()) {
+					throw new IllegalStateException(MERGE_KEPT_SOURCES.formatted(keptLabelIds));
+				}
 				metadataService.deleteMergedLabels(mergedAwaySourceIds);
 			}
 
-			return new RestructureOutcome(processed, auditEntries);
+			return new RestructureOutcome(processed - unchanged, unchanged, auditEntries);
 		} catch (final RuntimeException e) {
 			jobService.updateProgress(run.jobId(), processed);
 			throw new LabelRestructureAbortedException(ROLLED_BACK_MESSAGE.formatted(processed, total, reasonFor(e)), e);
@@ -278,6 +293,17 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 		mergedAwaySourceIds.addAll(sourceIds);
 
 		auditEntries.add(new MergeAudit(sourceIds, targetId));
+	}
+
+	/**
+	 * The source labels an errand still wears once the errands have been restowed, sorted so the message naming them is
+	 * stable.
+	 */
+	private List<String> labelsStillWorn(final Set<String> sourceLabelIds) {
+		return sourceLabelIds.stream()
+			.filter(sourceId -> errandsRepository.existsByLabelsMetadataLabelIdIn(Set.of(sourceId)))
+			.sorted()
+			.toList();
 	}
 
 	private MetadataLabelEntity findOrThrow(final String namespace, final String municipalityId, final List<String> path, final String messageTemplate) {
@@ -330,10 +356,19 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 
 	/**
 	 * What {@link #executeRestructure} hands back to {@link #restructure} once committed: how many errands were
-	 * restowed, and the audit events each MOVE/MERGE step queued - collected during the transaction but only ever
-	 * emitted afterward, so neither ever announces a step that could still roll back.
+	 * restowed and how many kept the labels they had, and the audit events each MOVE/MERGE step queued - collected
+	 * during the transaction but only ever emitted afterward, so neither ever announces a step that could still roll
+	 * back.
 	 */
-	private record RestructureOutcome(int restowed, List<AuditEntry> auditEntries) {
+	private record RestructureOutcome(int restowed, int unchanged, List<AuditEntry> auditEntries) {
+
+		/**
+		 * The outcome in words, for the summary of the job. The errands that kept their labels are named only when there
+		 * are any.
+		 */
+		String describe() {
+			return unchanged == 0 ? ONLY_RESTOWED.formatted(restowed) : RESTOWED_AND_UNCHANGED.formatted(restowed, unchanged);
+		}
 	}
 
 	/**

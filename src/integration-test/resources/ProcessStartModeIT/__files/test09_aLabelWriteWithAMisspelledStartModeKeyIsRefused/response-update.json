@@ -1,0 +1,11 @@
+{
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"title": "Constraint Violation",
+	"status": 400,
+	"violations": [
+		{
+			"field": "updateLabels.labels[0].attributes",
+			"message": "the attribute 'processstartmode' is read only when spelled exactly 'processStartMode'"
+		}
+	]
+}

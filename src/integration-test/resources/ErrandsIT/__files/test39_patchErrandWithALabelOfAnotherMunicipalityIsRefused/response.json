@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Label with id 'b1a2c3d4-e5f6-7890-abcd-ef1234567890' does not exist in namespace 'NAMESPACE-1' for municipality '2281'"
+}

@@ -18,9 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
- * What these tests pin down is the bound the deleter exists to give: how much is handed over at a time, and that the
- * persistence context is emptied between chunks rather than only at the end. The chunk size is the class's own, so the
- * tests are written against how the chunks divide rather than against the number itself.
+ * Verifies the bound the deleter gives: how much is handed over at a time, and that the persistence context is emptied
+ * after every chunk, not only at the end.
  */
 @ExtendWith(MockitoExtension.class)
 class ChunkedDeleterTest {

@@ -10,6 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameter
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.JsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
@@ -51,9 +52,12 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		// which are the measure's rather than the errand's, and the artefact it follows from, which points back at the errand.
 		Map.entry(MeasureEntity.class, Set.of("attachments", "jsonParameters", "decisionEntity", "statementEntity")),
 		Map.entry(TimeMeasurementEntity.class, Set.of(ERRAND_ENTITY)),
-		// Collections the errand holds for the search index alone. They are read and written through resources of their
-		// own and have never been part of the snapshot, and the communications point back at the errand.
-		Map.entry(ErrandEntity.class, Set.of("decisions", "statements", "investigations", "communications")));
+
+		Map.entry(ErrandLabelEmbeddable.class, Set.of("metadataLabel")),
+		// Besides the status held over from before a change, the collections the errand holds for the search index alone.
+		// They are read and written through resources of their own and have never been part of the snapshot, and the
+		// communications point back at the errand.
+		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus", "decisions", "statements", "investigations", "communications")));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();

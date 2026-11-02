@@ -1,0 +1,16 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MERGE",
+			"path": [
+				"TILLSYN"
+			],
+			"sourcePaths": [
+				[
+					"ANSOKAN"
+				]
+			]
+		}
+	]
+}

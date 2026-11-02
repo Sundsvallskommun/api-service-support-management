@@ -18,9 +18,11 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.TestObjectsBuilder;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationRepository;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -37,6 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.unsorted;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
@@ -437,6 +440,24 @@ class NotificationServiceTest {
 		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace, municipalityId, ownerId, errandEntity, description, created);
 	}
 
+	@Test
+	void createNotificationForADraftIsAConflict() {
+		final var municipalityId = "2281";
+		final var namespace = "namespace";
+		final var errandId = randomUUID().toString();
+		final var notification = TestObjectsBuilder.createNotification(n -> n.withExpires(null));
+
+		when(accessControlServiceMock.getErrand(namespace, municipalityId, errandId, false, ProtectedResource.NOTIFICATION, RW))
+			.thenReturn(ErrandEntity.create().withId(errandId).withLifecycle(ErrandLifecycle.DRAFT));
+
+		assertThatThrownBy(() -> notificationService.createNotification(municipalityId, namespace, errandId, notification))
+			.isInstanceOf(Problem.class)
+			.hasMessage("Conflict: The errand '%s' is a draft. Make the errand active first".formatted(errandId));
+
+		verifyNoInteractions(notificationRepositoryMock, namespaceConfigRepositoryMock);
+	}
+
+	@Test
 	void deleteNotificationNotFound() {
 
 		// Arrange

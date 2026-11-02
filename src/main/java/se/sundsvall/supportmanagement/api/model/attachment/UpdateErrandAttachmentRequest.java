@@ -2,13 +2,15 @@ package se.sundsvall.supportmanagement.api.model.attachment;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.PastOrPresent;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 /**
- * What can be written about an attachment of the errand once it is there.
+ * What can be written about an attachment of the errand once it is there: what it is for, and when it came in.
  * <p>
- * Deliberately not {@link ErrandAttachment}, which describes the file and is what the operation answers with. Its name,
- * its type and its content are set when it is uploaded; what it is for is the one thing that is decided afterwards.
+ * The name, type and content of the attachment are set when it is uploaded, and the operation answers with
+ * {@link ErrandAttachment}.
  */
 @Schema(description = "Writable properties of an errand attachment")
 public class UpdateErrandAttachmentRequest {
@@ -16,6 +18,10 @@ public class UpdateErrandAttachmentRequest {
 	@Schema(description = "What the attachment is for, named by the id of an attachment purpose of the namespace. Left as it is when omitted")
 	@Valid
 	private ErrandAttachmentPurpose purpose;
+
+	@Schema(description = "When the attachment came in. Left as it is when omitted", examples = "2023-01-01T00:00:00Z")
+	@PastOrPresent
+	private OffsetDateTime received;
 
 	public static UpdateErrandAttachmentRequest create() {
 		return new UpdateErrandAttachmentRequest();
@@ -34,9 +40,22 @@ public class UpdateErrandAttachmentRequest {
 		return this;
 	}
 
+	public OffsetDateTime getReceived() {
+		return received;
+	}
+
+	public void setReceived(final OffsetDateTime received) {
+		this.received = received;
+	}
+
+	public UpdateErrandAttachmentRequest withReceived(final OffsetDateTime received) {
+		this.received = received;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(purpose);
+		return Objects.hash(purpose, received);
 	}
 
 	@Override
@@ -47,13 +66,14 @@ public class UpdateErrandAttachmentRequest {
 		if (!(obj instanceof final UpdateErrandAttachmentRequest other)) {
 			return false;
 		}
-		return Objects.equals(purpose, other.purpose);
+		return Objects.equals(purpose, other.purpose) && Objects.equals(received, other.received);
 	}
 
 	@Override
 	public String toString() {
 		return "UpdateErrandAttachmentRequest{" +
 			"purpose=" + purpose +
+			", received=" + received +
 			'}';
 	}
 }

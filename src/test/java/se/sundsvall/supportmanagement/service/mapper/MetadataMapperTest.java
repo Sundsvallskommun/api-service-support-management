@@ -719,8 +719,8 @@ class MetadataMapperTest {
 	// =================================================================
 
 	/**
-	 * The key on measure_type_groups is as case insensitive as the column collation, so two spellings of one group are a
-	 * duplicate key rather than two rows. Dropped here, where the request is turned into what the entity holds.
+	 * The key on measure_type_groups is as case insensitive as the column collation, so a group differing from an
+	 * earlier one only in case is dropped when the request is turned into what the entity holds.
 	 */
 	@Test
 	void toMeasureTypeEntityDropsGroupsDifferingOnlyInCase() {
@@ -943,8 +943,8 @@ class MetadataMapperTest {
 	}
 
 	/**
-	 * An outcome registered without saying whether it means a response is taken to mean one - the common case, and the
-	 * one that holds a statement completed with it to the time of the response.
+	 * An outcome registered without saying whether it means a response is taken to mean one, which holds a statement
+	 * completed with it to the time of the response.
 	 */
 	@Test
 	void toStatementOutcomeEntityMeansAResponseUnlessToldOtherwise() {

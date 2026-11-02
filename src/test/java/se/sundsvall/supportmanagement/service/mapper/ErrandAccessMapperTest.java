@@ -38,8 +38,7 @@ class ErrandAccessMapperTest {
 	}
 
 	/**
-	 * A field holding no keyed collection carries neither, so a client is never handed an empty key list to read
-	 * something into.
+	 * Verifies that a field holding no keyed collection carries neither {@code allKeys} nor {@code keys}.
 	 */
 	@Test
 	void toErrandAccessLeavesKeysOutOfAFieldHoldingNoKeyedCollection() {

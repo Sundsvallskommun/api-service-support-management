@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,12 @@ import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
 import se.sundsvall.supportmanagement.api.model.config.ReporterAccess;
 import se.sundsvall.supportmanagement.api.model.config.ResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.RoleFieldRestriction;
+import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccessGrantEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
@@ -33,13 +36,18 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueTyp
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NEW_SUBSCRIBER_CHANNELS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_CONSUMER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 
 class NamespaceConfigMapperTest {
 
 	private static final String BASE_URL = "https://draken.example.com";
+	private static final String REPORTER_PROFILE_ID = "123e4567-e89b-12d3-a456-426614174000";
 
 	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
@@ -54,7 +62,9 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(40)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue(String.valueOf(notifyReporter)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(shortCode),
-				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL)))
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_REPORTER_PROFILE_ID).withType(STRING).withValue(REPORTER_PROFILE_ID),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NEW_SUBSCRIBER_CHANNELS).withType(STRING).withValue("INTERNAL,EMAIL")))
 			.withCreated(created)
 			.withModified(modified);
 	}
@@ -76,7 +86,10 @@ class NamespaceConfigMapperTest {
 			.withShortCode(shortCode)
 			.withAccessControl(toggleValue)
 			.withNotifyReporter(!toggleValue)
-			.withBaseUrl(BASE_URL);
+			.withBaseUrl(BASE_URL)
+			.withReporterProfileId(REPORTER_PROFILE_ID)
+			// A channel named twice is stored once
+			.withNewSubscriberChannels(List.of(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL, NotificationChannelType.INTERNAL));
 
 		final var entity = mapper.toEntity(config, namespace, municipalityId);
 
@@ -92,6 +105,8 @@ class NamespaceConfigMapperTest {
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
 		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_BASE_URL)).isEqualTo(BASE_URL);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_REPORTER_PROFILE_ID)).isEqualTo(REPORTER_PROFILE_ID);
+		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_NEW_SUBSCRIBER_CHANNELS)).isEqualTo("INTERNAL,EMAIL");
 	}
 
 	@Test
@@ -121,7 +136,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
-		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL);
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL, PROPERTY_REPORTER_PROFILE_ID, PROPERTY_NEW_SUBSCRIBER_CHANNELS);
 	}
 
 	@Test
@@ -139,7 +154,7 @@ class NamespaceConfigMapperTest {
 
 		final var config = mapper.toNamespaceConfig(entity);
 
-		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
+		assertThat(config).hasNoNullFieldsOrPropertiesExcept("notificationTTLInDays", "processConsumer", "processTriggers", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 		assertThat(config.getNamespace()).isEqualTo(namespace);
 		assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 		assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -149,6 +164,22 @@ class NamespaceConfigMapperTest {
 		assertThat(config.isAccessControl()).isEqualTo(accessControl);
 		assertThat(config.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(config.getBaseUrl()).isEqualTo(BASE_URL);
+		assertThat(config.getReporterProfileId()).isEqualTo(REPORTER_PROFILE_ID);
+		assertThat(config.getNewSubscriberChannels()).containsExactly(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
+	}
+
+	@Test
+	void toNamespaceConfigPassesOverAChannelNoLongerKnown() {
+		final var entity = NamespaceConfigEntity.create()
+			.withValues(List.of(
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_ACCESS_CONTROL).withType(BOOLEAN).withValue("false"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_DISPLAY_NAME).withType(STRING).withValue("displayName"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue("40"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue("false"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue("shortCode"),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NEW_SUBSCRIBER_CHANNELS).withType(STRING).withValue("EMAIL, PIGEON")));
+
+		assertThat(mapper.toNamespaceConfig(entity).getNewSubscriberChannels()).containsExactly(NotificationChannelType.EMAIL);
 	}
 
 	@Test
@@ -192,6 +223,8 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue("shortCode")));
 
 		assertThat(mapper.toNamespaceConfig(entity).getBaseUrl()).isNull();
+		assertThat(mapper.toNamespaceConfig(entity).getReporterProfileId()).isNull();
+		assertThat(mapper.toNamespaceConfig(entity).getNewSubscriberChannels()).isNull();
 	}
 
 	@Test
@@ -210,7 +243,7 @@ class NamespaceConfigMapperTest {
 		final var configs = mapper.toNamespaceConfigs(entities);
 
 		assertThat(configs).hasSize(1).satisfiesExactly(config -> {
-			assertThat(config).hasNoNullFieldsOrPropertiesExcept("limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
+			assertThat(config).hasNoNullFieldsOrPropertiesExcept("processConsumer", "processTriggers", "limitedReadAccess", "reporterAccess", "roleFieldRestrictions", "teliaAceWorkItemBaseUrl");
 			assertThat(config.getNamespace()).isEqualTo(namespace);
 			assertThat(config.getMunicipalityId()).isEqualTo(municipalityId);
 			assertThat(config.getDisplayName()).isEqualTo(displayName);
@@ -379,6 +412,88 @@ class NamespaceConfigMapperTest {
 		assertThat(config.isRoleBasedMapping()).isFalse();
 	}
 
+	@Test
+	void toEntityWritesEachProcessTriggerAsItsOwnRow() {
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode")
+			.withProcessConsumer("pw-alkt")
+			.withProcessTriggers(List.of(EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL, EventSubType.DECISION));
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		assertThat(entity.getValues())
+			.filteredOn(value -> PROPERTY_PROCESS_CONSUMER.equals(value.getKey()) || PROPERTY_PROCESS_TRIGGER.equals(value.getKey()))
+			.extracting(NamespaceConfigValueEmbeddable::getKey, NamespaceConfigValueEmbeddable::getValue, NamespaceConfigValueEmbeddable::getType)
+			.containsExactly(
+				tuple(PROPERTY_PROCESS_CONSUMER, "pw-alkt", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "ERRAND", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "MESSAGE_CONVERSATION_EXTERNAL", STRING),
+				tuple(PROPERTY_PROCESS_TRIGGER, "DECISION", STRING));
+	}
+
+	@Test
+	void toEntityWithoutProcessConfigurationWritesNoProcessRows() {
+		final var config = NamespaceConfig.create()
+			.withDisplayName("displayName")
+			.withShortCode("shortCode");
+
+		final var entity = mapper.toEntity(config, "namespace", "municipalityId");
+
+		// The value column does not take null, so a namespace running no processes must leave the rows out entirely
+		assertThat(entity.getValues())
+			.extracting(NamespaceConfigValueEmbeddable::getKey)
+			.doesNotContain(PROPERTY_PROCESS_CONSUMER, PROPERTY_PROCESS_TRIGGER);
+	}
+
+	@Test
+	void toNamespaceConfigReadsEveryProcessTrigger() {
+		final var entity = withProcessRows(createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true),
+			processRow(PROPERTY_PROCESS_CONSUMER, "pw-alkt"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "MESSAGE_CONVERSATION_EXTERNAL"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "ERRAND"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "DECISION"));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessConsumer()).isEqualTo("pw-alkt");
+		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.DECISION, EventSubType.ERRAND, EventSubType.MESSAGE_CONVERSATION_EXTERNAL);
+	}
+
+	@Test
+	void toNamespaceConfigSkipsProcessTriggersThatNoLongerResolve() {
+		final var entity = withProcessRows(createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true),
+			processRow(PROPERTY_PROCESS_TRIGGER, "NO_SUCH_SUB_TYPE"),
+			processRow(PROPERTY_PROCESS_TRIGGER, "ERRAND"));
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessTriggers()).containsExactly(EventSubType.ERRAND);
+	}
+
+	@Test
+	void toNamespaceConfigWithoutProcessConfiguration() {
+		final var entity = createEntity("municipalityId", "namespace", "shortCode", "displayName", null, null, true, true);
+
+		final var config = mapper.toNamespaceConfig(entity);
+
+		assertThat(config.getProcessConsumer()).isNull();
+		assertThat(config.getProcessTriggers()).isNull();
+	}
+
+	/**
+	 * Adds process rows to a namespace built by {@link #createEntity}, by rebuilding its immutable rows.
+	 */
+	private static NamespaceConfigEntity withProcessRows(final NamespaceConfigEntity entity, final NamespaceConfigValueEmbeddable... rows) {
+		final var values = new ArrayList<>(entity.getValues());
+		values.addAll(List.of(rows));
+		return entity.withValues(values);
+	}
+
+	private static NamespaceConfigValueEmbeddable processRow(final String key, final String value) {
+		return NamespaceConfigValueEmbeddable.create().withKey(key).withValue(value).withType(STRING);
+	}
+
 	private static NamespaceConfigAccessGrantEmbeddable accessGrantRow(final String scope, final RoleAccessType type, final String value, final String accessLevel) {
 		return NamespaceConfigAccessGrantEmbeddable.create()
 			.withScope(scope)
@@ -388,9 +503,7 @@ class NamespaceConfigMapperTest {
 	}
 
 	/**
-	 * The access definition is what a client configuring access reads instead of an enum of the schema, so it has to
-	 * publish
-	 * every value that is actually accepted. A field or resource missing from it would be configurable but undiscoverable.
+	 * Verifies that the access definition publishes every field and every resource, in the order of their enums.
 	 */
 	@Test
 	void toAccessDefinitionPublishesEveryFieldAndResource() {

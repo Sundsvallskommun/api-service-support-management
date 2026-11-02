@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: pw-alkt
+  contact: {}
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "1.0"
+servers:
+- url: http://localhost:51612
+  description: Generated server url
+tags:
+- name: Process endpoints
+  description: Endpoints for driving the processes of the alcohol and tobacco domain
+paths:
+  /{municipalityId}/{namespace}/process/errand-events:
+    post:
+      tags:
+      - Process endpoints
+      description: "Take an errand event from Support Management and act on it: start\
+        \ a process for the errand, move a running one along, or delete it when the\
+        \ errand is gone. An event that needs no action is accepted as well."
+      operationId: handleErrandEvent
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality ID
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+        example: my.namespace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrandEvent"
+        required: true
+      responses:
+        "202":
+          description: "Accepted - handled, or deliberately ignored"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "422":
+          description: The process key matches no deployed process definition. Permanent
+            - do not deliver again
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /api-docs:
+    get:
+      tags:
+      - API
+      summary: OpenAPI
+      operationId: getApiDocs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+      x-wso2-mutual-ssl: Optional
+components:
+  schemas:
+    ErrandEvent:
+      type: object
+      description: "An event on an errand, published by Support Management"
+      properties:
+        eventId:
+          type: string
+          description: "Id of the event, unique per published event"
+          example: 3f2b91c4-7d5e-4a10-9c33-8e6b2f0a1d77
+          minLength: 1
+        eventType:
+          type: string
+          description: What happened to the errand
+          enum:
+          - CREATE
+          - UPDATE
+          - DELETE
+        eventSubType:
+          type: string
+          description: "What kind of change it was, for example ERRAND, MESSAGE, ATTACHMENT,\
+            \ DECISION or SIGNAL"
+          example: MESSAGE
+        errandId:
+          type: string
+          description: Support Management errand ID
+          example: f0882f1d-06bc-47fd-b017-1d8307f5ce95
+        processKey:
+          type: string
+          description: |
+            Key of the process that drives the errand, taken from its running instance when it has one and from the labels of
+            the errand otherwise. Absent when an errand is deleted before a key can be resolved.
+          example: alcohol-serving
+        startAllowed:
+          type: boolean
+          description: |
+            Whether this event may start a new process instance. Support Management works it out when the event is published,
+            since a process that already ran to its end is invisible to this service. Read as false when absent: a process
+            that starts when it should not spends the one process life the errand has, whereas a start that fails to happen
+            shows up in the user interface as a button waiting to be pressed.
+        signalName:
+          type: string
+          description: |
+            Name of the message to correlate, set only when eventSubType is SIGNAL. It is the name of the gate in the process
+            model that a case worker pressed, and the only field that points into the model.
+          example: review_completed
+        occurredAt:
+          type: string
+          format: date-time
+          description: When the event occurred
+          example: 2026-08-19T09:12:03.221+02:00
+      required:
+      - errandId
+      - eventId
+      - eventType
+      - startAllowed
+    Problem:
+      type: object
+      properties:
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        detail:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+    ConstraintViolationProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Violation"
+        title:
+          type: string
+        instance:
+          type: string
+          format: uri
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
+        detail:
+          type: string
+    ThrowableProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        causeAsProblem: {}
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+  securitySchemes: {}

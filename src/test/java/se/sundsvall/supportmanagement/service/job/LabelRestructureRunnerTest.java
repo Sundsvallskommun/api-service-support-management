@@ -27,6 +27,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -105,6 +106,7 @@ class LabelRestructureRunnerTest {
 		final var errand1 = errand("errand-1");
 		final var errand2 = errand("errand-2");
 		when(errandsRepositoryMock.findAllByIdForUpdate(List.of("errand-1", "errand-2"))).thenReturn(List.of(errand1, errand2));
+		when(errandServiceMock.persistLabelRestructureMigration(any(), any(), anyBoolean())).thenReturn(true);
 
 		final var steps = List.of(
 			addStep(List.of("CATEGORY", "NEW"), "New type", "TYPE"),
@@ -113,7 +115,7 @@ class LabelRestructureRunnerTest {
 			moveStep(List.of("CATEGORY", "OLD"), List.of("CATEGORY2")),
 			mergeStep(List.of("CATEGORY", "TARGET"), List.of(List.of("CATEGORY", "SOURCE"))));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2"), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2"), STARTED_BY, true));
 
 		verify(metadataServiceMock).addLabel(NAMESPACE, MUNICIPALITY_ID, List.of("CATEGORY", "NEW"), "New type", "TYPE");
 		verify(metadataServiceMock).renameLabel(NAMESPACE, MUNICIPALITY_ID, List.of("CATEGORY", "RENAME_ME"), "Renamed");
@@ -122,8 +124,9 @@ class LabelRestructureRunnerTest {
 		verify(metadataServiceMock).mergeInto(NAMESPACE, MUNICIPALITY_ID, "target-id", Set.of("source-id"));
 
 		final var substitutions = Map.of("source-id", "target-id");
-		verify(errandServiceMock).persistLabelRestructureMigration(errand1, substitutions);
-		verify(errandServiceMock).persistLabelRestructureMigration(errand2, substitutions);
+		verify(errandServiceMock).persistLabelRestructureMigration(errand1, substitutions, true);
+		verify(errandServiceMock).persistLabelRestructureMigration(errand2, substitutions, true);
+		verify(errandsRepositoryMock).existsByLabelsMetadataLabelIdIn(Set.of("source-id"));
 
 		// Deleted only after the restow above, not alongside mergeInto - the restow still needs to read the source's
 		// own tree position.
@@ -144,7 +147,7 @@ class LabelRestructureRunnerTest {
 		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 		final var steps = List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY"));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, emptyList(), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, emptyList(), STARTED_BY, true));
 
 		verify(metadataServiceMock).addLabel(NAMESPACE, MUNICIPALITY_ID, List.of("CATEGORY"), "Category", "CATEGORY");
 		verify(errandsRepositoryMock, never()).findAllByIdForUpdate(any());
@@ -162,7 +165,7 @@ class LabelRestructureRunnerTest {
 			addStep(List.of("CATEGORY"), "Category", "CATEGORY"),
 			renameStep(List.of("CATEGORY", "RENAME_ME"), "Renamed"));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1"), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1"), STARTED_BY, true));
 
 		verify(metadataServiceMock).addLabel(NAMESPACE, MUNICIPALITY_ID, List.of("CATEGORY"), "Category", "CATEGORY");
 		verify(errandsRepositoryMock, never()).findAllByIdForUpdate(any());
@@ -187,9 +190,9 @@ class LabelRestructureRunnerTest {
 
 		final var steps = List.of(moveStep(List.of("CATEGORY", "OLD"), List.of("CATEGORY2")));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2"), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2"), STARTED_BY, true));
 
-		verify(errandServiceMock, times(2)).persistLabelRestructureMigration(any(), any());
+		verify(errandServiceMock, times(2)).persistLabelRestructureMigration(any(), any(), anyBoolean());
 		// Reported twice with the same count: once at the chunk boundary before the stop check fires, and again from
 		// the catch block that reports the exact point of failure before wrapping and rethrowing.
 		verify(jobServiceMock, times(2)).updateProgress(JOB_ID, 2);
@@ -211,10 +214,11 @@ class LabelRestructureRunnerTest {
 		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
 		when(errandsRepositoryMock.findAllByIdForUpdate(List.of("errand-1", "errand-2"))).thenReturn(List.of(errand("errand-1"), errand("errand-2")));
 		when(errandsRepositoryMock.findAllByIdForUpdate(List.of("errand-3"))).thenReturn(List.of(errand("errand-3")));
+		when(errandServiceMock.persistLabelRestructureMigration(any(), any(), anyBoolean())).thenReturn(true);
 
 		final var steps = List.of(moveStep(List.of("CATEGORY", "OLD"), List.of("CATEGORY2")));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2", "errand-3"), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2", "errand-3"), STARTED_BY, true));
 
 		verify(errandsRepositoryMock).findAllByIdForUpdate(List.of("errand-1", "errand-2"));
 		verify(errandsRepositoryMock).findAllByIdForUpdate(List.of("errand-3"));
@@ -232,7 +236,7 @@ class LabelRestructureRunnerTest {
 
 		final var steps = List.of(moveStep(List.of("CATEGORY", "OLD"), List.of("CATEGORY2")));
 
-		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1"), STARTED_BY));
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1"), STARTED_BY, true));
 
 		verify(jobServiceMock, never()).complete(any(), any());
 		verifyNoInteractions(eventServiceMock);
@@ -240,6 +244,54 @@ class LabelRestructureRunnerTest {
 		final var messageCaptor = ArgumentCaptor.forClass(String.class);
 		verify(jobServiceMock).fail(eq(JOB_ID), messageCaptor.capture());
 		assertThat(messageCaptor.getValue()).contains("could not acquire locks - one or more errands are being edited; retry when the namespace is idle");
+	}
+
+	@Test
+	@DisplayName("Verification that an errand whose rebuilt labels a guard refuses is counted apart from those restowed, and that the run is told whether it was started by an ad account")
+	void run_guardRefusesAnErrand_countsItApartFromThoseRestowed() {
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY2")).thenReturn(Optional.of(label("cat2-id")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/OLD")).thenReturn(Optional.of(label("old-id")));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
+		final var errand1 = errand("errand-1");
+		final var errand2 = errand("errand-2");
+		when(errandsRepositoryMock.findAllByIdForUpdate(List.of("errand-1", "errand-2"))).thenReturn(List.of(errand1, errand2));
+		when(errandServiceMock.persistLabelRestructureMigration(errand1, Map.of(), false)).thenReturn(true);
+		when(errandServiceMock.persistLabelRestructureMigration(errand2, Map.of(), false)).thenReturn(false);
+
+		final var steps = List.of(moveStep(List.of("CATEGORY", "OLD"), List.of("CATEGORY2")));
+
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1", "errand-2"), STARTED_BY, false));
+
+		verify(jobServiceMock).updateProgress(JOB_ID, 2);
+		verify(jobServiceMock).complete(JOB_ID, "1 step(s) applied, 1 errand(s) restowed, 1 kept their labels");
+		verify(jobServiceMock, never()).fail(any(), any());
+	}
+
+	@Test
+	@DisplayName("Verification that a MERGE step whose source an errand still wears after the restow - kept on it by a guard - rolls the run back without deleting the source, completing or auditing it")
+	void run_mergeSourceStillWornAfterRestow_failsWithoutDeletingTheSource() {
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/TARGET")).thenReturn(Optional.of(label("target-id")));
+		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityIdAndResourcePath(NAMESPACE, MUNICIPALITY_ID, "CATEGORY/SOURCE")).thenReturn(Optional.of(label("source-id")));
+		when(jobServiceMock.statusOf(JOB_ID)).thenReturn(Optional.of(RUNNING));
+		final var errand1 = errand("errand-1");
+		when(errandsRepositoryMock.findAllByIdForUpdate(List.of("errand-1"))).thenReturn(List.of(errand1));
+		when(errandServiceMock.persistLabelRestructureMigration(errand1, Map.of("source-id", "target-id"), true)).thenReturn(false);
+		when(errandsRepositoryMock.existsByLabelsMetadataLabelIdIn(Set.of("source-id"))).thenReturn(true);
+
+		final var steps = List.of(mergeStep(List.of("CATEGORY", "TARGET"), List.of(List.of("CATEGORY", "SOURCE"))));
+
+		runner.run(new LabelRestructureRun(JOB_ID, NAMESPACE, MUNICIPALITY_ID, steps, List.of("errand-1"), STARTED_BY, true));
+
+		verify(metadataServiceMock).mergeInto(NAMESPACE, MUNICIPALITY_ID, "target-id", Set.of("source-id"));
+		verify(metadataServiceMock, never()).deleteMergedLabels(any());
+		verify(jobServiceMock, never()).complete(any(), any());
+		verifyNoInteractions(eventServiceMock);
+
+		final var messageCaptor = ArgumentCaptor.forClass(String.class);
+		verify(jobServiceMock).fail(eq(JOB_ID), messageCaptor.capture());
+		assertThat(messageCaptor.getValue())
+			.contains("Reached 1 of 1 errand(s) before")
+			.contains("labels [source-id] were merged away but errands still wear them");
 	}
 
 	private void metadataServiceThrowsOnRename(final String message) {

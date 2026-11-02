@@ -37,8 +37,8 @@ public class ErrandPhaseService {
 	/**
 	 * Moves the errand into sent in phase, and holds sent in status against the phase it ends up in.
 	 * <p>
-	 * The two are one step and in that order: which statuses a phase allows is a property of the phase, so a status can
-	 * only be judged once the move has been made. Either may be left out - a request touching neither changes nothing.
+	 * The move is made first and the status is then checked against the statuses the resulting phase allows. Either may
+	 * be left out - a request touching neither changes nothing.
 	 *
 	 * @param errandEntity   errand to move
 	 * @param newPhaseId     phase to move it into, or null to leave it where it is

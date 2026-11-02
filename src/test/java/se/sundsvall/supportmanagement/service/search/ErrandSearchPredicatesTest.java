@@ -20,9 +20,13 @@ import org.hibernate.search.engine.search.predicate.dsl.TermsPredicateFieldStep;
 import org.hibernate.search.engine.search.predicate.dsl.TermsPredicateOptionsStep;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,6 +139,42 @@ class ErrandSearchPredicatesTest {
 		verify(matchFieldStepMock).field(ErrandSearchPredicates.NAMESPACE_FIELD);
 		verify(matchFieldMoreStepMock).matching(MUNICIPALITY_ID);
 		verify(matchFieldMoreStepMock).matching(NAMESPACE);
+	}
+
+	/**
+	 * A query that does not name the life cycle, a query that cannot be read included, finds no drafts.
+	 */
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = {
+		"vatten status:new", "title:lifecycle", "lifecycles:draft", "title:(unbalanced"
+	})
+	void aQueryNotNamingTheLifecycleLeavesTheDraftsOut(final String query) {
+		when(factoryMock.match()).thenReturn(matchFieldStepMock);
+		when(matchFieldStepMock.field(anyString())).thenReturn(matchFieldMoreStepMock);
+		when(matchFieldMoreStepMock.matching(any())).thenReturn(matchOptionsMock);
+		when(factoryMock.not(any(PredicateFinalStep.class))).thenReturn(notMock);
+		when(notMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().lifecycle(factoryMock, query)).isSameAs(predicateMock);
+
+		verify(matchFieldStepMock).field(ErrandSearchPredicates.LIFECYCLE_FIELD);
+		verify(matchFieldMoreStepMock).matching(ErrandLifecycle.DRAFT);
+		verify(factoryMock).not(matchOptionsMock);
+		verify(factoryMock, never()).matchAll();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"lifecycle:draft", "vatten -lifecycle:active", "status:new OR lifecycle:DRAFT", "_exists_:lifecycle"
+	})
+	void aQueryNamingTheLifecycleDecidesForItself(final String query) {
+		when(factoryMock.matchAll()).thenReturn(matchAllMock);
+		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().lifecycle(factoryMock, query)).isSameAs(predicateMock);
+
+		verify(factoryMock, never()).not(any(PredicateFinalStep.class));
 	}
 
 	@Test

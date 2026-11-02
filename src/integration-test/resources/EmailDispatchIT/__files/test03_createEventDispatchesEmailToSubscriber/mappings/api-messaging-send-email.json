@@ -9,7 +9,7 @@
 						"chef@example.com"
 					],
 					"subject": "Uppdatering i Namespace 1",
-					"message": "Uppdatering i Namespace 1\n\nÄrende NS1-2024-000001:\n    Länk: https://draken.test.local/2281/NAMESPACE-1/errands/NS1-2024-000001\n    - Nytt arende",
+					"message": "Uppdatering i Namespace 1\n\nÄrende NS1-2024-000001:\n    Länk: https://draken.test.local/NS1/arende/NS1-2024-000001\n    - Nytt arende",
 					"sender": {
 						"name": "Sundsvalls kommun",
 						"address": "no-reply@test.local"

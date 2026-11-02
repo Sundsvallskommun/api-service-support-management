@@ -9,6 +9,7 @@ import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
@@ -28,6 +29,7 @@ public class ErrandSearchPredicates {
 	static final String TIME_ZONE = "Europe/Stockholm";
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
+	static final String LIFECYCLE_FIELD = ErrandIndex.LIFECYCLE;
 
 	/**
 	 * What the client asked for. A blank query matches everything, so that a client can page through a namespace sorted
@@ -119,6 +121,25 @@ public class ErrandSearchPredicates {
 			f.match().field(MUNICIPALITY_ID_FIELD).matching(municipalityId),
 			f.match().field(NAMESPACE_FIELD).matching(namespace))
 			.toPredicate();
+	}
+
+	/**
+	 * Leaves the drafts out of a search whose query does not name the life cycle, as the listing does. A query naming it
+	 * decides for itself which errands it finds, while a query that cannot be read names nothing.
+	 * <p>
+	 * Drafts are left out rather than the active errands kept, so that an errand indexed before the index held a life
+	 * cycle is still found.
+	 *
+	 * @param f     the factory
+	 * @param query the query string
+	 */
+	public SearchPredicate lifecycle(final SearchPredicateFactory f, final String query) {
+		final var namesLifecycle = QueryScanner.scan(query).fields().stream()
+			.anyMatch(name -> LIFECYCLE_FIELD.equals(name) || name.startsWith(LIFECYCLE_FIELD + "."));
+
+		return namesLifecycle
+			? f.matchAll().toPredicate()
+			: f.not(f.match().field(LIFECYCLE_FIELD).matching(ErrandLifecycle.DRAFT)).toPredicate();
 	}
 
 	/**

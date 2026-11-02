@@ -1,0 +1,22 @@
+{
+	"parameters": [
+		{
+			"key": "ärende",
+			"values": [
+				"b"
+			]
+		},
+		{
+			"key": " zon ",
+			"values": [
+				"a"
+			]
+		},
+		{
+			"key": "Zon",
+			"values": [
+				"c"
+			]
+		}
+	]
+}

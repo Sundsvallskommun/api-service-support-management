@@ -12,8 +12,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import static jakarta.persistence.FetchType.LAZY;
 
 /**
- * A JSON parameter of an investigation. See {@link AbstractArtefactJsonParameterEntity} for why it is not one of the
- * errand.
+ * A JSON parameter of an investigation, held apart from the JSON parameters of the errand. See
+ * {@link AbstractArtefactJsonParameterEntity} for how it is held.
  */
 @Entity
 @Table(name = "investigation_json_parameter",

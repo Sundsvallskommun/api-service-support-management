@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachment;
 import se.sundsvall.supportmanagement.api.model.attachment.ErrandAttachmentPurpose;
+import se.sundsvall.supportmanagement.api.model.attachment.UpdateErrandAttachmentRequest;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
@@ -32,8 +33,8 @@ public final class ErrandAttachmentMapper {
 
 	private ErrandAttachmentMapper() {}
 
-	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final MultipartFile errandAttachment, final String channel) {
-		if (anyNull(errandEntity, errandAttachment)) {
+	public static AttachmentEntity toAttachmentEntity(final ErrandEntity errandEntity, final MultipartFile file, final ErrandAttachment errandAttachment) {
+		if (anyNull(errandEntity, file)) {
 			return null;
 		}
 
@@ -42,11 +43,12 @@ public final class ErrandAttachmentMapper {
 				.withErrandEntity(errandEntity)
 				.withNamespace(errandEntity.getNamespace())
 				.withMunicipalityId(errandEntity.getMunicipalityId())
-				.withFileSize(Math.toIntExact(errandAttachment.getSize()))
-				.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(errandAttachment.getInputStream(), errandAttachment.getSize())))
-				.withFileName(errandAttachment.getOriginalFilename())
-				.withMimeType(detectMimeTypeFromStream(errandAttachment.getOriginalFilename(), errandAttachment.getInputStream()))
-				.withChannel(ofNullable(channel).orElse(WEB_UI));
+				.withFileSize(Math.toIntExact(file.getSize()))
+				.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(file.getInputStream(), file.getSize())))
+				.withFileName(file.getOriginalFilename())
+				.withMimeType(detectMimeTypeFromStream(file.getOriginalFilename(), file.getInputStream()))
+				.withChannel(ofNullable(errandAttachment).map(ErrandAttachment::getChannel).orElse(WEB_UI))
+				.withReceived(ofNullable(errandAttachment).map(ErrandAttachment::getReceived).orElse(null));
 		} catch (final IOException e) {
 			LOGGER.warn("Exception when reading file", e);
 			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
@@ -83,11 +85,28 @@ public final class ErrandAttachmentMapper {
 			.toList();
 	}
 
+	/**
+	 * Writes the changes of the request to the attachment. What the request leaves out is left as it is.
+	 *
+	 * @param  entity  the attachment to change.
+	 * @param  request the changes.
+	 * @param  purpose the purpose the request names, already looked up, or null to leave the stored one.
+	 * @return         the changed attachment.
+	 */
+	public static AttachmentEntity updateAttachmentEntity(final AttachmentEntity entity, final UpdateErrandAttachmentRequest request, final AttachmentPurposeEntity purpose) {
+		ofNullable(purpose).ifPresent(entity::setPurpose);
+		ofNullable(request.getReceived()).ifPresent(entity::setReceived);
+		return entity;
+	}
+
 	public static ErrandAttachment toErrandAttachment(final AttachmentEntity attachmentEntity) {
 		return Optional.ofNullable(attachmentEntity)
 			.map(e -> ErrandAttachment.create()
 				.withFileName(e.getFileName())
 				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withReceived(e.getReceived())
+				.withSequenceNumber(e.getSequenceNumber())
 				.withId(e.getId())
 				.withMimeType(e.getMimeType())
 				.withFileSize(e.getFileSize())

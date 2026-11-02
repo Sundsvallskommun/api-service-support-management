@@ -26,11 +26,8 @@ public final class ErrandMeasureMapper {
 	private ErrandMeasureMapper() {}
 
 	/**
-	 * The namespace and the municipality are taken from the errand rather than passed in, since a measure of an errand
-	 * cannot belong anywhere else and a second source for them is a second thing that can disagree.
-	 * <p>
-	 * A measure with no status given is ACTIVE. The column has been not null since the shared shape arrived, and
-	 * demanding the field would have broken every client creating a measure the way they always have.
+	 * Maps a measure to a new entity of the errand, taking the namespace and the municipality from the errand. A measure
+	 * with no status given is ACTIVE.
 	 */
 	public static MeasureEntity toMeasureEntity(final Measure measure, final ErrandEntity errandEntity) {
 		return MeasureEntity.create()
@@ -58,8 +55,7 @@ public final class ErrandMeasureMapper {
 
 	/**
 	 * Applies the fields the patch carries. The provenance - which decision or statement the measure follows from - is
-	 * not among them: it names another artefact of the errand, and is written on the measures resource where that
-	 * artefact is looked up through the errand and cannot be one belonging to a different errand.
+	 * not among them; it is written through the measures resource.
 	 */
 	public static MeasureEntity updateMeasureEntity(final MeasureEntity entity, final Measure measure) {
 		ofNullable(measure.getResponsibleUser()).ifPresent(entity::setResponsibleUser);
@@ -83,17 +79,12 @@ public final class ErrandMeasureMapper {
 	}
 
 	/**
-	 * Merges sent in measures into the errand, matching on the id each measure carries and updating those in place.
+	 * Merges sent in measures into the errand, matching on the id each measure carries and updating those in place, so
+	 * that an existing measure keeps its id and its created timestamp.
 	 * <p>
-	 * Replacing the list wholesale would work, but the measures of an errand are addressable in their own right - a
-	 * created measure hands out a Location of its id, and clients hold on to it. Since measures are part of the errand
-	 * payload, the ordinary read, change a field, patch it back round trip carries them along, and a wholesale replace
-	 * would delete and reinsert every one of them under a fresh id, breaking every id previously handed out and resetting
-	 * created. Matching on the id keeps them stable, the same way parameters are merged on their key.
-	 * <p>
-	 * A measure without an id is new. So is one carrying an id this errand does not hold, which is what keeps a measure id
-	 * belonging to another errand from ever reaching across to it. Anything the request leaves out is removed, together
-	 * with the JSON parameters it holds, which is what makes a patch able to delete a measure.
+	 * A measure without an id is new. So is one carrying an id this errand does not hold, so a measure id belonging to
+	 * another errand never reaches across to it. Anything the request leaves out is removed, together with the JSON
+	 * parameters it holds.
 	 *
 	 * @param entity   errand to merge into
 	 * @param measures measures replacing the existing ones
@@ -128,11 +119,8 @@ public final class ErrandMeasureMapper {
 	}
 
 	/**
-	 * The measure as the errand carries it.
-	 * <p>
-	 * The attachments are left out. They are read through the measure resource, under the access the measure grants, like
-	 * the attachments of the other handling artefacts - and leaving them out spares a listing of errands a query per
-	 * measure for a collection it would not show.
+	 * The measure as the errand carries it, without its attachments. They are read through the measure resource, under
+	 * the access the measure grants.
 	 */
 	public static Measure toMeasureWithoutAttachments(final MeasureEntity entity) {
 		return Measure.create()

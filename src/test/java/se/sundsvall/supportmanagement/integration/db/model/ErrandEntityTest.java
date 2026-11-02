@@ -8,12 +8,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.MariaDbBlob;
+import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSettersExcluding;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,12 +31,19 @@ class ErrandEntityTest {
 	void testBean() {
 		assertThat(ErrandEntity.class, allOf(
 			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
+			hasValidGettersAndSettersExcluding("draft"),
 			// The collections the errand holds for the search index alone are kept out of equals, hashCode and toString,
 			// so that comparing or logging an errand never loads them
-			hasValidBeanHashCodeExcluding("version", "decisions", "statements", "investigations", "communications"),
-			hasValidBeanEqualsExcluding("version", "decisions", "statements", "investigations", "communications"),
-			hasValidBeanToStringExcluding("decisions", "statements", "investigations", "communications")));
+			hasValidBeanHashCodeExcluding("version", "draft", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanEqualsExcluding("version", "draft", "decisions", "statements", "investigations", "communications"),
+			hasValidBeanToStringExcluding("draft", "decisions", "statements", "investigations", "communications")));
+	}
+
+	@Test
+	void isDraftOnlyForTheDraftLifecycle() {
+		assertThat(ErrandEntity.create().withLifecycle(ErrandLifecycle.DRAFT).isDraft()).isTrue();
+		assertThat(ErrandEntity.create().withLifecycle(ErrandLifecycle.ACTIVE).isDraft()).isFalse();
+		assertThat(ErrandEntity.create().isDraft()).isFalse();
 	}
 
 	@Test
@@ -94,6 +102,7 @@ class ErrandEntityTest {
 			.withReporterUserId(reporterUserId)
 			.withResolution(resolution)
 			.withStatus(status)
+			.withLifecycle(ErrandLifecycle.DRAFT)
 			.withTitle(title)
 			.withType(type)
 			.withParameters(parameters)
@@ -135,6 +144,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getReporterUserId()).isEqualTo(reporterUserId);
 		assertThat(errandEntity.getResolution()).isEqualTo(resolution);
 		assertThat(errandEntity.getStatus()).isEqualTo(status);
+		assertThat(errandEntity.getLifecycle()).isEqualTo(ErrandLifecycle.DRAFT);
 		assertThat(errandEntity.getTitle()).isEqualTo(title);
 		assertThat(errandEntity.getType()).isEqualTo(type);
 		assertThat(errandEntity.getParameters()).isEqualTo(parameters);

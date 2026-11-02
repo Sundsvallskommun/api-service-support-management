@@ -5,11 +5,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
+import se.sundsvall.supportmanagement.api.validation.ValidNotificationChannel;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 
@@ -37,7 +39,9 @@ public class Subscriber {
 
 	@Valid
 	@Schema(description = "Channels the subscriber wants to receive notifications on. If empty, defaults to INTERNAL.")
-	private List<NotificationChannel> channels;
+	private List<@ValidNotificationChannel(groups = {
+		Default.class, OnCreate.class, OnUpdate.class
+	}) NotificationChannel> channels;
 
 	@Valid
 	@Schema(description = "Event filters that restrict which eventlog events trigger notifications. If empty, all events match.")

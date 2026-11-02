@@ -6,14 +6,9 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.config.MessageExchangeIntegration;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
@@ -28,14 +23,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@AutoConfigureWebTestClient
-@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
-@ActiveProfiles("junit")
+@ResourceTest
 class MessageExchangeIntegrationConfigResourceTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/messageexchange-integration-config";
@@ -47,13 +39,13 @@ class MessageExchangeIntegrationConfigResourceTest {
 	@Autowired
 	private WebTestClient webTestClient;
 
-	@MockitoBean
+	@Autowired
 	private MessageExchangeIntegrationConfigService serviceMock;
 
-	@MockitoBean
+	@Autowired
 	private AccessControlService accessControlServiceMock;
 
-	@MockitoBean
+	@Autowired
 	private MetadataService metadataServiceMock;
 
 	@BeforeEach

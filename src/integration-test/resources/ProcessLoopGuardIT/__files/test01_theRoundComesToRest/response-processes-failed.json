@@ -1,0 +1,25 @@
+{
+	"startable": {
+		"status": "AVAILABLE",
+		"processKeys": [
+			"alkt-ansokan"
+		]
+	},
+	"processes": [
+		{
+			"id": "${json-unit.any-string}",
+			"processService": "pw-alkt",
+			"processKey": "alkt-ansokan",
+			"processInstanceId": "pi-loop-guard",
+			"processStatus": "FAILED",
+			"ended": "${json-unit.any-string}",
+			"error": {
+				"code": "INCIDENT",
+				"message": "The work step gave up"
+			},
+			"awaitingSignals": [],
+			"created": "${json-unit.any-string}",
+			"modified": "${json-unit.any-string}"
+		}
+	]
+}

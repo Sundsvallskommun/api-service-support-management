@@ -5,9 +5,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import static java.util.Optional.ofNullable;
+import static java.util.UUID.randomUUID;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.NOTIFY_HEADER;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.REQUEST_GROUP_ID_HEADER;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
@@ -29,7 +32,11 @@ public class RequestHeaderFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain filterChain)
 		throws ServletException, IOException {
 
-		setRequestGroupId(request.getHeader(REQUEST_GROUP_ID_HEADER));
+		// A request that names no group is a group of its own, so that the events it logs still reach the subscribers as
+		// one notification
+		setRequestGroupId(ofNullable(request.getHeader(REQUEST_GROUP_ID_HEADER))
+			.filter(StringUtils::isNotBlank)
+			.orElseGet(() -> randomUUID().toString()));
 		setNotify(request.getHeader(NOTIFY_HEADER));
 		try {
 			filterChain.doFilter(request, response);

@@ -24,6 +24,7 @@ public final class ErrandIndex {
 	public static final String TITLE = "title";
 	public static final String TITLE_SORT = "title_sort";
 	public static final String STATUS = "status";
+	public static final String LIFECYCLE = "lifecycle";
 	public static final String RESOLUTION = "resolution";
 	public static final String CHANNEL = "channel";
 	public static final String CREATED = "created";

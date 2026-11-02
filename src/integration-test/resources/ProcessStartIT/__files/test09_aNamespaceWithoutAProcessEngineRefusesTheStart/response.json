@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "The namespace 'NAMESPACE-1' in municipality '2281' has no process consumer configured and runs no process"
+}

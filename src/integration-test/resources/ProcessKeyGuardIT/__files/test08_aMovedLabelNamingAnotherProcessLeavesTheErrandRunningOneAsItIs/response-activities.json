@@ -1,0 +1,42 @@
+{
+	"content": [
+		{
+			"id": "${json-unit.any-string}",
+			"activityType": "CONFIG",
+			"severity": "ERROR",
+			"message": "The labels of errand 'aa000000-0000-0000-0000-0000000000a1' resolve to the process key 'alkt-ansokan', and the change would leave them resolving to the process key 'alkt-tillsyn'. The errand runs the process 'alkt-ansokan', or has a start of it on its way, and an errand runs the one process for the whole of its life - labels naming another would leave the process it does run with nothing to wake it. Leave the label carrying the process key as it is, and handle the other process on an errand of its own. The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.",
+			"errorCode": "LABEL_MOVES_PROCESS_KEY",
+			"occurredAt": "${json-unit.any-string}",
+			"created": "${json-unit.any-string}"
+		},
+		{
+			"id": "epa-it-task",
+			"processInstanceId": "pi-it-live",
+			"activityType": "TASK",
+			"activityId": "granska-ansokan",
+			"activityName": "Granska ansokan",
+			"severity": "INFO",
+			"occurredAt": "2026-01-01T11:00:00+01:00",
+			"created": "2026-01-01T11:00:00+01:00"
+		},
+		{
+			"id": "epa-it-config",
+			"activityType": "CONFIG",
+			"severity": "ERROR",
+			"message": "Two labels resolve to different process keys",
+			"errorCode": "AMBIGUOUS_PROCESS_KEY",
+			"occurredAt": "2026-01-01T10:30:00+01:00",
+			"created": "2026-01-01T10:30:00+01:00"
+		}
+	],
+	"pageable": "${json-unit.ignore}",
+	"totalPages": 1,
+	"last": true,
+	"totalElements": 3,
+	"size": 50,
+	"number": 0,
+	"sort": "${json-unit.ignore}",
+	"first": true,
+	"numberOfElements": 3,
+	"empty": false
+}

@@ -21,6 +21,11 @@
 			"keyed": false
 		},
 		{
+			"field": "LIFECYCLE",
+			"property": "lifecycle",
+			"keyed": false
+		},
+		{
 			"field": "RESOLUTION",
 			"property": "resolution",
 			"keyed": false
@@ -131,6 +136,11 @@
 			"keyed": false
 		},
 		{
+			"field": "PROCESS",
+			"property": "process",
+			"keyed": false
+		},
+		{
 			"field": "VERSION",
 			"property": "version",
 			"keyed": false
@@ -238,6 +248,16 @@
 			"errandScoped": true
 		},
 		{
+			"resource": "PROCESS",
+			"path": "errand/process",
+			"errandScoped": true
+		},
+		{
+			"resource": "PROCESS_ACTIVITY",
+			"path": "errand/process-activity",
+			"errandScoped": true
+		},
+		{
 			"resource": "REVISION",
 			"path": "errand/revision",
 			"errandScoped": true
@@ -330,6 +350,11 @@
 		{
 			"resource": "SUBSCRIPTION",
 			"path": "subscriber/subscription",
+			"errandScoped": false
+		},
+		{
+			"resource": "SUBSCRIPTION_PROFILE",
+			"path": "subscription-profile",
 			"errandScoped": false
 		},
 		{

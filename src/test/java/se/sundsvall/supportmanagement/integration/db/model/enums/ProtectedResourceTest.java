@@ -9,8 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ProtectedResourceTest {
 
 	/**
-	 * The path is what an access pattern is matched against, and what the API reports in place of the constant. Two
-	 * resources sharing one would be granted together and reported as each other.
+	 * Every resource has a path of its own. The path is what an access pattern is matched against, and what the API
+	 * reports in place of the constant.
 	 */
 	@Test
 	void everyResourceCarriesADistinctPath() {

@@ -18,10 +18,12 @@ import org.hibernate.search.mapper.orm.mapping.SearchMapping;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexerFilteringTypeStep;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexerReindexParameterStep;
+import org.hibernate.search.mapper.orm.schema.management.SearchSchemaManager;
 import org.hibernate.search.mapper.orm.scope.SearchScope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -71,6 +74,9 @@ class ErrandReindexServiceTest {
 
 	@Mock
 	private SearchScope<ErrandEntity> searchScopeMock;
+
+	@Mock
+	private SearchSchemaManager schemaManagerMock;
 
 	@Mock
 	private MassIndexer massIndexerMock;
@@ -295,10 +301,15 @@ class ErrandReindexServiceTest {
 			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
 			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
 			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
+			when(searchScopeMock.schemaManager()).thenReturn(schemaManagerMock);
 
 			service(true).reindexEveryNamespace();
 		}
 
+		// The index is created where it is missing before any namespace is emptied into it
+		final InOrder order = inOrder(schemaManagerMock, restClientMock);
+		order.verify(schemaManagerMock).createIfMissing();
+		order.verify(restClientMock, times(2)).performRequest(any());
 		// A namespace is emptied and written again before the next one is taken, so only one is searched with a hole in it
 		verify(restClientMock, times(2)).performRequest(any());
 		verify(massIndexerMock, times(2)).startAndWait();
@@ -330,6 +341,7 @@ class ErrandReindexServiceTest {
 			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
 			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
 			when(searchScopeMock.massIndexer()).thenReturn(massIndexerMock);
+			when(searchScopeMock.schemaManager()).thenReturn(schemaManagerMock);
 
 			final var service = service(true);
 			final var e = assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
@@ -348,9 +360,37 @@ class ErrandReindexServiceTest {
 		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(NamespaceConfigEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID)));
 		when(openSearchMock.errandWriteIndex()).thenThrow(new IllegalStateException("no search mapping"));
 
-		final var service = service(true);
-		assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
+		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
+			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
+			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
+			when(searchScopeMock.schemaManager()).thenReturn(schemaManagerMock);
 
+			final var service = service(true);
+			assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
+		}
+
+		verify(lockMock).unlock();
+	}
+
+	/**
+	 * Where the index can be neither found nor created, no namespace can be written into it either, so the night fails as
+	 * a whole and the lock is released for the next try.
+	 */
+	@Test
+	void theNightlyReindexReleasesTheLockWhenTheIndexCannotBeCreated() {
+		when(lockProviderMock.lock(any())).thenReturn(Optional.of(lockMock));
+		doThrow(new IllegalStateException("cluster gone")).when(schemaManagerMock).createIfMissing();
+
+		try (final MockedStatic<Search> search = mockStatic(Search.class)) {
+			search.when(() -> Search.mapping(entityManagerFactoryMock)).thenReturn(searchMappingMock);
+			when(searchMappingMock.scope(ErrandEntity.class)).thenAnswer(_ -> searchScopeMock);
+			when(searchScopeMock.schemaManager()).thenReturn(schemaManagerMock);
+
+			final var service = service(true);
+			assertThrows(IllegalStateException.class, service::reindexEveryNamespace);
+		}
+
+		verifyNoInteractions(namespaceConfigRepositoryMock, openSearchMock);
 		verify(lockMock).unlock();
 	}
 

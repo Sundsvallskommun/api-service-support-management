@@ -64,8 +64,7 @@ class StatementJsonParameterEntityTest {
 	}
 
 	/**
-	 * The five kinds share their fields but not their tables, so a parameter of a statement is never equal to one of a
-	 * decision carrying the same values.
+	 * Verifies that a parameter of a statement is never equal to one of a decision carrying the same values.
 	 */
 	@Test
 	void isNotEqualToAParameterOfAnotherKindOfOwner() {

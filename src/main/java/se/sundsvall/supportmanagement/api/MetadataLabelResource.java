@@ -29,7 +29,6 @@ import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureDryRunResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
-import se.sundsvall.supportmanagement.api.validation.ValidLabelAttributes;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
@@ -75,7 +74,7 @@ class MetadataLabelResource {
 	ResponseEntity<Void> createLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @ValidLabelSiblings @ValidLabelAttributes @NotNull @RequestBody final List<Label> labels) {
+		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> labels) {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 
@@ -112,7 +111,7 @@ class MetadataLabelResource {
 	ResponseEntity<Void> updateLabels(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
-		@Valid @ValidLabelSiblings @ValidLabelAttributes @NotNull @RequestBody final List<Label> labels) {
+		@Valid @ValidLabelSiblings @NotNull @RequestBody final List<Label> labels) {
 
 		accessControlService.verifyNamespaceAuthorization(namespace, municipalityId, ProtectedResource.METADATA_LABEL, RW);
 

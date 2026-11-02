@@ -1,0 +1,13 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MOVE",
+			"path": [
+				"SPARRAD",
+				"MANUELL"
+			],
+			"destinationParentPath": []
+		}
+	]
+}

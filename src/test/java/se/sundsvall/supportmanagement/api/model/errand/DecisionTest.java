@@ -63,6 +63,7 @@ class DecisionTest {
 		final var errandProcessId = "errandProcessId";
 		final var terms = List.of(DecisionTerm.create());
 		final var attachments = List.of(ErrandAttachment.create());
+		final var parameters = List.of(Parameter.create());
 		final var createdBy = "createdBy";
 		final var modifiedBy = "modifiedBy";
 		final var created = now();
@@ -93,6 +94,7 @@ class DecisionTest {
 			.withErrandProcessId(errandProcessId)
 			.withTerms(terms)
 			.withAttachments(attachments)
+			.withParameters(parameters)
 			.withCreatedBy(createdBy)
 			.withModifiedBy(modifiedBy)
 			.withCreated(created)
@@ -114,8 +116,8 @@ class DecisionTest {
 			.extracting(Decision::getInvestigationId, Decision::getErrandProcessId, Decision::getTerms, Decision::getAttachments, Decision::getCreatedBy, Decision::getModifiedBy)
 			.containsExactly(investigationId, errandProcessId, terms, attachments, createdBy, modifiedBy);
 		assertThat(result)
-			.extracting(Decision::getCreated, Decision::getModified, Decision::getVersion)
-			.containsExactly(created, modified, version);
+			.extracting(Decision::getParameters, Decision::getCreated, Decision::getModified, Decision::getVersion)
+			.containsExactly(parameters, created, modified, version);
 	}
 
 	@Test

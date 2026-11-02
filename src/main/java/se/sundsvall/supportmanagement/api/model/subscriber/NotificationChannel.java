@@ -14,7 +14,8 @@ public class NotificationChannel {
 
 	@Size(max = 255)
 	@Schema(description = "Optional destination override (e.g. an alternative e-mail address or phone number). " +
-		"If omitted, the default destination derived from the subscriber's identifier is used.", examples = "user@example.com")
+		"If omitted, the default destination derived from the subscriber's identifier is used, i.e. the e-mail address or mobile number of the employee. " +
+		"The destination of an SMS channel must be an MSISDN, e.g. +46701234567.", examples = "user@example.com")
 	private String destination;
 
 	public static NotificationChannel create() {

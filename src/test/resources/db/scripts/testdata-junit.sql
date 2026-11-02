@@ -116,10 +116,14 @@ INSERT INTO attachment_data(id, file) VALUES
 -------------------------------------
 -- Attachment
 -------------------------------------
-INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id) VALUES
-    ('ATTACHMENT_ID-1', '1', 'Test_image.jpg', 'image/jpeg', 'ERRAND_ID-1'),
-    ('ATTACHMENT_ID-2', '2', 'Test.txt', 'text/plain', 'ERRAND_ID-2'),
-    ('ATTACHMENT_ID-3', '3', 'Test2.txt', 'text/plain', 'ERRAND_ID-2');
+INSERT INTO attachment(id, attachment_data_id, file_name, mime_type, errand_id, sequence_number) VALUES
+    ('ATTACHMENT_ID-1', '1', 'Test_image.jpg', 'image/jpeg', 'ERRAND_ID-1', 1),
+    ('ATTACHMENT_ID-2', '2', 'Test.txt', 'text/plain', 'ERRAND_ID-2', 1),
+    ('ATTACHMENT_ID-3', '3', 'Test2.txt', 'text/plain', 'ERRAND_ID-2', 2);
+
+INSERT INTO attachment_sequence(errand_id, last_sequence_number) VALUES
+    ('ERRAND_ID-1', 1),
+    ('ERRAND_ID-2', 2);
 
 -------------------------------------
 -- Revision

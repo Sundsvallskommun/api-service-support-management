@@ -1,0 +1,16 @@
+{
+	"parameters": [
+		{
+			"key": "zone",
+			"values": [
+				"A"
+			]
+		},
+		{
+			"key": "zone",
+			"values": [
+				"B"
+			]
+		}
+	]
+}

@@ -13,6 +13,7 @@ public class HandoverMapping {
 	@Schema(description = "Status to set on the new errand", example = "NEW_CASE")
 	private String status;
 
+	@Schema(description = "Category/type to set on the new errand. Required when the target namespace validates CATEGORY or TYPE, otherwise optional")
 	@Valid
 	private Classification classification;
 

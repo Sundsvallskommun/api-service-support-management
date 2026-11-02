@@ -34,12 +34,8 @@ class ValidationMapperTest {
 
 		assertThat(validations)
 			.hasSize(EntityType.values().length)
-			.extracting(Validation::getType, Validation::getValidated)
-			.contains(tuple(STATUS, true), tuple(CATEGORY, false));
-
-		assertThat(validations).filteredOn(validation -> validation.getType() == STATUS)
-			.extracting(Validation::getCreated, Validation::getModified)
-			.containsExactly(tuple(created, modified));
+			.extracting(Validation::getType, Validation::getValidated, Validation::getCreated, Validation::getModified)
+			.contains(tuple(STATUS, true, created, modified), tuple(CATEGORY, false, null, null));
 	}
 
 	@Test

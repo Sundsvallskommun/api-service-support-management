@@ -13,6 +13,11 @@ public final class Constants {
 	public static final String JSON_PARAMETER_KEY_REGEXP = "[A-Za-z0-9_-]+";
 	public static final String JSON_PARAMETER_KEY_VALIDATION_MESSAGE = "can only contain A-Z, a-z, 0-9, - and _";
 	public static final String SENT_BY_HEADER = "X-Sent-By";
+	/**
+	 * The name of Support Management on its errands in the relations of the relation service. The services that relate
+	 * their resources to errands here write the same name, without a hyphen.
+	 */
+	public static final String RELATION_SERVICE = "supportmanagement";
 	public static final String UNKNOWN = "UNKNOWN";
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";
 	public static final String EXTERNAL_TAG_KEY_NOTE_ID = "NoteId";

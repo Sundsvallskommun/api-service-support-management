@@ -24,7 +24,7 @@ class ValueTypeTest {
 
 	@Test
 	void test() {
-		assertThat(ValueType.getAsTypedClass(NamespaceConfigValueEmbeddable.create().withType(ValueType.BOOLEAN).withValue("true"))).isEqualTo(true);
+		assertThat((Boolean) ValueType.getAsTypedClass(NamespaceConfigValueEmbeddable.create().withType(ValueType.BOOLEAN).withValue("true"))).isTrue();
 		assertThat(ValueType.getAsTypedClass(NamespaceConfigValueEmbeddable.create().withType(ValueType.INTEGER).withValue("123"))).isEqualTo(123);
 		assertThat(ValueType.getAsTypedClass(NamespaceConfigValueEmbeddable.create().withType(ValueType.STRING).withValue("value"))).isEqualTo("value");
 	}
