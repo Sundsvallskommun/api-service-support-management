@@ -18,7 +18,7 @@
 		<opensearch-testcontainers.version>4.1.0</opensearch-testcontainers.version>
 		<!-- The Lucene of the OpenSearch the index runs on, whose query parser reads a search the way the index will -->
 		<lucene.version>10.6.0</lucene.version>
-		<tika-core.version>4.1.0</tika-core.version>
+		<tika-core.version>4.2.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<commons-validator.version>1.11.0</commons-validator.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
