@@ -53,14 +53,8 @@ import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESS
 // NotificationService, NotificationRepository and NotificationEntity, plus the errand notification endpoints nested
 // under /errands/{errandId}/notifications.
 //
-// Deliberately NOT fixed here, because the stack is going away: GET /notifications?ownerId= has no access check at all
-// (NotificationService.getNotificationsByOwnerId), so any caller can enumerate any owner's notifications, including the
-// errand ids and numbers of errands they cannot open. The errand scoped endpoints in this resource are fine - those go
-// through verifyExistingErrandAndAuthorization in the service.
-//
-// If removal slips, that read has to be closed instead: either restrict ownerId to the requesting identity, or filter
-// each row against errand access. Filtering per row is an N+1 unless the errand predicate is pushed into the query, so
-// prefer restricting ownerId if the stack is still alive by then.
+// GET /notifications?ownerId= is limited to the requesting user's own notifications (NotificationService
+// .getNotificationsByOwnerId), since they tell of errands the user may not be allowed to open.
 @RestController
 @Validated
 @RequestMapping("/{municipalityId}/{namespace}")
@@ -162,8 +156,9 @@ class NotificationsResource {
 	 */
 
 	@GetMapping(path = "/notifications", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality with the specified ownerId", responses = {
+	@Operation(summary = "Get notifications", description = "Get notifications for the namespace and municipality with the specified ownerId, which must be the ad account of the requesting user", responses = {
 		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+		@ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
 	ResponseEntity<List<Notification>> getNotificationsByOwnerId(

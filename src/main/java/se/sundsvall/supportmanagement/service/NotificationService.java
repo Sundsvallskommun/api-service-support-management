@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.service.mapper.NotificationMapper;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static org.springframework.data.domain.Sort.unsorted;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.util.StringUtils.hasText;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -40,6 +41,7 @@ public class NotificationService {
 	private static final String NOTIFICATION_ENTITY_NOT_FOUND = "Notification with id:'%s' not found in namespace:'%s' for municipality with id:'%s' and errand with id:'%s'";
 	private static final String NAMESPACE_ENTITY_NOT_FOUND = "Namespace with name:'%s' and municiplaityId '%s' not found!";
 	private static final String EMPLOYEE_LOOKUP_FAILED = "Failed to resolve employee {} in municipality {}: {}";
+	private static final String NOTIFICATIONS_NOT_OWNED = "Notifications of '%s' not accessible by user '%s'";
 
 	private final NotificationRepository notificationRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -65,7 +67,16 @@ public class NotificationService {
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, NOTIFICATION_ENTITY_NOT_FOUND.formatted(notificationId, namespace, municipalityId, errandId)));
 	}
 
+	/**
+	 * Reads the notifications of sent in owner, which only the owner may do. Refuses with 403 unless ownerId is the ad
+	 * account of the requesting user, since the notifications tell of errands the requesting user may not be allowed to
+	 * open. A request without an ad account owns nothing and is refused.
+	 */
 	public List<Notification> getNotificationsByOwnerId(final String municipalityId, final String namespace, final String ownerId, final Sort sort) {
+		if (!Strings.CI.equals(ownerId, getAdUser())) {
+			throw Problem.valueOf(FORBIDDEN, NOTIFICATIONS_NOT_OWNED.formatted(ownerId, getAdUser()));
+		}
+
 		return notificationRepository.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort)
 			.stream()
 			.map(NotificationMapper::toNotification)
