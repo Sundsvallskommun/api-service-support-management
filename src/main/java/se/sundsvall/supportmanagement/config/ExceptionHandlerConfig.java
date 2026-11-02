@@ -64,7 +64,7 @@ public class ExceptionHandlerConfig {
 
 		/**
 		 * A job (label-move, purge) that arrives with every thread in its own executor pool already busy is refused
-		 * outright rather than queued - see {@code LabelMoveConfig}'s own doc for why. Mapped here to 503 with a
+		 * outright rather than queued - see {@code LabelRestructureConfig}'s own doc for why. Mapped here to 503 with a
 		 * Retry-After header, rather than the generic 500 a {@link se.sundsvall.dept44.problem.ThrowableProblem} would
 		 * otherwise carry: the pool being momentarily full is not a server error, and a caller told to retry shortly
 		 * is answered more usefully than one just told something went wrong.

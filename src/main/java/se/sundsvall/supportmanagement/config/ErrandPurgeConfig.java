@@ -20,7 +20,8 @@ class ErrandPurgeConfig {
 	 * {@link org.springframework.core.task.SimpleAsyncTaskExecutor} would instead hold the request thread until a run
 	 * finished, which for a purge means hours.
 	 * <p>
-	 * No shutdown grace period, unlike {@code LabelMoveConfig}'s own pool: a purge runs for hours, so any grace period
+	 * No shutdown grace period, unlike {@code LabelRestructureConfig}'s own pool: a purge runs for hours, so any grace
+	 * period
 	 * short enough to be worth configuring would be meaningless next to it - a run cut off by a deploy is no worse off
 	 * than one cut off at any other point in its walk, since each errand it removes is already committed on its own as
 	 * it goes.

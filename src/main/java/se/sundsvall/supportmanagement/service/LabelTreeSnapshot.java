@@ -12,7 +12,7 @@ import static java.util.stream.Collectors.toSet;
 
 /**
  * A path-indexed view of a namespace's label tree, shared by {@link MetadataService#restructureLabelTree} (dry-run)
- * and {@code LabelTreeRestructureWorker} (real execution) so that both walk the exact same ordered list of
+ * and {@code LabelRestructureRunner} (real execution) so that both walk the exact same ordered list of
  * {@code LabelRestructureStep}s the exact same way, resolving each step's paths against whatever the *previous* steps
  * in that same request already did to the tree - including a step that references a label an earlier {@code ADD}
  * step in the same request just created, which has no persisted id yet during a dry run.
@@ -69,7 +69,7 @@ public final class LabelTreeSnapshot {
 
 	/**
 	 * Every segment of {@code path} but the last - a step's own parent path, which both {@link MetadataService}'s
-	 * simulation and {@code LabelTreeRestructureWorker}'s real execution need from the exact same
+	 * simulation and {@code LabelRestructureRunner}'s real execution need from the exact same
 	 * {@code LabelRestructureStep#getPath()} shape, hence held here rather than as a private copy in each.
 	 */
 	public static List<String> allButLast(final List<String> path) {

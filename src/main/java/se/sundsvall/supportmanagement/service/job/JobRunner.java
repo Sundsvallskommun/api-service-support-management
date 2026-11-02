@@ -10,7 +10,8 @@ package se.sundsvall.supportmanagement.service.job;
  * Ending in a state of its own on success is {@link #work}'s job, not this envelope's - usually a call of its own to
  * {@link JobService#complete} once it has something to say about the outcome.
  *
- * @param <R> the run type this carries out - {@code LabelMoveRun}, {@code PurgeRun}, or a future kind of job's own.
+ * @param <R> the run type this carries out - {@code LabelRestructureRun}, {@code PurgeRun}, or a future kind of job's
+ *            own.
  */
 public abstract class JobRunner<R> {
 
@@ -23,7 +24,7 @@ public abstract class JobRunner<R> {
 	/**
 	 * Runs one job to its end.
 	 * <p>
-	 * Deliberately not {@code final}: {@link MetadataService} injects its {@code LabelMoveRunner} behind
+	 * Deliberately not {@code final}: {@link MetadataService} injects its {@code LabelRestructureRunner} behind
 	 * {@code @Lazy} to break a construction cycle, and Spring backs that with a CGLIB subclass proxy - a proxy built
 	 * by objenesis, without ever running a real constructor, whose fields stay unset until a call is intercepted and
 	 * delegated to the real bean. CGLIB cannot override a {@code final} method, so a final {@code run} here would

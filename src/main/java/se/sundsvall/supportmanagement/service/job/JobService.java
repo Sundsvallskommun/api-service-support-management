@@ -247,7 +247,7 @@ public class JobService {
 	 * The state a job is in, for work that needs to know whether it is still wanted. Empty for a job that is not there.
 	 * <p>
 	 * {@code REQUIRES_NEW} rather than the default propagation: a caller whose own work runs inside one long
-	 * transaction - {@code LabelMoveRunner}, since the atomicity redesign - would otherwise have this call join that
+	 * transaction - {@code LabelRestructureRunner}, since the atomicity redesign - would otherwise have this call join that
 	 * same transaction and reuse its snapshot, under MySQL's default {@code REPEATABLE READ}. A stop or a lease steal
 	 * committed by some other request after that long transaction began would then never become visible to it, no
 	 * matter how often this is asked, which defeats the stop check entirely. A fresh transaction here always reads the

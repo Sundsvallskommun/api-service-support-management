@@ -6,9 +6,6 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -54,10 +51,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	 * one of them (e.g. the moved/merged label itself and one of its descendants, both stored per the
 	 * ancestor-chain-expansion invariant) must still count once.
 	 * <p>
-	 * The single source of truth for "which errands does this operation affect": a label-move or -merge dry run reads
-	 * its {@code affectedErrandCount} from {@code size()} here, and the job this starts resolves the same list once at
-	 * the outset and carries it through {@code LabelMoveRun}/{@code LabelMergeRun} so the job's own {@code total} and
-	 * the walk that restows them read from the exact same set - see the review discussion on
+	 * The single source of truth for "which errands does this operation affect": a restructure dry run reads its
+	 * per-step {@code affectedErrandCount} from {@code size()} here, and the job this starts resolves the same union
+	 * once at the outset and carries it through {@code LabelRestructureRun} so the job's own {@code total} and the
+	 * walk that restows them read from the exact same set - see the review discussion on the former
 	 * {@code LabelMoveRunner#restowErrands} for what went wrong when the walk instead re-derived its own, narrower set
 	 * from a single label id.
 	 */
@@ -65,21 +62,12 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	List<String> findDistinctIdsByLabelsMetadataLabelIdIn(@Param("labelIds") Collection<String> labelIds);
 
 	/**
-	 * Overridden purely to attach {@code accessLabels} eagerly: it is lazy by default, and the label-move/-merge worker
-	 * reads it on an already-detached entity (fetched in one transaction, persisted in the next), so it must come back
-	 * populated with the page itself rather than needing a session that has since closed.
-	 */
-	@Override
-	@EntityGraph(attributePaths = "accessLabels")
-	List<ErrandEntity> findAllById(Iterable<String> ids);
-
-	/**
-	 * Locks every errand in {@code ids} with {@code SELECT ... FOR UPDATE}, ordered by id - used by the label-move
-	 * runner, which restows a whole move inside one transaction and needs every affected errand locked against a
-	 * concurrent write for the duration rather than retried against one. Ordered acquisition, combined with the
-	 * runner chunking a globally-sorted id list, keeps lock acquisition ascending across the whole run, so it cannot
-	 * deadlock against another ordered multi-row operation (a user PATCHing several errands, {@code ErrandPurgeRunner}'s
-	 * own ascending-id walk).
+	 * Locks every errand in {@code ids} with {@code SELECT ... FOR UPDATE}, ordered by id - used by the label-
+	 * restructure runner, which restows a whole run inside one transaction and needs every affected errand locked
+	 * against a concurrent write for the duration rather than retried against one. Ordered acquisition, combined
+	 * with the runner chunking a globally-sorted id list, keeps lock acquisition ascending across the whole run, so
+	 * it cannot deadlock against another ordered multi-row operation (a user PATCHing several errands,
+	 * {@code ErrandPurgeRunner}'s own ascending-id walk).
 	 * <p>
 	 * No lock-timeout hint - left at the server/session default ({@code innodb_lock_wait_timeout}, 50s), deliberately:
 	 * a brief conflict is worth waiting through rather than bouncing the run, and the default can be raised later,
@@ -89,32 +77,14 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	@Query("select e from ErrandEntity e where e.id in :ids order by e.id")
 	List<ErrandEntity> findAllByIdForUpdate(@Param("ids") Collection<String> ids);
 
-	// Used by the internal LabelMoveWorker helper's keyset-paged restow walk for a single moved label.
-	@EntityGraph(attributePaths = "accessLabels")
-	List<ErrandEntity> findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(String metadataLabelId, String id, Pageable pageable);
-
-	// Sibling of the single-id query above, for the label-merge worker walking several source labels at once - same
-	// keyset paging, same reason for it.
-	@EntityGraph(attributePaths = "accessLabels")
-	List<ErrandEntity> findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(Collection<String> metadataLabelIds, String id, Pageable pageable);
-
-	/**
-	 * The ids, among {@code ids}, of errands whose {@code labels} is non-empty - used by the label-move/-merge restow
-	 * guard to tell "has labels" apart from "doesn't" for a page of already-detached entities, without needing
-	 * {@code labels} itself eagerly fetched onto them: {@code labels} and {@code accessLabels} are both
-	 * {@code @ElementCollection} bags, and Hibernate refuses to join-fetch two bags in the same query
-	 * ({@code MultipleBagFetchException}), so this asks as a separate, cheap id-only query instead.
-	 */
-	@Query("select e.id from ErrandEntity e where e.id in :ids and e.labels is not empty")
-	Set<String> findIdsWithNonEmptyLabels(@Param("ids") Collection<String> ids);
-
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
 	/**
-	 * Puts {@code modified} and {@code touched} back to what they were before a label-move restow - a direct write
-	 * rather than another {@code save}, since going through the entity again would only have {@code @PreUpdate} stamp
-	 * both with {@code now()} a second time. A restow is driven by a label-tree change, not anything the errand's own
-	 * occupant did, and must not reset the purge clock ({@code touched}) or reorder "recently modified" listings.
+	 * Puts {@code modified} and {@code touched} back to what they were before a label-restructure restow - a direct
+	 * write rather than another {@code save}, since going through the entity again would only have {@code @PreUpdate}
+	 * stamp both with {@code now()} a second time. A restow is driven by a label-tree change, not anything the
+	 * errand's own occupant did, and must not reset the purge clock ({@code touched}) or reorder "recently modified"
+	 * listings.
 	 */
 	@Modifying
 	@Query("update ErrandEntity e set e.modified = :modified, e.touched = :touched where e.id = :id")

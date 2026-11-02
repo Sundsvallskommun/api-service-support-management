@@ -4,7 +4,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * The part of building a job executor that every kind of job shares - bounded, no queue, core threads allowed to
- * time out - factored out of {@code LabelMoveConfig} and {@code ErrandPurgeConfig}, which used to build this same
+ * time out - factored out of {@code LabelRestructureConfig} and {@code ErrandPurgeConfig}, which used to build this
+ * same
  * executor twice over, differing only in thread-name prefix and pool size. The pools themselves stay separate: a
  * purge "may be at it for hours", so sharing one pool between the two kinds of job would let a bulk deletion starve
  * label moves for just as long, and the 503 a caller gets when a pool has no thread free promises "too many jobs

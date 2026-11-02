@@ -12,10 +12,9 @@ import se.sundsvall.supportmanagement.api.validation.ValidRestructureStep;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 /**
- * A label-tree restructure reshuffles the tree and, for MOVE/MERGE steps, the errands under it, and cannot be undone,
- * so dryRun carries no default for the same reason it carries none on {@link LabelMoveRequest}/
- * {@link LabelMergeRequest} - leaving it out is far more likely to be an oversight than a considered request to
- * start that, and a caller that has to write the intent out cannot make that mistake silently.
+ * A label-tree restructure reshuffles the tree and, for MOVE/MERGE steps, the errands under it, and cannot be
+ * undone, so dryRun carries no default - leaving it out is far more likely to be an oversight than a considered
+ * request to start that, and a caller that has to write the intent out cannot make that mistake silently.
  */
 @Schema(description = "Request for restructuring the label tree as one ordered sequence of add/rename/delete/move/merge steps")
 public class LabelRestructureRequest {
