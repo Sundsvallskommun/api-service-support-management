@@ -32,8 +32,11 @@ class SoftDeleteChokePointTest {
 		// The retention purge removes soft deleted errands as it removes any other, and a handover reads an errand already
 		// held to access, or the one it has just created.
 		entry("findByIdAndNamespaceAndMunicipalityId", "retention purge, and handover of an errand already verified"),
-		// The action worker locks the errand and leaves a soft deleted one waiting itself.
-		entry("findWithLockingById", "ActionWorker, which checks the deletion after locking"),
+		// The action worker locks the errand and leaves a soft deleted one waiting itself, and the removal of soft deleted
+		// errands locks the errand before deleting it for good.
+		entry("findWithLockingById", "ActionWorker, which checks the deletion after locking, and the removal of soft deleted errands"),
+		// The removal of soft deleted errands reaches nothing else.
+		entry("findIdsDeletedBefore", "removal of soft deleted errands"),
 		// Incoming email is kept on the errand it answers, soft deleted or not, so that nothing is lost.
 		entry("findByErrandNumberAndNamespaceAndMunicipalityId", "EmailReaderWorker, which keeps incoming email on a soft deleted errand"),
 		// A soft deleted errand still wears its labels and phases, so metadata it uses may not be removed, and moving or

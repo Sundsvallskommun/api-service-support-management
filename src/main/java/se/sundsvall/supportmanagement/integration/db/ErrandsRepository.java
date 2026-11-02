@@ -90,4 +90,14 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
+	// The errands of a namespace soft deleted before a point in time, for the scheduled removal of them. Keyset paged for
+	// the same reason as the label-move worker query above: an errand that cannot be removed is passed rather than met
+	// again on the next page. A UUID id sorts after "" so "" is the lower bound the first page is read with.
+	@Query("""
+		select e.id from ErrandEntity e
+		where e.namespace = :namespace and e.municipalityId = :municipalityId and e.deleted < :deletedBefore and e.id > :id
+		order by e.id asc""")
+	List<String> findIdsDeletedBefore(@Param("namespace") String namespace, @Param("municipalityId") String municipalityId, @Param("deletedBefore") OffsetDateTime deletedBefore,
+		@Param("id") String id, Pageable pageable);
+
 }

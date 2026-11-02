@@ -222,6 +222,30 @@ class NamespaceConfigResourceFailureTest {
 	}
 
 	@Test
+	void createWithNegativeSoftDeletedRetentionInDays() {
+		final var namespaceConfig = NamespaceConfig.create().withDisplayName(DISPLAY_NAME).withShortCode(SHORT_CODE).withSoftDeletedRetentionInDays(-1);
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(namespaceConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("softDeletedRetentionInDays", "must be greater than or equal to 0"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@Test
 	void createWithInvalidTeliaAceWorkItemBaseUrl() {
 		final var namespaceConfig = createValidNamespaceConfig().withTeliaAceWorkItemBaseUrl("not-a-url");
 
