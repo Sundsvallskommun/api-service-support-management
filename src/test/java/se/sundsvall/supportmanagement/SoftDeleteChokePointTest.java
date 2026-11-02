@@ -40,9 +40,7 @@ class SoftDeleteChokePointTest {
 		// merging labels rebuilds its labels as well, for it to come back with the labels of the tree.
 		entry("existsByLabelsMetadataLabelIdIn", "label removal guard"),
 		entry("existsByAccessLabelsMetadataLabelIdIn", "label removal guard"),
-		entry("countByLabelsMetadataLabelId", "label usage count"),
 		entry("countDistinctByLabelsMetadataLabelIdIn", "label usage count"),
-		entry("findAllByLabelsMetadataLabelId", "label usage lookup"),
 		entry("findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc", "label move restow"),
 		entry("findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc", "label merge restow"),
 		entry("findIdsWithNonEmptyLabels", "label move and merge restow"),
