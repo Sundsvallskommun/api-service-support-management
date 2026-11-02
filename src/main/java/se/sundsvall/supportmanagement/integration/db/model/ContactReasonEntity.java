@@ -2,68 +2,22 @@ package se.sundsvall.supportmanagement.integration.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
 import java.util.Objects;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
-import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.LOWERCASE;
 
 @Entity
 @Table(name = "contact_reason")
-public class ContactReasonEntity {
-
-	@Id
-	@UuidGenerator
-	@Column(name = "id")
-	private String id;
+public class ContactReasonEntity extends AbstractMetadataEntity<ContactReasonEntity> {
 
 	@Column(name = "reason")
 	@KeywordField(normalizer = LOWERCASE)
 	private String reason;
 
-	@Column(name = "display_name")
-	private String displayName;
-
-	@Column(name = "sort_order")
-	private Integer sortOrder;
-
-	@Column(name = "deprecated", nullable = false)
-	private boolean deprecated;
-
-	@Column(name = "municipality_id", nullable = false, length = 8)
-	private String municipalityId;
-
-	@Column(name = "namespace", nullable = false, length = 32)
-	private String namespace;
-
-	@Column(name = "created")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime created;
-
-	@Column(name = "modified")
-	@TimeZoneStorage(NORMALIZE)
-	private OffsetDateTime modified;
-
 	public static ContactReasonEntity create() {
 		return new ContactReasonEntity();
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(final String id) {
-		this.id = id;
-	}
-
-	public ContactReasonEntity withId(final String id) {
-		this.id = id;
-		return this;
 	}
 
 	public String getReason() {
@@ -79,128 +33,18 @@ public class ContactReasonEntity {
 		return this;
 	}
 
-	public String getDisplayName() {
-		return displayName;
-	}
-
-	public void setDisplayName(final String displayName) {
-		this.displayName = displayName;
-	}
-
-	public ContactReasonEntity withDisplayName(final String displayName) {
-		this.displayName = displayName;
-		return this;
-	}
-
-	public Integer getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(final Integer sortOrder) {
-		this.sortOrder = sortOrder;
-	}
-
-	public ContactReasonEntity withSortOrder(final Integer sortOrder) {
-		this.sortOrder = sortOrder;
-		return this;
-	}
-
-	public boolean isDeprecated() {
-		return deprecated;
-	}
-
-	public void setDeprecated(final boolean deprecated) {
-		this.deprecated = deprecated;
-	}
-
-	public ContactReasonEntity withDeprecated(final boolean deprecated) {
-		this.deprecated = deprecated;
-		return this;
-	}
-
-	public String getMunicipalityId() {
-		return municipalityId;
-	}
-
-	public void setMunicipalityId(final String municipalityId) {
-		this.municipalityId = municipalityId;
-	}
-
-	public ContactReasonEntity withMunicipalityId(final String municipalityId) {
-		this.municipalityId = municipalityId;
-		return this;
-	}
-
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(final String namespace) {
-		this.namespace = namespace;
-	}
-
-	public ContactReasonEntity withNamespace(final String namespace) {
-		this.namespace = namespace;
-		return this;
-	}
-
-	public OffsetDateTime getCreated() {
-		return created;
-	}
-
-	public void setCreated(final OffsetDateTime created) {
-		this.created = created;
-	}
-
-	public ContactReasonEntity withCreated(final OffsetDateTime created) {
-		this.created = created;
-		return this;
-	}
-
-	public OffsetDateTime getModified() {
-		return modified;
-	}
-
-	public void setModified(final OffsetDateTime modified) {
-		this.modified = modified;
-	}
-
-	public ContactReasonEntity withModified(final OffsetDateTime modified) {
-		this.modified = modified;
-		return this;
-	}
-
-	@Override
-	public String toString() {
-		return "ContactReasonEntity{" +
-			"id='" + id + '\'' +
-			", reason='" + reason + '\'' +
-			", displayName='" + displayName + '\'' +
-			", sortOrder=" + sortOrder +
-			", deprecated=" + deprecated +
-			", municipalityId='" + municipalityId + '\'' +
-			", namespace='" + namespace + '\'' +
-			", created=" + created +
-			", modified=" + modified +
-			'}';
-	}
-
 	@Override
 	public boolean equals(final Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		final ContactReasonEntity that = (ContactReasonEntity) o;
-		return Objects.equals(id, that.id) && Objects.equals(reason, that.reason) && Objects.equals(displayName, that.displayName) && Objects.equals(sortOrder, that.sortOrder) && deprecated == that.deprecated && Objects.equals(municipalityId,
-			that.municipalityId) && Objects.equals(
-				namespace, that.namespace) && Objects.equals(
-					created, that.created) && Objects.equals(modified,
-						that.modified);
+		return super.equals(o) && Objects.equals(reason, ((ContactReasonEntity) o).reason);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, reason, displayName, sortOrder, deprecated, municipalityId, namespace, created, modified);
+		return Objects.hash(super.hashCode(), reason);
+	}
+
+	@Override
+	protected String fieldsToString() {
+		return super.fieldsToString() + ", reason='" + reason + '\'';
 	}
 }

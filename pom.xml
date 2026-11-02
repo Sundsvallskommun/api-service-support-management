@@ -184,6 +184,35 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Copy/paste detection. Fails the build on verify (and thereby install) when duplicated code is found -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>3.26.0</version>
+				<configuration>
+					<minimumTokens>100</minimumTokens>
+					<includeTests>false</includeTests>
+					<failOnViolation>true</failOnViolation>
+					<printFailingErrors>true</printFailingErrors>
+					<excludeRoots>
+						<excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+					</excludeRoots>
+					<!-- The resources repeat the same OpenAPI annotations on every endpoint, and the API models mirror the fields of the
+							entities they are mapped from, which the separation of the API from the persistence layer requires. Neither is
+							duplication worth acting on -->
+					<excludes>
+						<exclude>**/api/*Resource.java</exclude>
+						<exclude>**/api/model/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>cpd-check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>

@@ -11,7 +11,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.AccessDefinition;
@@ -86,17 +85,7 @@ public class NamespaceConfigService {
 		this.mapper = mapper;
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
-	})
+	@CacheEvict(value = CACHE_NAME, allEntries = true)
 	public void create(NamespaceConfig request, String namespace, String municipalityId) {
 		if (configRepository.existsByNamespaceAndMunicipalityId(namespace, municipalityId)) {
 			throw Problem.valueOf(BAD_REQUEST, CONFIG_ENTITY_ALREADY_EXISTS.formatted(namespace, municipalityId));
@@ -299,17 +288,7 @@ public class NamespaceConfigService {
 			});
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
-	})
+	@CacheEvict(value = CACHE_NAME, allEntries = true)
 	public void replace(NamespaceConfig request, String namespace, String municipalityId) {
 		validateAccessConfiguration(request);
 		validateProcessConfiguration(request);
@@ -409,17 +388,7 @@ public class NamespaceConfigService {
 		return mapper.toNamespaceConfigs(entities);
 	}
 
-	@Caching(evict = {
-		@CacheEvict(value = CACHE_NAME, key = "{'get', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findAll', #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isAccessControlActive', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessConsumer', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSingleDecisionPerErrand', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'getProcessTriggers', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findReporterProfileId', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'findNewSubscriberChannels', #namespace, #municipalityId}"),
-		@CacheEvict(value = CACHE_NAME, key = "{'isSmsNotificationsEnabled', #namespace, #municipalityId}")
-	})
+	@CacheEvict(value = CACHE_NAME, allEntries = true)
 	public void delete(String namespace, String municipalityId) {
 		if (configRepository.findByNamespaceAndMunicipalityId(namespace, municipalityId).isEmpty()) {
 			throw Problem.valueOf(NOT_FOUND, CONFIG_ENTITY_NOT_FOUND.formatted(namespace, municipalityId));
