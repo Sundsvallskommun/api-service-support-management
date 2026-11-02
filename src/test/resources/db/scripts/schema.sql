@@ -315,6 +315,7 @@
     create table errand (
         business_related bit,
         created datetime(6),
+        deleted datetime(6),
         modified datetime(6),
         municipality_id varchar(8) not null,
         suspended_from datetime(6),
@@ -331,6 +332,7 @@
         category varchar(255),
         channel varchar(255),
         contact_reason_id varchar(255),
+        deleted_by varchar(255),
         errand_number varchar(255) not null,
         escalation_email varchar(255),
         id varchar(255) not null,

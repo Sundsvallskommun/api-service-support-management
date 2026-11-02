@@ -142,6 +142,7 @@ public class EmailReaderWorker {
 		final var errandNumber = parseSubject(email.getSubject());
 
 		return Optional.ofNullable(errandNumber)
+			// A soft deleted errand is found too: what comes in is kept on it, to be seen once it is restored
 			.flatMap(number -> errandRepository.findByErrandNumberAndNamespaceAndMunicipalityId(number, config.getNamespace(), config.getMunicipalityId()))
 			.or(() -> errandRepository
 				.findById(errandService.createErrand(

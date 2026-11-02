@@ -162,6 +162,16 @@ public class ErrandAttachmentService {
 	}
 
 	/**
+	 * The attachments of an errand about to be deleted for good, read as {@link #readErrandAttachments} reads them, under
+	 * the same access check, but found while the errand is soft deleted too.
+	 */
+	@Transactional(readOnly = true)
+	public List<ErrandAttachment> readAttachmentsOfErrandToDelete(final String namespace, final String municipalityId, final String errandId) {
+		final var errandEntity = accessControlService.getErrandIncludingDeleted(namespace, municipalityId, errandId, false, ProtectedResource.ATTACHMENT, LR);
+		return toErrandAttachments(errandEntity.getAttachments());
+	}
+
+	/**
 	 * Writes what the attachment is for, named by the id of an attachment purpose of the namespace.
 	 * <p>
 	 * The only way to set it. The purpose belongs to the attachment itself, not to any one link to it. A request without

@@ -453,7 +453,7 @@ class ProcessEventRelayTest {
 
 		relay.relayErrand(ERRAND_ID);
 
-		verify(errandsRepositoryMock).existsById(ERRAND_ID);
+		verify(errandsRepositoryMock).existsByIdAndDeletedIsNull(ERRAND_ID);
 		verify(pwAlktIntegrationMock).sendErrandEvent(eq(MUNICIPALITY_ID), eq(NAMESPACE), eventCaptor.capture());
 		assertThat(eventCaptor.getValue().getEventId()).isEqualTo("row-1");
 		assertThat(List.of(deletion, start)).extracting(ProcessEventOutboxEntity::getDeliveredAt).containsOnly(NOW_IN_MILLIS);
@@ -467,7 +467,7 @@ class ProcessEventRelayTest {
 		givenWaitingFor(ERRAND_ID, start);
 		givenLocked(List.of("row-1"), start);
 		givenAccepted();
-		when(errandsRepositoryMock.existsById(ERRAND_ID)).thenReturn(true);
+		when(errandsRepositoryMock.existsByIdAndDeletedIsNull(ERRAND_ID)).thenReturn(true);
 
 		relay.relayErrand(ERRAND_ID);
 

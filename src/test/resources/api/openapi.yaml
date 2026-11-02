@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.1"
+  version: "18.2"
 servers:
-- url: http://localhost:65188
+- url: http://localhost:40887
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -6100,6 +6100,234 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/move:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Move label
+      description: "Validates a label move. When dryRun is true, returns the number\
+        \ of affected errands and actions without making any changes. When dryRun\
+        \ is false, starts the move as an asynchronous job."
+      operationId: moveLabel
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Label ID to move
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMoveRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMoveDryRunResponse"
+        "202":
+          description: Move accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: "Conflict — path collision at destination, or a job is already\
+            \ running for this namespace"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/labels/{labelId}/merge:
+    post:
+      tags:
+      - Metadata for labels
+      summary: Merge labels
+      description: "Validates merging one or more source labels into a destination\
+        \ label. When dryRun is true, returns the number of affected errands and actions\
+        \ without making any changes. When dryRun is false, starts the merge as an\
+        \ asynchronous job."
+      operationId: mergeLabels
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: labelId
+        in: path
+        description: Destination label ID
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelMergeRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful dry-run operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelMergeDryRunResponse"
+        "202":
+          description: Merge accepted and started as an asynchronous job
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Conflict — a merge job is already running for this namespace
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "500":
           description: Internal Server error
           content:
@@ -24029,11 +24257,7 @@ components:
       properties:
         empty:
           type: boolean
-        boolean:
-          type: boolean
-        missingNode:
-          type: boolean
-        pojo:
+        array:
           type: boolean
         "null":
           type: boolean
@@ -24059,10 +24283,6 @@ components:
           type: boolean
         integralNumber:
           type: boolean
-        missingNode:
-          type: boolean
-        valueNode:
-          type: boolean
         pojo:
           type: boolean
         floatingPointNumber:
@@ -24079,24 +24299,18 @@ components:
           type: boolean
         bigInteger:
           type: boolean
-        binary:
-          type: boolean
         textual:
           type: boolean
           deprecated: true
-        floatingPointNumber:
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        valueNode:
           type: boolean
         container:
           type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
         number:
-          type: boolean
-        object:
-          type: boolean
-        float:
           type: boolean
         embeddedValue:
           type: boolean
@@ -25264,6 +25478,20 @@ components:
           type: string
           description: Human-readable display value for the action
           example: Send email to assignee
+    LabelMoveDryRunResponse:
+      type: object
+      description: Result of a label move dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference the label or any of its descendants
+        affectedActions:
+          type: array
+          description: Actions that have hasLabel conditions referencing the moved
+            label or its descendants
+          items:
+            $ref: "#/components/schemas/AffectedAction"
     JobResponse:
       type: object
       description: Job response
@@ -25311,14 +25539,59 @@ components:
           type: string
           format: date-time
           description: When the job was last updated
+    LabelMoveRequest:
+      type: object
+      description: Request for moving a label to a new parent
+      properties:
+        newParentId:
+          type:
+          - string
+          - "null"
+          description: ID of the new parent label. Null means move to root.
+          example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts without making any changes.\
+            \ When false, starts the move as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+    LabelMergeDryRunResponse:
+      type: object
+      description: Result of a label merge dry-run — no changes are made
+      properties:
+        affectedErrandCount:
+          type: integer
+          format: int64
+          description: Number of errands that reference one or more of the source
+            labels
         affectedActions:
           type: array
-          description: "Actions affected by the operation this job carries out - populated\
-            \ only on the response returned when the job is started, not on later\
-            \ reads through GET, since it reflects a dry-run-style computation done\
-            \ once at start time rather than state stored on the job itself"
+          description: Actions that have hasLabel conditions referencing one or more
+            of the source labels
           items:
             $ref: "#/components/schemas/AffectedAction"
+    LabelMergeRequest:
+      type: object
+      description: Request for merging one or more source labels into a destination
+        label
+      properties:
+        sourceLabelIds:
+          type: array
+          description: IDs of the source labels to merge into the destination label
+          items:
+            type: string
+          minItems: 1
+        dryRun:
+          type: boolean
+          description: "When true, return affected counts without making any changes.\
+            \ When false, starts the merge as an asynchronous job."
+          examples:
+          - true
+      required:
+      - dryRun
+      - sourceLabelIds
     LabelRestructureDryRunResponse:
       type: object
       description: Result of a label-tree restructure dry-run — no changes are made
