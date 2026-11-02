@@ -217,6 +217,23 @@ public class Errand {
 	})
 	private OffsetDateTime touched;
 
+	@Schema(description = """
+		Timestamp when the errand was soft deleted. Null for an errand that is not. A soft deleted errand is left out of \
+		every read until it is restored, but for a listing whose filter names deleted, e.g. deleted is not null.""",
+		examples = "2000-10-31T01:30:00.000+02:00",
+		accessMode = READ_ONLY)
+	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private OffsetDateTime deleted;
+
+	@Schema(description = "The user who soft deleted the errand. Null for an errand that is not soft deleted", examples = "joe01doe", accessMode = READ_ONLY)
+	@Null(groups = {
+		OnCreate.class, OnUpdate.class
+	})
+	private String deletedBy;
+
 	@Schema(description = "Optimistic locking version of the errand", accessMode = READ_ONLY)
 	@Null(groups = {
 		OnCreate.class, OnUpdate.class
@@ -500,6 +517,32 @@ public class Errand {
 		return this;
 	}
 
+	public OffsetDateTime getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(final OffsetDateTime deleted) {
+		this.deleted = deleted;
+	}
+
+	public Errand withDeleted(final OffsetDateTime deleted) {
+		this.deleted = deleted;
+		return this;
+	}
+
+	public String getDeletedBy() {
+		return deletedBy;
+	}
+
+	public void setDeletedBy(final String deletedBy) {
+		this.deletedBy = deletedBy;
+	}
+
+	public Errand withDeletedBy(final String deletedBy) {
+		this.deletedBy = deletedBy;
+		return this;
+	}
+
 	public String getErrandNumber() {
 		return errandNumber;
 	}
@@ -658,7 +701,8 @@ public class Errand {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, description, errandNumber, escalationEmail, externalTags, id, jsonParameters,
+		return Objects.hash(activePhaseId, actions, assignedGroupId, assignedUserId, businessRelated, channel, classification, contactReason, contactReasonDescription, created, deleted, deletedBy, description, errandNumber, escalationEmail, externalTags,
+			id, jsonParameters,
 			labels, lifecycle, measures, activeNotifications, modified, process,
 			parameters, phases, priority, reporterUserId, resolution, stakeholders, status, suspension, title, touched, version);
 	}
@@ -673,7 +717,8 @@ public class Errand {
 		}
 		return Objects.equals(activePhaseId, other.activePhaseId) && Objects.equals(actions, other.actions) && Objects.equals(assignedGroupId, other.assignedGroupId) && Objects.equals(assignedUserId, other.assignedUserId)
 			&& Objects.equals(businessRelated, other.businessRelated) && Objects.equals(channel, other.channel) && Objects.equals(classification, other.classification) && Objects.equals(contactReason, other.contactReason)
-			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
+			&& Objects.equals(contactReasonDescription, other.contactReasonDescription) && Objects.equals(created, other.created) && Objects.equals(deleted, other.deleted)
+			&& Objects.equals(deletedBy, other.deletedBy) && Objects.equals(description, other.description) && Objects.equals(errandNumber, other.errandNumber)
 			&& Objects.equals(escalationEmail, other.escalationEmail) && Objects.equals(externalTags, other.externalTags) && Objects.equals(id, other.id) && Objects.equals(jsonParameters, other.jsonParameters) && Objects.equals(labels, other.labels)
 			&& Objects.equals(lifecycle, other.lifecycle)
 			&& Objects.equals(measures, other.measures) && Objects.equals(activeNotifications, other.activeNotifications) && Objects.equals(modified, other.modified) && Objects.equals(parameters, other.parameters) && Objects.equals(phases, other.phases)
@@ -717,6 +762,8 @@ public class Errand {
 			", created=" + created +
 			", modified=" + modified +
 			", touched=" + touched +
+			", deleted=" + deleted +
+			", deletedBy='" + deletedBy + '\'' +
 			", version=" + version +
 			'}';
 	}

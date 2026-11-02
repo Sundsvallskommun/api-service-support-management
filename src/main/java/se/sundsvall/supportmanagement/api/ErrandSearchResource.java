@@ -46,7 +46,7 @@ class ErrandSearchResource {
 		+ "`, `" + ErrandIndex.CONTACT_REASON + ".reason`, `" + ErrandIndex.STATUS + "`, `" + ErrandIndex.LIFECYCLE + "`, `" + ErrandIndex.CATEGORY + "`, `" + ErrandIndex.TYPE + "`, `" + ErrandIndex.RESOLUTION + "`, `"
 		+ ErrandIndex.CHANNEL + "`, `" + ErrandIndex.PRIORITY + "`, `" + ErrandIndex.REPORTER_USER_ID + "`, `" + ErrandIndex.ASSIGNED_USER_ID + "`, `" + ErrandIndex.ASSIGNED_GROUP_ID + "`, `"
 		+ ErrandIndex.ESCALATION_EMAIL + "`, `" + ErrandIndex.BUSINESS_RELATED + "`, `" + ErrandIndex.CREATED + "`, `" + ErrandIndex.MODIFIED + "`, `" + ErrandIndex.TOUCHED + "`, `"
-		+ ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
+		+ ErrandIndex.DELETED + "`, `" + ErrandIndex.DELETED_BY + "`, `" + ErrandIndex.SUSPENDED_FROM + "`, `" + ErrandIndex.SUSPENDED_TO + "`, `" + ErrandIndex.EXTERNAL_TAGS + ".key`, `" + ErrandIndex.EXTERNAL_TAG_VALUE + "`, `" + ErrandIndex.LABELS + "."
 		+ ErrandIndex.METADATA_LABEL_ID + "`, `" + ErrandIndex.ATTACHMENTS + ".fileName`, `" + ErrandIndex.ATTACHMENTS + ".mimeType`.";
 
 	/**
@@ -116,13 +116,14 @@ class ErrandSearchResource {
 		wildcard open at both ends, a regular expression or a fuzzy term over many fields can ask for more than the \
 		index can do.""";
 
-	static final String DRAFT_DESCRIPTION = "Drafts are left out unless the query names lifecycle, e.g. lifecycle:DRAFT.";
+	static final String DRAFT_DESCRIPTION = "Drafts are left out unless the query names lifecycle, e.g. lifecycle:DRAFT. " +
+		"Soft deleted errands are left out unless the query names deleted or deletedBy, e.g. _exists_:deleted.";
 
 	static final String GROUPABLE_DESCRIPTION = "status, resolution, channel, priority, category, type, reporterUserId, assignedUserId, assignedGroupId. " +
 		"Labels, parameters and JSON parameters cannot be grouped by, since an errand may carry several of each and the buckets would add up to more than the count.";
 
 	static final String SORT_DESCRIPTION = "Without a sort the best matches come first, newest first among equals. Sortable properties: " +
-		"created, modified, touched, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
+		"created, modified, touched, deleted, suspendedFrom, suspendedTo, errandNumber, title, status, category, type, priority, resolution, channel, " +
 		"reporterUserId, assignedUserId, assignedGroupId.";
 
 	private final ErrandSearchService searchService;

@@ -112,7 +112,7 @@ class ErrandsResource {
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Read matching errands",
-		description = "Query for errands with or without filters. The resource allows the client a wide range of variations on how to filter the result. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'.",
+		description = "Query for errands with or without filters. The resource allows the client a wide range of variations on how to filter the result. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'. Soft deleted errands are left out unless the filter names deleted or deletedBy, e.g. deleted is not null.",
 		responses = {
 			@ApiResponse(responseCode = "200", description = "Successful Operation", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -161,8 +161,9 @@ class ErrandsResource {
 
 	@DeleteMapping(path = "/{errandId}", produces = ALL_VALUE)
 	@Operation(summary = "Delete errand", description = """
-		Deletes the errand that matches the provided id. An errand with a process cannot be deleted once one of its \
-		decisions can no longer be changed - when the process has run to its end, or the decision is completed.""", responses = {
+		Deletes the errand that matches the provided id for good, whether it is soft deleted or not. An errand with a \
+		process cannot be deleted once one of its decisions can no longer be changed - when the process has run to its end, \
+		or the decision is completed.""", responses = {
 		@ApiResponse(responseCode = "204", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 			Problem.class, ConstraintViolationProblem.class
@@ -187,13 +188,15 @@ class ErrandsResource {
 	}
 
 	@GetMapping(path = "/count", produces = APPLICATION_JSON_VALUE)
-	@Operation(summary = "Count errands", description = "Counts errands based on the provided filters. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'.", responses = {
-		@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
-		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-			Problem.class, ConstraintViolationProblem.class
-		}))),
-		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	})
+	@Operation(summary = "Count errands",
+		description = "Counts errands based on the provided filters. Drafts are left out unless the filter names lifecycle, e.g. lifecycle:'DRAFT'. Soft deleted errands are left out unless the filter names deleted or deletedBy, e.g. deleted is not null.",
+		responses = {
+			@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+				Problem.class, ConstraintViolationProblem.class
+			}))),
+			@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+		})
 	ResponseEntity<CountResponse> countErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,

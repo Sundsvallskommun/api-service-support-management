@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
@@ -160,6 +161,54 @@ class ErrandsRepositoryTest {
 		assertThat(errandsRepository.findAll(Optional.ofNullable(filter).map(search::and).orElse(search)))
 			.extracting(ErrandEntity::getErrandNumber)
 			.containsExactlyInAnyOrderElementsOf(Optional.ofNullable(expectedErrandNumbers).map(numbers -> List.of(numbers.split(","))).orElse(List.of()));
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiter = '|', quoteCharacter = '"', nullValues = "NONE", value = {
+		"NONE                                          | KEPT-1",
+		"errandNumber : 'DELETED-1'                    | ",
+		"deleted is not null                           | DELETED-1",
+		"deleted is null or deleted is not null        | KEPT-1,DELETED-1",
+		"deletedBy : 'joe01doe'                        | DELETED-1"
+	})
+	void defaultDeletedLeavesSoftDeletedErrandsOutUnlessTheFilterNamesTheDeletion(final String filterString, final String expectedErrandNumbers) {
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withStatus("STATUS").withErrandNumber("DELETED-1").withDeleted(OffsetDateTime.now()).withDeletedBy("joe01doe"));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withStatus("STATUS").withErrandNumber("KEPT-1"));
+
+		final Specification<ErrandEntity> filter = Optional.ofNullable(filterString).<Specification<ErrandEntity>>map(filterSpecificationConverter::convert).orElse(null);
+		final var search = withNamespace("SOFT-DELETES").and(withDefaultDeleted(filter));
+
+		assertThat(errandsRepository.findAll(Optional.ofNullable(filter).map(search::and).orElse(search)))
+			.extracting(ErrandEntity::getErrandNumber)
+			.containsExactlyInAnyOrderElementsOf(Optional.ofNullable(expectedErrandNumbers).map(numbers -> List.of(numbers.split(","))).orElse(List.of()));
+	}
+
+	@Test
+	void existsLeavingOutSoftDeleted() {
+		final var deleted = errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("DELETED-2").withDeleted(OffsetDateTime.now()));
+		final var kept = errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT-2"));
+
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(kept.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isTrue();
+		assertThat(errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(kept.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isTrue();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isFalse();
+		assertThat(errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isFalse();
+		assertThat(errandsRepository.existsByIdAndNamespaceAndMunicipalityId(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isTrue();
+		assertThat(errandsRepository.existsByIdAndDeletedIsNull(kept.getId())).isTrue();
+		assertThat(errandsRepository.existsByIdAndDeletedIsNull(deleted.getId())).isFalse();
+		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(kept.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isPresent();
+		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isEmpty();
+	}
+
+	@Test
+	void findAllBySuspendedToBeforeAndDeletedIsNull() {
+		final var suspendedTo = OffsetDateTime.now().minusDays(1);
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("DELETED-3").withSuspendedTo(suspendedTo).withDeleted(OffsetDateTime.now()));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT-3").withSuspendedTo(suspendedTo));
+
+		assertThat(errandsRepository.findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime.now()))
+			.extracting(ErrandEntity::getErrandNumber)
+			.contains("KEPT-3")
+			.doesNotContain("DELETED-3");
 	}
 
 	@ParameterizedTest

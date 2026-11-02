@@ -1,0 +1,5 @@
+{
+	"title": "Conflict",
+	"status": 409,
+	"detail": "The errand '1be673c0-6ba3-4fb0-af4a-43acf23389f6' is not soft deleted, and there is nothing to restore"
+}

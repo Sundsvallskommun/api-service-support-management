@@ -506,7 +506,29 @@ public class AccessControlService {
 	 * @return                errand entity
 	 */
 	public ErrandEntity getErrand(final String namespace, final String municipalityId, final String errandId, boolean lock, ProtectedResource resource, Access.AccessLevelEnum required) {
-		verifyExistingErrand(errandId, namespace, municipalityId, lock);
+		verifyExistingErrand(errandId, namespace, municipalityId, lock, false);
+		return findAccessibleErrand(namespace, municipalityId, errandId, resource, required);
+	}
+
+	/**
+	 * Fetches ErrandEntity and checks user access, if enabled in namespace, as {@link #getErrand} does, but finds a soft
+	 * deleted errand as well. For what may be done to an errand while it is soft deleted: restoring it, or deleting it for
+	 * good.
+	 *
+	 * @param  namespace      namespace
+	 * @param  municipalityId municipality id
+	 * @param  errandId       errand id
+	 * @param  lock           db row locking enable if true
+	 * @param  resource       resource being guarded
+	 * @param  required       lowest access level accepted for the operation
+	 * @return                errand entity, soft deleted or not
+	 */
+	public ErrandEntity getErrandIncludingDeleted(final String namespace, final String municipalityId, final String errandId, boolean lock, ProtectedResource resource, Access.AccessLevelEnum required) {
+		verifyExistingErrand(errandId, namespace, municipalityId, lock, true);
+		return findAccessibleErrand(namespace, municipalityId, errandId, resource, required);
+	}
+
+	private ErrandEntity findAccessibleErrand(final String namespace, final String municipalityId, final String errandId, ProtectedResource resource, Access.AccessLevelEnum required) {
 		return errandsRepository
 			.findOne(withId(errandId).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)))
 			.orElseThrow(() -> Problem.valueOf(FORBIDDEN, ENTITY_NOT_ACCESSIBLE.formatted(getCallerIdentity())));
@@ -514,7 +536,7 @@ public class AccessControlService {
 
 	/**
 	 * Verify existence of errand and that user has access to it if access control is enabled in namespace. Throws Problem
-	 * 404 if errand does not exist. Throws 403 if user does not have access.
+	 * 404 if errand does not exist, or is soft deleted. Throws 403 if user does not have access.
 	 *
 	 * @param namespace      namespace
 	 * @param municipalityId municipality id
@@ -523,7 +545,7 @@ public class AccessControlService {
 	 * @param required       lowest access level accepted for the operation
 	 */
 	public void verifyExistingErrandAndAuthorization(final String namespace, final String municipalityId, final String id, ProtectedResource resource, Access.AccessLevelEnum required) {
-		verifyExistingErrand(id, namespace, municipalityId, false);
+		verifyExistingErrand(id, namespace, municipalityId, false, false);
 		final var authorized = errandsRepository.exists(withId(id).and(withAccessControl(namespace, municipalityId, Identifier.get(), resource, required)));
 
 		if (!authorized) {
@@ -531,13 +553,21 @@ public class AccessControlService {
 		}
 	}
 
-	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock) {
+	/**
+	 * Throws 404 unless the errand exists. A soft deleted errand counts as gone unless {@code includeDeleted} says
+	 * otherwise, which is what keeps it out of every resource of the errand until it is restored.
+	 */
+	private void verifyExistingErrand(final String id, final String namespace, final String municipalityId, final boolean lock, final boolean includeDeleted) {
 
 		final boolean exists;
-		if (lock) {
+		if (lock && includeDeleted) {
 			exists = errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
-		} else {
+		} else if (lock) {
+			exists = errandsRepository.existsWithLockingByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(id, namespace, municipalityId);
+		} else if (includeDeleted) {
 			exists = errandsRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		} else {
+			exists = errandsRepository.existsByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(id, namespace, municipalityId);
 		}
 
 		if (!exists) {

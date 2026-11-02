@@ -38,6 +38,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -77,12 +78,12 @@ class ActionWorkerTest {
 	@Test
 	void getExpiredActions() {
 		final var expiredAction = ErrandActionEntity.create().withId("action-1");
-		when(errandActionRepositoryMock.findAllByExecuteAfterBefore(any(OffsetDateTime.class))).thenReturn(List.of(expiredAction));
+		when(errandActionRepositoryMock.findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of(expiredAction));
 
 		final var result = actionWorker.getExpiredActions();
 
 		assertThat(result).containsExactly(expiredAction);
-		verify(errandActionRepositoryMock).findAllByExecuteAfterBefore(any(OffsetDateTime.class));
+		verify(errandActionRepositoryMock).findAllByExecuteAfterBeforeAndErrandEntityDeletedIsNull(any(OffsetDateTime.class));
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 	}
 
@@ -107,6 +108,25 @@ class ActionWorkerTest {
 		verify(errandActionRepositoryMock).delete(actionEntity);
 		verifyNoMoreInteractions(errandActionRepositoryMock, errandsRepositoryMock);
 		verifyNoInteractions(eventServiceMock);
+	}
+
+	@Test
+	void processActionLeavesTheActionWaitingWhenTheErrandWasSoftDeleted() {
+		final var errand = ErrandEntity.create().withId("errand-id").withDeleted(OffsetDateTime.now());
+		final var config = ActionConfigEntity.create().withName("testAction");
+		final var actionEntity = ErrandActionEntity.create()
+			.withId("action-id")
+			.withErrandEntity(errand)
+			.withActionConfigEntity(config);
+
+		when(errandsRepositoryMock.findWithLockingById(any())).thenReturn(Optional.of(errand));
+
+		actionWorker.processAction(actionEntity);
+
+		verify(errandsRepositoryMock).findWithLockingById("errand-id");
+		verifyNoMoreInteractions(errandsRepositoryMock);
+		verify(actionMock, never()).actionFulfilled(any(), any());
+		verifyNoInteractions(errandActionRepositoryMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@Test

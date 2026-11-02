@@ -1,0 +1,28 @@
+[
+	{
+		"accessByType": [
+			{
+				"type": "label",
+				"access": [
+					{
+						"pattern": "FRONTLINE/**",
+						"accessLevel": "R"
+					}
+				]
+			},
+			{
+				"type": "resource",
+				"access": [
+					{
+						"pattern": "errand",
+						"accessLevel": "R"
+					},
+					{
+						"pattern": "errand/conversation/message",
+						"accessLevel": "RW"
+					}
+				]
+			}
+		]
+	}
+]

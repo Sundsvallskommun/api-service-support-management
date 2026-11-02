@@ -80,7 +80,7 @@ class ErrandSearchServiceTest {
 
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).isEqualTo("Sorting on 'description' is not supported by search. Sortable properties are: " +
-			"[assignedGroupId, assignedUserId, category, channel, created, errandNumber, modified, priority, reporterUserId, resolution, status, suspendedFrom, suspendedTo, title, touched, type]");
+			"[assignedGroupId, assignedUserId, category, channel, created, deleted, errandNumber, modified, priority, reporterUserId, resolution, status, suspendedFrom, suspendedTo, title, touched, type]");
 		verifyNoInteractions(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, errandProcessServiceMock);
 	}
 
@@ -126,7 +126,7 @@ class ErrandSearchServiceTest {
 
 	@Test
 	void sortablePropertiesMapToIndexFields() {
-		assertThat(ErrandIndexModel.sortableProperties()).containsExactly("assignedGroupId", "assignedUserId", "category", "channel", "created", "errandNumber", "modified", "priority",
+		assertThat(ErrandIndexModel.sortableProperties()).containsExactly("assignedGroupId", "assignedUserId", "category", "channel", "created", "deleted", "errandNumber", "modified", "priority",
 			"reporterUserId", "resolution", "status", "suspendedFrom", "suspendedTo", "title", "touched", "type");
 		assertThat(ErrandIndexModel.sortField("title")).contains("title_sort");
 		assertThat(ErrandIndexModel.sortField("category")).contains("category");

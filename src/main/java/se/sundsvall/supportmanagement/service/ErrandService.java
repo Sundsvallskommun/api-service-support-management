@@ -47,6 +47,9 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
 import static generated.se.sundsvall.eventlog.EventType.CREATE;
 import static generated.se.sundsvall.eventlog.EventType.DELETE;
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -54,6 +57,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
@@ -61,6 +65,8 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLi
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
@@ -70,7 +76,9 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -86,6 +94,9 @@ public class ErrandService {
 	private static final String EVENT_LOG_UPDATE_ERRAND = "Ärendet har uppdaterats.";
 	private static final String EVENT_LOG_ACTIVATE_ERRAND = "Ärendet har aktiverats.";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
+	private static final String EVENT_LOG_SOFT_DELETE_ERRAND = "Ärendet har mjukraderats.";
+	private static final String EVENT_LOG_RESTORE_ERRAND = "Ärendet har återställts.";
+	private static final String ERRAND_NOT_DELETED = "The errand '%s' is not soft deleted, and there is nothing to restore";
 	private static final String EVENT_LOG_ASSIGN_ERRAND = "Ärendet har tilldelats.";
 	private static final String LABELS_KEPT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had. Give the errand labels that name the process it runs, or put the labels back as they were.";
 	private static final String LABELS_NOT_REBUILT = "The labels of the errand were therefore not rebuilt after labels were moved or merged, and it keeps the labels it had.";
@@ -205,7 +216,7 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter))
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		final var matches = repository.findAll(fullFilter, pageable);
@@ -315,9 +326,69 @@ public class ErrandService {
 		return applyClassificationDisplayNames(toErrandWithAccessControl(entity, keyAccess.readable(), enrichmentOf(namespace, municipalityId, List.of(entity))), classificationDisplayNames);
 	}
 
+	/**
+	 * Soft deletes an errand: it is kept with everything belonging to it, but left out of every read of the API until it
+	 * is restored by {@link #restoreErrand(String, String, String, String)} or deleted for good by
+	 * {@link #deleteErrand(String, String, String, String)}.
+	 * <p>
+	 * Held to what deleting the errand for good is held to: the access it takes, the version the caller believes it is at
+	 * and no decision of it that can no longer be changed. Nor is an errand with a process still running on it soft
+	 * deleted, since the process would be left calling an errand that answers as gone. The deletion is recorded as a
+	 * revision and told of as an update.
+	 *
+	 * @param namespace      namespace of the errand.
+	 * @param municipalityId id of the municipality of the errand.
+	 * @param id             id of the errand to soft delete.
+	 * @param ifMatch        the version the caller believes the errand is at, or null to skip the check.
+	 */
+	@Transactional
+	public void softDeleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
+		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
+
+		validateIfMatch(ifMatch, entity.getVersion());
+		decisionValidator.validateErrandSoftDeletable(namespace, municipalityId, id);
+
+		entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		entity.setDeleted(now(systemDefault()).truncatedTo(MILLIS));
+		entity.setDeletedBy(getCallerIdentity());
+
+		final var saved = repository.saveAndFlush(entity);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_SOFT_DELETE_ERRAND, ERRAND_DELETION, true);
+	}
+
+	/**
+	 * Restores a soft deleted errand, as it was when it was soft deleted. The restoration is recorded as a revision and
+	 * told of as an update.
+	 *
+	 * @param  namespace                                      namespace of the errand.
+	 * @param  municipalityId                                 id of the municipality of the errand.
+	 * @param  id                                             id of the errand to restore.
+	 * @param  ifMatch                                        the version the caller believes the errand is at, or null to
+	 *                                                        skip the check.
+	 * @throws org.springframework.web.ErrorResponseException 409 when the errand is not soft deleted.
+	 */
+	@Transactional
+	public void restoreErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
+		final var entity = accessControlService.getErrandIncludingDeleted(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
+
+		// Held to the version first, as every other write to the errand is
+		validateIfMatch(ifMatch, entity.getVersion());
+		if (isNull(entity.getDeleted())) {
+			throw Problem.valueOf(CONFLICT, ERRAND_NOT_DELETED.formatted(id));
+		}
+
+		entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		entity.setDeleted(null);
+		entity.setDeletedBy(null);
+
+		final var saved = repository.saveAndFlush(entity);
+		logUpdateEvent(saved, revisionService.createErrandRevision(saved), EVENT_LOG_RESTORE_ERRAND, ERRAND_RESTORATION, true);
+	}
+
 	@Transactional
 	public void deleteErrand(final String namespace, final String municipalityId, final String id, final String ifMatch) {
-		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
+		// A soft deleted errand is found too, so that it can be deleted for good
+		final var entity = accessControlService.getErrandIncludingDeleted(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		if (ifMatch == null && LOG.isDebugEnabled()) {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
@@ -339,7 +410,7 @@ public class ErrandService {
 
 		// Attachments are read through the attachment service rather than off the entity, so that the access check
 		// guarding them applies to a caller deleting them along with the errand.
-		removeErrand(entity, errandAttachmentService.readErrandAttachments(namespace, municipalityId, id).stream()
+		removeErrand(entity, errandAttachmentService.readAttachmentsOfErrandToDelete(namespace, municipalityId, id).stream()
 			.map(ErrandAttachment::getId)
 			.toList());
 
@@ -420,7 +491,7 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
-		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter))
+		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);

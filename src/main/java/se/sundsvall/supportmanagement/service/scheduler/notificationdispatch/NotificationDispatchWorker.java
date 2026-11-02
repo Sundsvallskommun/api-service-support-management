@@ -216,6 +216,7 @@ public class NotificationDispatchWorker {
 	 * control specification explicitly. A subscriber whose identifier cannot be resolved reaches nothing.
 	 */
 	private boolean mayReachErrand(final String errandId, final SubscriberEntity subscriber) {
+		// A soft deleted errand is reached too, or the notice of its deletion would never be delivered
 		return errandsRepository.findOne(withId(errandId)
 			.and(accessControlService.withAccessControl(subscriber.getNamespace(), subscriber.getMunicipalityId(), toIdentifier(subscriber), ProtectedResource.NOTIFICATION, LR)))
 			.isPresent();

@@ -30,6 +30,8 @@ public class ErrandSearchPredicates {
 	static final String REPORTER_USER_ID_FIELD = ErrandIndex.REPORTER_USER_ID;
 	static final String ACCESS_LABEL_ID_FIELD = ErrandIndex.ACCESS_LABEL_ID;
 	static final String LIFECYCLE_FIELD = ErrandIndex.LIFECYCLE;
+	static final String DELETED_FIELD = ErrandIndex.DELETED;
+	static final String DELETED_BY_FIELD = ErrandIndex.DELETED_BY;
 
 	/**
 	 * What the client asked for. A blank query matches everything, so that a client can page through a namespace sorted
@@ -140,6 +142,33 @@ public class ErrandSearchPredicates {
 		return namesLifecycle
 			? f.matchAll().toPredicate()
 			: f.not(f.match().field(LIFECYCLE_FIELD).matching(ErrandLifecycle.DRAFT)).toPredicate();
+	}
+
+	/**
+	 * Leaves the soft deleted errands out of a search whose query does not name the deletion, by deleted or deletedBy, as
+	 * the listing does. A query naming it decides for itself which errands it finds.
+	 * <p>
+	 * The errands carrying a deletion are left out rather than those without one kept, so that an errand indexed before the
+	 * index held the deletion is still found.
+	 *
+	 * @param f     the factory
+	 * @param query the query string
+	 */
+	public SearchPredicate deleted(final SearchPredicateFactory f, final String query) {
+		return namesDeletion(query)
+			? f.matchAll().toPredicate()
+			: f.not(f.exists().field(DELETED_FIELD)).toPredicate();
+	}
+
+	/**
+	 * Whether the query names the deletion of the errand, by deleted or deletedBy, and so decides for itself whether soft
+	 * deleted errands are found.
+	 *
+	 * @param query the query string
+	 */
+	public boolean namesDeletion(final String query) {
+		return QueryScanner.scan(query).fields().stream()
+			.anyMatch(name -> DELETED_FIELD.equals(name) || DELETED_BY_FIELD.equals(name));
 	}
 
 	/**

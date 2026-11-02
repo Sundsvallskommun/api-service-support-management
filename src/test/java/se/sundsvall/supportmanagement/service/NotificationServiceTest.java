@@ -130,7 +130,7 @@ class NotificationServiceTest {
 		final var ownerId = randomUUID().toString();
 		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort))
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort))
 			.thenReturn(List.of(createNotificationEntity(_ -> {})));
 
 		// Act
@@ -138,7 +138,7 @@ class NotificationServiceTest {
 
 		// Assert
 		assertThat(result).isNotNull().hasSize(1);
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort);
 	}
 
 	@Test
@@ -150,7 +150,7 @@ class NotificationServiceTest {
 		final var ownerId = randomUUID().toString();
 		final var sort = Sort.by(Sort.Direction.DESC, "created");
 
-		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort))
+		when(notificationRepositoryMock.findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort))
 			.thenReturn(List.of());
 
 		// Act
@@ -158,7 +158,7 @@ class NotificationServiceTest {
 
 		// Assert
 		assertThat(result).isNotNull().isEmpty();
-		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerId(namespace, municipalityId, ownerId, sort);
+		verify(notificationRepositoryMock).findAllByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityDeletedIsNull(namespace, municipalityId, ownerId, sort);
 	}
 
 	@Test

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchExtension;
 import org.hibernate.search.engine.search.predicate.SearchPredicate;
+import org.hibernate.search.engine.search.predicate.dsl.ExistsPredicateFieldStep;
+import org.hibernate.search.engine.search.predicate.dsl.ExistsPredicateOptionsStep;
 import org.hibernate.search.engine.search.predicate.dsl.MatchAllPredicateOptionsStep;
 import org.hibernate.search.engine.search.predicate.dsl.MatchNonePredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.MatchPredicateFieldMoreStep;
@@ -81,6 +83,12 @@ class ErrandSearchPredicatesTest {
 
 	@Mock
 	private MatchPredicateOptionsStep matchOptionsMock;
+
+	@Mock
+	private ExistsPredicateFieldStep existsFieldStepMock;
+
+	@Mock
+	private ExistsPredicateOptionsStep existsOptionsMock;
 
 	@Mock
 	private TermsPredicateFieldStep termsFieldStepMock;
@@ -173,6 +181,42 @@ class ErrandSearchPredicatesTest {
 		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
 
 		assertThat(predicates().lifecycle(factoryMock, query)).isSameAs(predicateMock);
+
+		verify(factoryMock, never()).not(any(PredicateFinalStep.class));
+	}
+
+	/**
+	 * A query that does not name the deletion, a query that cannot be read included, finds no soft deleted errands.
+	 */
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = {
+		"vatten status:new", "title:deleted", "deletedAt:*", "title:(unbalanced"
+	})
+	void aQueryNotNamingTheDeletionLeavesTheSoftDeletedErrandsOut(final String query) {
+		when(factoryMock.exists()).thenReturn(existsFieldStepMock);
+		when(existsFieldStepMock.field(anyString())).thenReturn(existsOptionsMock);
+		when(factoryMock.not(any(PredicateFinalStep.class))).thenReturn(notMock);
+		when(notMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().deleted(factoryMock, query)).isSameAs(predicateMock);
+		assertThat(predicates().namesDeletion(query)).isFalse();
+
+		verify(existsFieldStepMock).field(ErrandSearchPredicates.DELETED_FIELD);
+		verify(factoryMock).not(existsOptionsMock);
+		verify(factoryMock, never()).matchAll();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"_exists_:deleted", "deleted:[* TO now]", "status:new OR deletedBy:joe01doe", "vatten -_exists_:deleted"
+	})
+	void aQueryNamingTheDeletionDecidesForItself(final String query) {
+		when(factoryMock.matchAll()).thenReturn(matchAllMock);
+		when(matchAllMock.toPredicate()).thenReturn(predicateMock);
+
+		assertThat(predicates().deleted(factoryMock, query)).isSameAs(predicateMock);
+		assertThat(predicates().namesDeletion(query)).isTrue();
 
 		verify(factoryMock, never()).not(any(PredicateFinalStep.class));
 	}
