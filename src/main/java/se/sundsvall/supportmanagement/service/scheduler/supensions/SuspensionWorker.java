@@ -11,7 +11,7 @@ import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.NotificationService;
 
 import static java.time.OffsetDateTime.now;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.SUSPENSION;
 
 @Component
 public class SuspensionWorker {

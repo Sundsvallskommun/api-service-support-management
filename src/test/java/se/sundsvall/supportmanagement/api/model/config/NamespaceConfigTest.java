@@ -17,9 +17,9 @@ import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.DECISION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.ErrandField.TITLE;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.DECISION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 
 class NamespaceConfigTest {
 

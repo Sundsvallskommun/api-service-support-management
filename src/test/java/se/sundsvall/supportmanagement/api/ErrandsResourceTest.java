@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.turkraft.springfilter.parser.node.FilterNode;
 import java.io.Serial;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
@@ -35,7 +35,6 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import tools.jackson.databind.JsonNode;
@@ -474,7 +473,7 @@ class ErrandsResourceTest {
 		final var countResponse = new CountResponse(count);
 
 		// Mock
-		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(count);
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<FilterNode>any())).thenReturn(count);
 
 		// Call
 		webTestClient.get()
@@ -486,7 +485,7 @@ class ErrandsResourceTest {
 			.isEqualTo(countResponse);
 
 		// Verification
-		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any());
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<FilterNode>any());
 	}
 
 	// Helper implementation of Page

@@ -16,12 +16,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
+import se.sundsvall.supportmanagement.model.enums.Direction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType.WEB_MESSAGE;
+import static se.sundsvall.supportmanagement.model.enums.CommunicationType.WEB_MESSAGE;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class WebMessageCollectorMapperTest {

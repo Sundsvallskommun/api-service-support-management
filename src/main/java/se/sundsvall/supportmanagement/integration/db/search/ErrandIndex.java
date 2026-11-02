@@ -6,8 +6,8 @@ import java.util.List;
  * The names of the fields of the errand index that anything but the index itself refers to.
  * <p>
  * The entity mapping declares the fields under these names,
- * {@link se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField}
- * and {@link se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource} say which of them carry a
+ * {@link se.sundsvall.supportmanagement.model.enums.ErrandField}
+ * and {@link se.sundsvall.supportmanagement.model.enums.ProtectedResource} say which of them carry a
  * field or a resource, and the search reads the rest of the index from its descriptor. Naming a field here and nowhere
  * else is what lets a rename be caught by the compiler, and what the index model checks against the index at startup.
  * A name ending in a dot, made with {@link #under}, stands for every field below an object.

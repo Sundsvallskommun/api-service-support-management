@@ -20,9 +20,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
 
 /**
  * Verifies what publication actually writes, read back from a real row of the outbox: the key of a label that has not

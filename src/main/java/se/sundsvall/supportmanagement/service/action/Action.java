@@ -9,7 +9,7 @@ import se.sundsvall.supportmanagement.api.model.config.action.Definition;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 
 public interface Action {
 

@@ -26,7 +26,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.subscription.Subscription;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.SubscriptionService;
 

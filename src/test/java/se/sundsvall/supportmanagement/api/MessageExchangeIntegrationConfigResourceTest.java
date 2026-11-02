@@ -11,7 +11,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.MessageExchangeIntegration;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.config.MessageExchangeIntegrationConfigService;

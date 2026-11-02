@@ -31,7 +31,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 
 /**
  * The start mode of the labels over the wire: the permission an ordinary errand event carries to pw-alkt, and the

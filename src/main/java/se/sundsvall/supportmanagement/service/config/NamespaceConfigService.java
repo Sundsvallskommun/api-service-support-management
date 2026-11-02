@@ -25,9 +25,9 @@ import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelTy
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
+import se.sundsvall.supportmanagement.model.enums.AccessGrantScope;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static java.util.Collections.emptyList;

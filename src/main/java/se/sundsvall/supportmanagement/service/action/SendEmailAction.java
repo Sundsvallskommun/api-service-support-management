@@ -19,9 +19,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.Direction;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 

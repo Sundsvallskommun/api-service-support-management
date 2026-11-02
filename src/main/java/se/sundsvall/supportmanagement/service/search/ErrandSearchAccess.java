@@ -9,7 +9,8 @@ import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndexBindings;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.search.index.ErrandIndexModel;
@@ -202,7 +203,7 @@ public class ErrandSearchAccess {
 		// classification it belongs to rather than to a field named after it
 		for (final var order : sort) {
 			final var refused = Stream.of(ErrandField.values())
-				.filter(field -> field.getSortField(order.getProperty()).isPresent())
+				.filter(field -> ErrandIndexBindings.sortField(field, order.getProperty()).isPresent())
 				.map(fields::wholeFieldRefusal)
 				.flatMap(Optional::stream)
 				.findFirst();

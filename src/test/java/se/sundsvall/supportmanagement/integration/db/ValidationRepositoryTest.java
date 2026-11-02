@@ -8,7 +8,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.Direction;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;

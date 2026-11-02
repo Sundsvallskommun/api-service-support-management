@@ -16,7 +16,7 @@ import se.sundsvall.supportmanagement.integration.db.model.TimeMeasurementEntity
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.ACTIVE;
 
 public class ErrandListener {
 

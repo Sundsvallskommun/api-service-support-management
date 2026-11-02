@@ -9,16 +9,16 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.PENDING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.PENDING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobType.ERRAND_PURGE;
+import static se.sundsvall.supportmanagement.model.enums.JobType.MOVE_LABEL;
 
 /**
  * Verifies against a real database the pair of queries that together find the jobs that have gone quiet: one finds

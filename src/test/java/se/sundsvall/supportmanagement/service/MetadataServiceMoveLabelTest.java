@@ -36,7 +36,7 @@ import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -52,7 +52,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.MOVE_LABEL;
+import static se.sundsvall.supportmanagement.model.enums.JobType.MOVE_LABEL;
 
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceMoveLabelTest {

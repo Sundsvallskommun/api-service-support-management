@@ -10,7 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivity
 
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
 
 /**
  * The entries SM itself writes in the activity log of an errand, as opposed to those a process reports.

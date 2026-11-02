@@ -26,10 +26,10 @@ import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEnti
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.emailreader.EmailReaderClient;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.CommunicationService;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.EventService;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_EMAIL_EXTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.MESSAGE_EMAIL_EXTERNAL;
 
 class EmailReaderWorkerTest {
 

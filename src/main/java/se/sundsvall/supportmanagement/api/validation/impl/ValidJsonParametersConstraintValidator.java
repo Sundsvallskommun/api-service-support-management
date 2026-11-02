@@ -4,11 +4,10 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map.Entry;
-import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+import se.sundsvall.supportmanagement.service.JsonSchemaValidationService;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
@@ -18,10 +17,10 @@ import static org.springframework.util.CollectionUtils.isEmpty;
 
 public class ValidJsonParametersConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidJsonParameters, List<JsonParameter>> {
 
-	private final JsonSchemaClient jsonSchemaClient;
+	private final JsonSchemaValidationService jsonSchemaValidationService;
 
-	public ValidJsonParametersConstraintValidator(final JsonSchemaClient jsonSchemaClient) {
-		this.jsonSchemaClient = jsonSchemaClient;
+	public ValidJsonParametersConstraintValidator(final JsonSchemaValidationService jsonSchemaValidationService) {
+		this.jsonSchemaValidationService = jsonSchemaValidationService;
 	}
 
 	@Override
@@ -49,12 +48,9 @@ public class ValidJsonParametersConstraintValidator extends AbstractTagConstrain
 				continue;
 			}
 
-			try {
-				jsonSchemaClient.validateJson(municipalityId, param.getSchemaId(), param.getValue());
-			} catch (final ServerProblem e) {
-				throw e;
-			} catch (final ThrowableProblem e) {
-				useCustomMessageForValidation(extractErrorMessage(e, param), i, context);
+			final var violation = jsonSchemaValidationService.findViolation(municipalityId, param.getSchemaId(), param.getValue());
+			if (violation.isPresent()) {
+				useCustomMessageForValidation(extractErrorMessage(violation.get(), param), i, context);
 				hasErrors = true;
 			}
 		}

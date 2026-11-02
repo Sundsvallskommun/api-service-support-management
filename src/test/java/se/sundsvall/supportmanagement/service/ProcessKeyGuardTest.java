@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.service.ProcessActivityLog.CONFIG_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.ProcessKeyGuard.MOVES_KEY_ERROR_CODE;
 import static se.sundsvall.supportmanagement.service.ProcessKeyGuard.TWO_PROCESSES_ERROR_CODE;

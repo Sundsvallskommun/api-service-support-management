@@ -24,7 +24,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;

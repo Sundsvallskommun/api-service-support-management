@@ -11,7 +11,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.PARAMETERS;
+import static se.sundsvall.supportmanagement.model.enums.ErrandField.PARAMETERS;
 
 class FieldAccessTest {
 

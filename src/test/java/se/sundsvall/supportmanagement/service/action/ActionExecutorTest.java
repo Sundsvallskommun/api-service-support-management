@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.clearNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.setNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;

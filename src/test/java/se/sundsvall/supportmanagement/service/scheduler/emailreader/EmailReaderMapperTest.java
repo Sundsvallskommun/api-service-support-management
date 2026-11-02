@@ -24,15 +24,15 @@ import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.EmailWorkerConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.Direction.INBOUND;
+import static se.sundsvall.supportmanagement.model.enums.Direction.INBOUND;
 
 @ExtendWith(MockitoExtension.class)
 class EmailReaderMapperTest {

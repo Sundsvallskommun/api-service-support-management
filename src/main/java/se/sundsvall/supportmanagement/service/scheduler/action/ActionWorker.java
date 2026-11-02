@@ -61,7 +61,7 @@ public class ActionWorker {
 			throw new IllegalStateException("No action implementation found for name: " + actionName);
 		}
 
-		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new RuntimeException("Could not find errand"));
+		final var errand = errandsRepository.findWithLockingById(actionEntity.getErrandEntity().getId()).orElseThrow(() -> new IllegalStateException("No errand found for errand action with id: " + actionEntity.getId()));
 
 		// Soft deleted since the action was picked up: left waiting, to be carried out once the errand is restored
 		if (nonNull(errand.getDeleted())) {

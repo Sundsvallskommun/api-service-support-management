@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 

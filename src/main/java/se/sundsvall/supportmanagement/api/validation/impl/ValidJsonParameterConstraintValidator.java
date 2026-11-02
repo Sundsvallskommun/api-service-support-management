@@ -2,11 +2,10 @@ package se.sundsvall.supportmanagement.api.validation.impl;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameter;
-import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+import se.sundsvall.supportmanagement.service.JsonSchemaValidationService;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -14,10 +13,10 @@ import static org.hibernate.validator.internal.engine.messageinterpolation.util.
 
 public class ValidJsonParameterConstraintValidator extends AbstractTagConstraintValidator implements ConstraintValidator<ValidJsonParameter, JsonParameter> {
 
-	private final JsonSchemaClient jsonSchemaClient;
+	private final JsonSchemaValidationService jsonSchemaValidationService;
 
-	public ValidJsonParameterConstraintValidator(final JsonSchemaClient jsonSchemaClient) {
-		this.jsonSchemaClient = jsonSchemaClient;
+	public ValidJsonParameterConstraintValidator(final JsonSchemaValidationService jsonSchemaValidationService) {
+		this.jsonSchemaValidationService = jsonSchemaValidationService;
 	}
 
 	@Override
@@ -28,15 +27,9 @@ public class ValidJsonParameterConstraintValidator extends AbstractTagConstraint
 
 		final var municipalityId = getPathVariable(PATHVARIABLE_MUNICIPALITY_ID);
 
-		try {
-			jsonSchemaClient.validateJson(municipalityId, value.getSchemaId(), value.getValue());
-			return true;
-		} catch (final ServerProblem e) {
-			throw e;
-		} catch (final ThrowableProblem e) {
-			useCustomMessageForValidation(extractErrorMessage(e, value), context);
-			return false;
-		}
+		final var violation = jsonSchemaValidationService.findViolation(municipalityId, value.getSchemaId(), value.getValue());
+		violation.ifPresent(problem -> useCustomMessageForValidation(extractErrorMessage(problem, value), context));
+		return violation.isEmpty();
 	}
 
 	private String extractErrorMessage(final ThrowableProblem e, final JsonParameter param) {

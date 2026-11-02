@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.model.subscriber;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 
 @Embeddable
 public class NotificationChannelEmbeddable {

@@ -4,7 +4,7 @@ import java.util.List;
 import org.apache.commons.lang3.Strings;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -45,7 +45,7 @@ public class ConfigPropertyExtractor {
 		return (T) ofNullable(nullableNamespaceConfigEntity).orElse(NamespaceConfigEntity.create())
 			.getValues().stream()
 			.filter(configValue -> Strings.CI.equals(key, configValue.getKey()))
-			.map(ValueType::getAsTypedClass)
+			.map(ConfigPropertyExtractor::asTyped)
 			.findFirst()
 			.orElse(null);
 	}
@@ -66,7 +66,7 @@ public class ConfigPropertyExtractor {
 		return (List<T>) ofNullable(nullableNamespaceConfigEntity).orElse(NamespaceConfigEntity.create())
 			.getValues().stream()
 			.filter(configValue -> Strings.CI.equals(key, configValue.getKey()))
-			.map(ValueType::getAsTypedClass)
+			.map(ConfigPropertyExtractor::asTyped)
 			.toList();
 	}
 
@@ -87,5 +87,16 @@ public class ConfigPropertyExtractor {
 		return (T) ofNullable(getNullableValue(namespaceConfigEntity, key))
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No configurationproperty matching key '%s' found in configuration for municipality '%s' and namespace '%s'"
 				.formatted(key, namespaceConfigEntity.getMunicipalityId(), namespaceConfigEntity.getNamespace())));
+	}
+
+	/**
+	 * The value of a key/value-pair as the type that is defined for it.
+	 */
+	static Object asTyped(final NamespaceConfigValueEmbeddable configValue) {
+		return switch (configValue.getType()) {
+			case BOOLEAN -> Boolean.valueOf(configValue.getValue());
+			case INTEGER -> Integer.valueOf(configValue.getValue());
+			case STRING -> String.valueOf(configValue.getValue());
+		};
 	}
 }

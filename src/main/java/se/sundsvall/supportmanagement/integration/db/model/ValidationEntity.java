@@ -14,7 +14,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.GenerationType.IDENTITY;

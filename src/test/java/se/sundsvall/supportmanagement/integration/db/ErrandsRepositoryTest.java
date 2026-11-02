@@ -20,7 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;

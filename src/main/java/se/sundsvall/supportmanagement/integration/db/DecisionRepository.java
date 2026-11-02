@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 /**
  * Reads the decisions of an errand through its errand.

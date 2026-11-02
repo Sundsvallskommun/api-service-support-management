@@ -2,7 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.converter;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+import se.sundsvall.supportmanagement.model.enums.ValueType;
 
 import static java.util.Optional.ofNullable;
 

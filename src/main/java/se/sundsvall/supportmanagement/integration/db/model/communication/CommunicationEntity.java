@@ -29,9 +29,9 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordFie
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.Direction;
 
 import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;

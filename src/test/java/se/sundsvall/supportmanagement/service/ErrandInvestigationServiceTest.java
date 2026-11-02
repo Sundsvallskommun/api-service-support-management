@@ -24,9 +24,9 @@ import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationSectionJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.SectionAssessment;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;

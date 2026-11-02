@@ -15,12 +15,12 @@ public class TeliaAceWorkItemScheduler {
 	private final TeliaAceWorkItemWorker worker;
 	private final Dept44HealthUtility healthUtility;
 
-	@Value("${scheduler.telia-ace-work-item.name}")
-	private String jobName;
+	private final String jobName;
 
-	public TeliaAceWorkItemScheduler(final TeliaAceWorkItemWorker worker, final Dept44HealthUtility healthUtility) {
+	public TeliaAceWorkItemScheduler(final TeliaAceWorkItemWorker worker, final Dept44HealthUtility healthUtility, @Value("${scheduler.telia-ace-work-item.name}") final String jobName) {
 		this.worker = worker;
 		this.healthUtility = healthUtility;
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

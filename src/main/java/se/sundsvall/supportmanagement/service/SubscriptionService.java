@@ -16,11 +16,11 @@ import se.sundsvall.supportmanagement.api.model.subscription.SubscriptionTargetT
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.IdentifierEmbeddableMapper;
 import se.sundsvall.supportmanagement.service.mapper.SubscriptionMapper;

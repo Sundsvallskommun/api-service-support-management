@@ -19,7 +19,7 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withIdAfter;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withLastTouchedBefore;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;

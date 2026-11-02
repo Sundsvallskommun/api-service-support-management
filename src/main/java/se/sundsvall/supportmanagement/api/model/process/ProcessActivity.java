@@ -9,7 +9,7 @@ import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.validation.ValidEnumValue;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
+import se.sundsvall.supportmanagement.model.enums.ActivitySeverity;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import static java.util.Optional.ofNullable;

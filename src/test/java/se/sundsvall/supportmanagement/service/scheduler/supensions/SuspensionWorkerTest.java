@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.SUSPENSION;
 
 @ExtendWith(MockitoExtension.class)
 class SuspensionWorkerTest {

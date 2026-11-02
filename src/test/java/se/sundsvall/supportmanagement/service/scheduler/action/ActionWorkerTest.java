@@ -43,7 +43,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.scheduler.action.ActionWorker.EVENT_LOG_ACTION;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getRequestGroupId;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;

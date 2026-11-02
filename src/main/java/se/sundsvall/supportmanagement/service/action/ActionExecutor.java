@@ -18,7 +18,7 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.shouldNotify;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.withNotify;
 

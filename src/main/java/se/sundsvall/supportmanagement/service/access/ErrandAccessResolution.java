@@ -2,8 +2,8 @@ package se.sundsvall.supportmanagement.service.access;
 
 import generated.se.sundsvall.accessmapper.Access;
 import java.util.Map;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 /**
  * What a user may do with one errand, resolved in one pass.

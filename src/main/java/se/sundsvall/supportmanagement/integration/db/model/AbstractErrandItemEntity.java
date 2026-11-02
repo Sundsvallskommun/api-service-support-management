@@ -21,8 +21,8 @@ import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;

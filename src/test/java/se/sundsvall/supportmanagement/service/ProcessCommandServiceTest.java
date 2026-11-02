@@ -34,9 +34,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivity
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessCommand;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
@@ -57,15 +57,15 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
 import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SIGNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.DRAFT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.SIGNAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.AUTOMATIC;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.MANUAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.ProtectedResource.PROCESS;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessCommandServiceTest {

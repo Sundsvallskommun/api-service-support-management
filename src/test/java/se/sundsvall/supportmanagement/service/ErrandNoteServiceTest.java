@@ -21,8 +21,8 @@ import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.mapper.ErrandNoteMapper;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;

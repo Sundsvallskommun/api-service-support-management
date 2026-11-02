@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Test;
 import se.sundsvall.supportmanagement.api.model.notification.Notification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 
 class NotificationMapperTest {
 

@@ -21,14 +21,15 @@ public class NotificationDispatchScheduler {
 	private final SubscriberSmsService subscriberSmsService;
 	private final Dept44HealthUtility healthUtility;
 
-	@Value("${scheduler.notification-dispatch.name}")
-	private String jobName;
+	private final String jobName;
 
-	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final SubscriberEmailService subscriberEmailService, final SubscriberSmsService subscriberSmsService, final Dept44HealthUtility healthUtility) {
+	public NotificationDispatchScheduler(final NotificationDispatchWorker worker, final SubscriberEmailService subscriberEmailService, final SubscriberSmsService subscriberSmsService, final Dept44HealthUtility healthUtility,
+		@Value("${scheduler.notification-dispatch.name}") final String jobName) {
 		this.worker = worker;
 		this.subscriberEmailService = subscriberEmailService;
 		this.subscriberSmsService = subscriberSmsService;
 		this.healthUtility = healthUtility;
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

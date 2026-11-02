@@ -14,8 +14,11 @@ public class ValidFileSizeConstraintValidator implements ConstraintValidator<Val
 	// Defaults to 10 MB if property is not set. Observe that setting for max_allowed_packet in DB must be set to larger
 	// value than byte size in validator, as DB transaction will fail if file is bigger than value allowed by DB. See
 	// https://mariadb.com/kb/en/server-system-variables/#max_allowed_packet for further documentation on setting.
-	@Value("${attachment.maximum.bytesize:52430000}")
-	private int maximumByteSize;
+	private final int maximumByteSize;
+
+	public ValidFileSizeConstraintValidator(@Value("${attachment.maximum.bytesize:52430000}") final int maximumByteSize) {
+		this.maximumByteSize = maximumByteSize;
+	}
 
 	@Override
 	public boolean isValid(final String base64Data, final ConstraintValidatorContext context) {

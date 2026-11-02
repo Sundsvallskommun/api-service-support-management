@@ -19,7 +19,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.CoreMatchers.allOf;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS;
 
 class NotificationDispatchOutboxEntityTest {
 

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 

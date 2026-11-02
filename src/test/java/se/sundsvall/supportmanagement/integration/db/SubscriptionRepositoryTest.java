@@ -10,7 +10,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
@@ -18,6 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;

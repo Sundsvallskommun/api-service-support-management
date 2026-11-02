@@ -22,8 +22,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -45,8 +45,8 @@ import static org.springframework.data.domain.Sort.unsorted;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {

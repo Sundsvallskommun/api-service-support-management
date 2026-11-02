@@ -26,9 +26,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.Direction;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;

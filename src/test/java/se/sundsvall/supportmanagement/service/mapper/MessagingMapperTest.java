@@ -24,8 +24,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.model.MessagingSettings;
+import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettings;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static java.util.Map.entry;
 import static java.util.UUID.randomUUID;

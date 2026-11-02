@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static java.util.Objects.isNull;
 

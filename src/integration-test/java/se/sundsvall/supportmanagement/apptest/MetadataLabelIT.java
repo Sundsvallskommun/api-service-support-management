@@ -12,8 +12,8 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 import static java.time.Duration.ofMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -34,9 +34,9 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 /**
  * Label Metadata IT tests.

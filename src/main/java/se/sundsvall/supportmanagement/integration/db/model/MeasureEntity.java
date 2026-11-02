@@ -30,10 +30,10 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextFi
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
-import se.sundsvall.supportmanagement.integration.db.model.enums.MeasureResult;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.enums.Accept;
+import se.sundsvall.supportmanagement.model.enums.MeasureResult;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static org.hibernate.Length.LONG32;

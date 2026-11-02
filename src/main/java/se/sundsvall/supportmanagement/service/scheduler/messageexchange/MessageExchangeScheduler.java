@@ -18,20 +18,21 @@ public class MessageExchangeScheduler {
 
 	private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(MessageExchangeScheduler.class);
 
-	@Value("${scheduler.messageexchange.enabled:true}")
-	private boolean isSchedulerEnabled;
+	private final boolean isSchedulerEnabled;
 	private final MessageExchangeWorker messageExchangeWorker;
 	private final AsyncTaskExecutor asyncTaskExecutor;
 	private final MessageExchangeScheduler self;
 
 	public MessageExchangeScheduler(final MessageExchangeWorker messageExchangeWorker,
 		@Qualifier("taskScheduler") final AsyncTaskExecutor asyncTaskExecutor,
-		@Lazy final MessageExchangeScheduler self) {
+		@Lazy final MessageExchangeScheduler self,
+		@Value("${scheduler.messageexchange.enabled:true}") final boolean isSchedulerEnabled) {
 
 		this.messageExchangeWorker = messageExchangeWorker;
 		this.asyncTaskExecutor = asyncTaskExecutor;
 		this.self = self;
 
+		this.isSchedulerEnabled = isSchedulerEnabled;
 	}
 
 	@Dept44Scheduled(

@@ -27,8 +27,9 @@ import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.AccessLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndexBindings;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.access.AccessSnapshot;
 import se.sundsvall.supportmanagement.service.access.ErrandAccessSpecifications;
 import se.sundsvall.supportmanagement.service.access.NamespaceGrantResolver;
@@ -176,7 +177,7 @@ class ErrandSearchFieldParityTest {
 	 * resource is reached whole or not at all and the mapper never trims it, which is settled before a route is built.
 	 */
 	private static Stream<ErrandField> fieldsBinding(final String name) {
-		return Stream.of(ErrandField.values()).filter(field -> field.getSearchFields().stream().anyMatch(bound -> bound.equals(name)));
+		return Stream.of(ErrandField.values()).filter(field -> ErrandIndexBindings.searchFields(field).stream().anyMatch(bound -> bound.equals(name)));
 	}
 
 	/** A null map is an unrestricted user, which is not the same as one restricted to nothing. */

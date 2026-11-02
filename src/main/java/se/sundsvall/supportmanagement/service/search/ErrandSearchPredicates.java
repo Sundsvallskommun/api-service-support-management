@@ -9,8 +9,8 @@ import org.hibernate.search.engine.search.predicate.SearchPredicate;
 import org.hibernate.search.engine.search.predicate.dsl.PredicateFinalStep;
 import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static java.util.Objects.isNull;

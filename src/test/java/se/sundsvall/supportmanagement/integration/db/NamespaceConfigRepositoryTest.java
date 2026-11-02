@@ -17,14 +17,14 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFY_REPORTER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)

@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.service.access.AccessScope;
 
 import static org.assertj.core.api.Assertions.assertThat;

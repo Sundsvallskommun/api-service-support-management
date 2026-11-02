@@ -25,8 +25,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.Collections.emptyList;

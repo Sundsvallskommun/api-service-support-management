@@ -20,19 +20,14 @@ import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelTy
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccessGrantEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.RoleAccessType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.RESOURCE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
@@ -43,6 +38,11 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.FIELD;
+import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.RESOURCE;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
 
 class NamespaceConfigMapperTest {
 

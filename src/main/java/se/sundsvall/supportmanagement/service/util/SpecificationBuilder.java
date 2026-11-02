@@ -9,7 +9,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.Strings;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

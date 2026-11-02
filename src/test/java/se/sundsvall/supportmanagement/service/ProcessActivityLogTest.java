@@ -26,8 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity.MESSAGE_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.INFO;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessActivityLogTest {

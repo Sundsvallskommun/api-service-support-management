@@ -11,13 +11,13 @@ import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueE
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
 
 class ConfigPropertyExtractorTest {
 
@@ -129,4 +129,10 @@ class ConfigPropertyExtractorTest {
 		assertThat(e.getDetail()).isEqualTo("No configuration present");
 	}
 
+	@Test
+	void asTyped() {
+		assertThat((Boolean) ConfigPropertyExtractor.asTyped(NamespaceConfigValueEmbeddable.create().withType(BOOLEAN).withValue("true"))).isTrue();
+		assertThat(ConfigPropertyExtractor.asTyped(NamespaceConfigValueEmbeddable.create().withType(INTEGER).withValue("123"))).isEqualTo(123);
+		assertThat(ConfigPropertyExtractor.asTyped(NamespaceConfigValueEmbeddable.create().withType(STRING).withValue("value"))).isEqualTo("value");
+	}
 }

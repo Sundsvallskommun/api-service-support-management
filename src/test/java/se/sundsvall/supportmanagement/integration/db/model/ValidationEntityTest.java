@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;

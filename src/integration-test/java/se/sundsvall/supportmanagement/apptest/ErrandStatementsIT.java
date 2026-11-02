@@ -10,7 +10,7 @@ import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.StatementRepository;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.LOCATION;

@@ -57,9 +57,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED;
 import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
 import static se.sundsvall.supportmanagement.service.ProcessActivityLog.DELIVERY_ACTIVITY_TYPE;
 import static se.sundsvall.supportmanagement.service.scheduler.processevent.ProcessEventRelay.REJECTION_ERROR_CODE;
 

@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;

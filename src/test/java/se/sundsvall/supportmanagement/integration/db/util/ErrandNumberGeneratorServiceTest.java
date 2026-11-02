@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandNumberGeneratorServiceTest {

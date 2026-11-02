@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import com.turkraft.springfilter.parser.node.FieldNode;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import jakarta.persistence.LockModeType;
@@ -57,13 +58,13 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.action.DueAction;
@@ -110,14 +111,14 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ASSIGNMENT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_RESTORATION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandServiceTest {
@@ -334,7 +335,7 @@ class ErrandServiceTest {
 		true, false
 	})
 	void findErrandWithMatches(boolean limited) {
-		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
+		final var filter = new FieldNode("id");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(1, 2, sort);
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
@@ -357,11 +358,12 @@ class ErrandServiceTest {
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(accessControlServiceMock).roleBasedFieldResolver(NAMESPACE, MUNICIPALITY_ID, user);
 		verify(errandRepositoryMock).findAll(ArgumentMatchers.<Specification<ErrandEntity>>any(), eq(pageable));
+		verify(filterSpecificationConverterSpy).convert(filter);
 	}
 
 	@Test
 	void findErrandWithoutMatches() {
-		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
+		final var filter = new FieldNode("id");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
 		final Pageable pageable = PageRequest.of(3, 7, sort);
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
@@ -1470,7 +1472,7 @@ class ErrandServiceTest {
 	void countErrands() {
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
 		Identifier.set(user);
-		final Specification<ErrandEntity> filter = filterSpecificationConverterSpy.convert("id: 'uuid'");
+		final var filter = new FieldNode("id");
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 
 		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
@@ -1482,6 +1484,7 @@ class ErrandServiceTest {
 
 		verify(accessControlServiceMock).withAccessControl(NAMESPACE, MUNICIPALITY_ID, user, ProtectedResource.ERRAND, LR);
 		verify(errandRepositoryMock).count(ArgumentMatchers.<Specification<ErrandEntity>>any());
+		verify(filterSpecificationConverterSpy).convert(filter);
 	}
 
 	@Test

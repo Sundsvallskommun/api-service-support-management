@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.converter;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.Optional;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
 
 @Converter(autoApply = true)
 public class CommunicationTypeConverter implements AttributeConverter<CommunicationType, String> {

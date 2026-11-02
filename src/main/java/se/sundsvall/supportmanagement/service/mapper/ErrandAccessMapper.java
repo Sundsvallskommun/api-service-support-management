@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.api.model.access.ErrandFieldAccess;
 import se.sundsvall.supportmanagement.api.model.access.ErrandFieldKeyAccess;
 import se.sundsvall.supportmanagement.api.model.access.ErrandResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.access.ErrandAccessResolution;
 import se.sundsvall.supportmanagement.service.access.FieldGrant;
 

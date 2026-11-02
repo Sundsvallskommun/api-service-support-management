@@ -10,7 +10,7 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureJsonParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
+import se.sundsvall.supportmanagement.model.enums.Accept;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;

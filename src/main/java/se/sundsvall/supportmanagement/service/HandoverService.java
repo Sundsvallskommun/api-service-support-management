@@ -27,10 +27,10 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.mapper.HandoverMapper;
 
@@ -47,8 +47,8 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.Constants.RELATION_SERVICE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_IN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.HANDOVER_OUT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.HANDOVER_IN;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.HANDOVER_OUT;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.requireActive;
 

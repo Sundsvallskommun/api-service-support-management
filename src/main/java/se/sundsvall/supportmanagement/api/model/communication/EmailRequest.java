@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;

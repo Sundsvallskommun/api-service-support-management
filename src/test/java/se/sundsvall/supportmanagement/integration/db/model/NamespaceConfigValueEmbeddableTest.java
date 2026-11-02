@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.model;
 
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+import se.sundsvall.supportmanagement.model.enums.ValueType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;

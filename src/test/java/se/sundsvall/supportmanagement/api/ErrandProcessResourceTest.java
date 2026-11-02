@@ -30,8 +30,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
 
 @ResourceTest
 class ErrandProcessResourceTest {

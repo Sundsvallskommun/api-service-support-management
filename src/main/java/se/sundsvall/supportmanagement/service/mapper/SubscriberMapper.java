@@ -102,15 +102,15 @@ public final class SubscriberMapper {
 			.orElse(null);
 	}
 
-	static NotificationChannelType toApiChannelType(final se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType dbType) {
+	static NotificationChannelType toApiChannelType(final se.sundsvall.supportmanagement.model.enums.NotificationChannelType dbType) {
 		return Optional.ofNullable(dbType)
 			.map(t -> NotificationChannelType.valueOf(t.name()))
 			.orElse(null);
 	}
 
-	static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType toDbChannelType(final NotificationChannelType apiType) {
+	static se.sundsvall.supportmanagement.model.enums.NotificationChannelType toDbChannelType(final NotificationChannelType apiType) {
 		return Optional.ofNullable(apiType)
-			.map(t -> se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.valueOf(t.name()))
+			.map(t -> se.sundsvall.supportmanagement.model.enums.NotificationChannelType.valueOf(t.name()))
 			.orElse(null);
 	}
 

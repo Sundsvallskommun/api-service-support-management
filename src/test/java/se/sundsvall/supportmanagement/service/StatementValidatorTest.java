@@ -13,7 +13,7 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;

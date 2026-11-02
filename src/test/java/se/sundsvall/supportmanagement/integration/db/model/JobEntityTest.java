@@ -4,8 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;

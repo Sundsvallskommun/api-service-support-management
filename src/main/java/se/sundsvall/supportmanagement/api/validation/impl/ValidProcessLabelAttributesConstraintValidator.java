@@ -11,7 +11,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Strings;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.validation.ValidProcessLabelAttributes;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.service.ProcessRules;
 
 import static java.lang.Boolean.FALSE;

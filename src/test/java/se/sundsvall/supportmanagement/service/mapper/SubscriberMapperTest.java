@@ -35,7 +35,7 @@ class SubscriberMapperTest {
 		assertThat(entity.getIdentifier()).isEqualTo(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"));
 		assertThat(entity.getChannels()).containsExactly(
 			NotificationChannelEmbeddable.create()
-				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL)
+				.withType(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL)
 				.withDestination("joe@example.com"));
 		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("ATTACHMENT").withLabelId("label-1"));
 		assertThat(entity.getPausedFrom()).isEqualTo(subscriber.getPausedFrom());
@@ -65,7 +65,7 @@ class SubscriberMapperTest {
 			.withName("Servicedesk")
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"))
 			.withChannels(List.of(NotificationChannelEmbeddable.create()
-				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS)
+				.withType(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS)
 				.withDestination("+46700000000")))
 			.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype(null).withLabelId("label-2")))
 			.withCreated(OffsetDateTime.parse("2026-05-01T12:00:00+02:00"))
@@ -104,7 +104,7 @@ class SubscriberMapperTest {
 			.withName("old")
 			.withIdentifier(IdentifierEmbeddable.create().withType("adAccount").withValue("joe01doe"))
 			.withChannels(List.of(NotificationChannelEmbeddable.create()
-				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL)));
+				.withType(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL)));
 
 		SubscriberMapper.applyPatch(entity, Subscriber.create().withName("new"));
 
@@ -119,7 +119,7 @@ class SubscriberMapperTest {
 	void applyPatchWithEmptyChannelsClearsThem() {
 		final var entity = SubscriberEntity.create()
 			.withChannels(List.of(NotificationChannelEmbeddable.create()
-				.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL)));
+				.withType(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL)));
 
 		SubscriberMapper.applyPatch(entity, Subscriber.create().withChannels(List.of()));
 
@@ -186,7 +186,7 @@ class SubscriberMapperTest {
 		assertThat(entity.getEventFilters()).isInstanceOf(java.util.ArrayList.class);
 		// Verify they actually accept mutation (catches future use of Stream.toList()).
 		entity.getChannels().add(NotificationChannelEmbeddable.create()
-			.withType(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL));
+			.withType(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL));
 		entity.getEventFilters().add(EventFilterEmbeddable.create().withType("CREATE"));
 		assertThat(entity.getChannels()).hasSize(2);
 		assertThat(entity.getEventFilters()).hasSize(2);

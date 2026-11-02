@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api;
 
 import com.turkraft.springfilter.boot.Filter;
+import com.turkraft.springfilter.parser.node.FilterNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -16,7 +17,6 @@ import jakarta.validation.constraints.Pattern;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,8 +37,8 @@ import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
+import se.sundsvall.supportmanagement.service.util.ErrandFilters;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.ETAG;
@@ -125,11 +125,11 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
-			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter,
+			schema = @Schema(implementation = String.class)) @Nullable @Filter final FilterNode filter,
 		@ParameterObject final Pageable pageable,
 		final HttpServletRequest request) {
 
-		ErrandFilters.verifyFilterable(request);
+		ErrandFilters.verifyFilterable(request.getParameter(ErrandFilters.FILTER_PARAMETER));
 		ErrandFilters.verifySortable(pageable);
 		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
 	}
@@ -202,10 +202,10 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
-			schema = @Schema(implementation = String.class)) @Nullable @Filter final Specification<ErrandEntity> filter,
+			schema = @Schema(implementation = String.class)) @Nullable @Filter final FilterNode filter,
 		final HttpServletRequest request) {
 
-		ErrandFilters.verifyFilterable(request);
+		ErrandFilters.verifyFilterable(request.getParameter(ErrandFilters.FILTER_PARAMETER));
 		return ok(new CountResponse(service.countErrands(namespace, municipalityId, filter)));
 	}
 }

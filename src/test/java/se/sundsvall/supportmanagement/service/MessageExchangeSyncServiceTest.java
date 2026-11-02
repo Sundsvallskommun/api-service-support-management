@@ -33,8 +33,8 @@ import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegrationConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 

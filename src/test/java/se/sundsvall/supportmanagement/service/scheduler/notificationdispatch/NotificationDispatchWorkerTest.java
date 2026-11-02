@@ -29,8 +29,6 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
@@ -38,6 +36,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -50,8 +50,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationDispatchWorkerTest {
