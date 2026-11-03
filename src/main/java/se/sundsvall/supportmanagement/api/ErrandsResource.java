@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -38,7 +37,6 @@ import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
 import se.sundsvall.supportmanagement.service.ErrandService;
-import se.sundsvall.supportmanagement.service.util.ErrandFilters;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpHeaders.ETAG;
@@ -126,11 +124,8 @@ class ErrandsResource {
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
 			schema = @Schema(implementation = String.class)) @Nullable @Filter final FilterNode filter,
-		@ParameterObject final Pageable pageable,
-		final HttpServletRequest request) {
+		@ParameterObject final Pageable pageable) {
 
-		ErrandFilters.verifyFilterable(request.getParameter(ErrandFilters.FILTER_PARAMETER));
-		ErrandFilters.verifySortable(pageable);
 		return ok(service.findErrands(namespace, municipalityId, filter, pageable));
 	}
 
@@ -202,10 +197,8 @@ class ErrandsResource {
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId,
 		@Parameter(description = "Syntax description: [spring-filter](https://github.com/turkraft/spring-filter/blob/85730f950a5f8623159cc0eb4d737555f9382bb7/README.md#syntax)",
 			example = "categoryTag:'SUPPORT-CASE' and stakeholder.externalId:'81471222-5798-11e9-ae24-57fa13b361e1' and externalTags.key:'caseId' and externalTags.value:'111' and created>'2022-09-08T12:00:00.000+02:00'",
-			schema = @Schema(implementation = String.class)) @Nullable @Filter final FilterNode filter,
-		final HttpServletRequest request) {
+			schema = @Schema(implementation = String.class)) @Nullable @Filter final FilterNode filter) {
 
-		ErrandFilters.verifyFilterable(request.getParameter(ErrandFilters.FILTER_PARAMETER));
 		return ok(new CountResponse(service.countErrands(namespace, municipalityId, filter)));
 	}
 }

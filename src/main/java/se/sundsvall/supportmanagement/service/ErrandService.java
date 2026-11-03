@@ -78,6 +78,8 @@ import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErran
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.ErrandFilters.verifyFilterable;
+import static se.sundsvall.supportmanagement.service.util.ErrandFilters.verifySortable;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
@@ -221,6 +223,8 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final FilterNode filterNode, final Pageable pageable) {
+		verifyFilterable(filterNode);
+		verifySortable(pageable);
 		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
@@ -497,6 +501,7 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final FilterNode filterNode) {
+		verifyFilterable(filterNode);
 		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));

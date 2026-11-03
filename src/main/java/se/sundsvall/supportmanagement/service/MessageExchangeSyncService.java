@@ -56,7 +56,7 @@ public class MessageExchangeSyncService {
 
 	public MessageExchangeSyncService(final MessageExchangeClient messageExchangeClient, final ErrandAttachmentService attachmentService, final ConversationRepository conversationRepository, final EventService eventService,
 		final ErrandsRepository errandsRepository, final MessageExchangeIntegrationConfigRepository messageExchangeIntegrationConfigRepository,
-		@Value("${integration.message-exchange.namespace:supportmanagement}") final String messageExchangeNamespace) {
+		@Value("${integration.messageexchange.namespace}") final String messageExchangeNamespace) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.attachmentService = attachmentService;

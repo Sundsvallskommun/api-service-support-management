@@ -1,11 +1,18 @@
 package se.sundsvall.supportmanagement.service.util;
 
+import com.turkraft.springfilter.parser.FilterParser;
+import java.util.List;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.context.annotation.ImportCandidates;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.ClassUtils;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,17 +22,48 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 class ErrandFiltersTest {
 
+	// The parser of spring-filter, with the operators and functions it registers itself, so that the guard is asked about
+	// the very trees a request is parsed into
+	private static final List<String> PARSER_PACKAGES = List.of(
+		"com.turkraft.springfilter.parser.", "com.turkraft.springfilter.definition.", "com.turkraft.springfilter.language.");
+
+	private static AnnotationConfigApplicationContext springFilter;
+	private static FilterParser filterParser;
+
+	@BeforeAll
+	static void startSpringFilter() {
+		final var classLoader = ErrandFiltersTest.class.getClassLoader();
+		springFilter = new AnnotationConfigApplicationContext();
+		ImportCandidates.load(AutoConfiguration.class, classLoader).getCandidates().stream()
+			.filter(name -> PARSER_PACKAGES.stream().anyMatch(name::startsWith))
+			.map(name -> ClassUtils.resolveClassName(name, classLoader))
+			.forEach(springFilter::register);
+		springFilter.refresh();
+		filterParser = springFilter.getBean(FilterParser.class);
+	}
+
+	@AfterAll
+	static void stopSpringFilter() {
+		springFilter.close();
+	}
+
+	@Test
+	void noFilterPasses() {
+		assertThatCode(() -> ErrandFilters.verifyFilterable(null)).doesNotThrowAnyException();
+	}
+
 	@ParameterizedTest
-	@NullSource
 	@ValueSource(strings = {
-		"",
 		"status:'NEW'",
 		"stakeholders.firstName:'Anna' and parameters.values:'x'",
 		"decisionsCount:1",
-		"title~'%communications.%'"
+		"title~'%communications.%'",
+		"title:'decisions' or description:'statements.x'"
 	})
 	void filtersThatStayOnTheErrandPass(final String filter) {
-		assertThatCode(() -> ErrandFilters.verifyFilterable(filter)).doesNotThrowAnyException();
+		final var filterNode = filterParser.parse(filter);
+
+		assertThatCode(() -> ErrandFilters.verifyFilterable(filterNode)).doesNotThrowAnyException();
 	}
 
 	@ParameterizedTest
@@ -43,10 +81,16 @@ class ErrandFiltersTest {
 		"stakeholders.errandEntity.communications.messageBody~'%secret%'",
 		"parameters.errandEntity.decisions.justification~'%x%'",
 		"attachments.errandEntity.statements.responseText:'x'",
-		"stakeholders.errandEntity.communications is not empty"
+		"stakeholders.errandEntity.communications is not empty",
+		// Further in, behind another operator
+		"not (status:'NEW' or (title:'x' and communications.subject~'%x%'))",
+		// Two filter parameters, as spring-filter joins them
+		"(title:'x') and (communications.subject~'%secret%')"
 	})
 	void filtersReachingAnIndexOnlyAssociationAreRefused(final String filter) {
-		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifyFilterable(filter));
+		final var filterNode = filterParser.parse(filter);
+
+		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifyFilterable(filterNode));
 
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).matches("Filtering on '(communications|decisions|statements|investigations)' is not supported");
@@ -95,19 +139,5 @@ class ErrandFiltersTest {
 		final var pageable = PageRequest.of(0, 20, Sort.by("created").and(Sort.by("communications.subject")));
 
 		assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifySortable(pageable));
-	}
-
-	/**
-	 * A value as long as a request line allows is read as one value, rather than overflowing the stack of a matcher that
-	 * recurses once per character.
-	 */
-	@Test
-	void aLongQuotedValueIsReadAsAValue() {
-		assertThatCode(() -> ErrandFilters.verifyFilterable("title:'" + "communications ".repeat(1000) + "'")).doesNotThrowAnyException();
-	}
-
-	@Test
-	void countIsGuardedTheSameWay() {
-		assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifyFilterable("communications.subject:'x'"));
 	}
 }

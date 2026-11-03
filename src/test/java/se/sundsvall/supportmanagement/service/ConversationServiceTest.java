@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
@@ -60,7 +59,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.EXTERNAL;
 import static se.sundsvall.supportmanagement.api.model.communication.conversation.ConversationType.INTERNAL;
 import static se.sundsvall.supportmanagement.service.ConversationService.CONVERSATION_DEPARTMENT_NAME;
@@ -115,13 +113,12 @@ class ConversationServiceTest {
 	@Captor
 	private ArgumentCaptor<List<MultipartFile>> attachmentsCaptor;
 
-	@InjectMocks
 	private ConversationService conversationService;
 
 	@BeforeEach
 	void beforeEach() {
-		// Set Spring managed value.
-		setField(conversationService, "messageExchangeNamespace", "draken");
+		conversationService = new ConversationService(messageExchangeClientMock, conversationRepositoryMock, messageExchangeSchedulerMock, communicationServiceMock, relationClientMock,
+			accessControlServiceMock, namespaceConfigServiceMock, errandAttachmentServiceMock, MESSAGE_EXCHANGE_NAMESPACE);
 		lenient().when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.CONVERSATION, RW)).thenReturn(ErrandEntity.create());
 		lenient().when(accessControlServiceMock.getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, false, ProtectedResource.CONVERSATION_MESSAGE, RW)).thenReturn(ErrandEntity.create());
 	}

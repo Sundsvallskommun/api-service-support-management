@@ -4,10 +4,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 
@@ -28,12 +26,11 @@ class ActionSchedulerTest {
 	@Mock
 	private Dept44HealthUtility healthUtilityMock;
 
-	@InjectMocks
 	private ActionScheduler actionScheduler;
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(actionScheduler, "jobName", "process_actions");
+		actionScheduler = new ActionScheduler(actionWorkerMock, healthUtilityMock, "process_actions");
 	}
 
 	@Test

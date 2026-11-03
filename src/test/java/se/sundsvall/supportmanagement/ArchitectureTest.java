@@ -10,11 +10,14 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import static com.tngtech.archunit.base.DescribedPredicate.alwaysTrue;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
@@ -39,25 +42,29 @@ class ArchitectureTest {
 
 	// Layered architecture: api -> service -> integration, never backwards or past a layer. The API models are a layer of
 	// their own, since the mappers of the service layer map to and from them, and so is the validation the API models are
-	// annotated with. The enums every layer shares live in the model package, outside the layers
+	// annotated with. The servlet filters carry what a request says about itself, such as its request group, over to the
+	// service layer. Every dependency within the service is considered, so that the classes outside the layers, the
+	// configuration and the enums every layer shares in the model package, are held to the rules of the layers they reach
 	@ArchTest
 	static final ArchRule layers = layeredArchitecture()
-		.consideringOnlyDependenciesInLayers()
+		.consideringOnlyDependenciesInAnyPackage("se.sundsvall.supportmanagement..")
 		.layer("Api").definedBy("se.sundsvall.supportmanagement.api", "..api.util..")
 		.layer("ApiValidation").definedBy("..api.validation..")
 		.layer("ApiModel").definedBy("..api.model..")
 		.layer("Service").definedBy("..service..")
 		.layer("Integration").definedBy("..integration..")
+		.layer("Filter").definedBy("se.sundsvall.supportmanagement.filter..")
 		.whereLayer("Api").mayNotBeAccessedByAnyLayer()
 		.whereLayer("ApiValidation").mayOnlyBeAccessedByLayers("Api", "ApiModel")
 		.whereLayer("ApiModel").mayOnlyBeAccessedByLayers("Api", "ApiValidation", "Service")
-		.whereLayer("Service").mayOnlyBeAccessedByLayers("Api", "ApiValidation")
+		.whereLayer("Service").mayOnlyBeAccessedByLayers("Api", "ApiValidation", "Filter")
 		.whereLayer("Integration").mayOnlyBeAccessedByLayers("Service");
 
-	// The service layer mapping to and from the API models is the convention the layers allow, and not a cycle
+	// The service layer mapping to and from the API models is the convention the layers allow, and not a cycle. Only that
+	// dependency is ignored, so that any other slice depending on the API models is still held to be free of cycles
 	@ArchTest
 	static final ArchRule noCycles = slices().matching("se.sundsvall.supportmanagement.(*)..").should().beFreeOfCycles()
-		.ignoreDependency(alwaysTrue(), resideInAPackage("..api.model.."));
+		.ignoreDependency(resideInAPackage("..service.."), resideInAPackage("..api.model.."));
 
 	// Entities must not leak into the API
 	@ArchTest
@@ -71,16 +78,19 @@ class ArchitectureTest {
 		.should().dependOnClassesThat(resideInAnyPackage("org.springframework.web..", "jakarta.servlet..")
 			.and(not(belongToAnyOf(MultipartFile.class, HttpServletResponse.class, ServletOutputStream.class))));
 
-	// @Transactional only in the service layer, and on the repositories and database utilities of the integration layer
+	// @Transactional, of Spring or of Jakarta, which Spring honours as well, only in the service layer, and on the
+	// repositories and database utilities of the integration layer
 	@ArchTest
 	static final ArchRule transactionalMethods = noMethods()
 		.that().areDeclaredInClassesThat().resideOutsideOfPackages("..service..", "..integration.db..")
-		.should().beAnnotatedWith(Transactional.class);
+		.should().beAnnotatedWith(Transactional.class)
+		.orShould().beAnnotatedWith(jakarta.transaction.Transactional.class);
 
 	@ArchTest
 	static final ArchRule transactionalClasses = noClasses()
 		.that().resideOutsideOfPackages("..service..", "..integration.db..")
-		.should().beAnnotatedWith(Transactional.class);
+		.should().beAnnotatedWith(Transactional.class)
+		.orShould().beAnnotatedWith(jakarta.transaction.Transactional.class);
 
 	// Naming and placement
 	@ArchTest
@@ -114,11 +124,15 @@ class ArchitectureTest {
 	static final ArchRule resourceMethodsNotPublic = noMethods().that().areDeclaredInClassesThat().areAnnotatedWith(RestController.class)
 		.should().bePublic();
 
-	// No time read in the default time zone without saying so
+	// No time read in the default time zone without saying so, whichever type it is read into
 	@ArchTest
-	static final ArchRule noLocalDateTimeNow = noClasses()
+	static final ArchRule noNowInTheDefaultTimeZone = noClasses()
 		.should().callMethod(LocalDateTime.class, "now")
-		.orShould().callMethod(LocalDate.class, "now");
+		.orShould().callMethod(LocalDate.class, "now")
+		.orShould().callMethod(LocalTime.class, "now")
+		.orShould().callMethod(OffsetDateTime.class, "now")
+		.orShould().callMethod(OffsetTime.class, "now")
+		.orShould().callMethod(ZonedDateTime.class, "now");
 
 	// General rules catching common bad habits
 	@ArchTest

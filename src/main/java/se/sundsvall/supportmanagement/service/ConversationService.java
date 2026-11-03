@@ -73,7 +73,7 @@ public class ConversationService {
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
 		final ErrandAttachmentService errandAttachmentService,
-		@Value("${integration.messageexchange.namespace:draken}") final String messageExchangeNamespace) {
+		@Value("${integration.messageexchange.namespace}") final String messageExchangeNamespace) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;

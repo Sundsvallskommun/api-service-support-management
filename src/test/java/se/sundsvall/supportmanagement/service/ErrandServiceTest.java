@@ -362,6 +362,50 @@ class ErrandServiceTest {
 	}
 
 	@Test
+	void findErrandsRefusesAFilterReachingAnIndexOnlyAssociation() {
+		final var filter = new FieldNode("communications.subject");
+		final var pageable = PageRequest.of(0, 20);
+
+		assertThatThrownBy(() -> service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable))
+			.isInstanceOfSatisfying(ThrowableProblem.class, problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getDetail()).isEqualTo("Filtering on 'communications' is not supported");
+			});
+
+		verifyNoInteractions(errandRepositoryMock, accessControlServiceMock);
+	}
+
+	/**
+	 * An ordering naming an association the errand holds for the search index alone is refused before it reaches Spring
+	 * Data, which would resolve it into a join of the collection and multiply the errands of the page.
+	 */
+	@Test
+	void findErrandsRefusesAnOrderingByAnIndexOnlyAssociation() {
+		final var pageable = PageRequest.of(0, 20, Sort.by("communications.messageBody"));
+
+		assertThatThrownBy(() -> service.findErrands(NAMESPACE, MUNICIPALITY_ID, null, pageable))
+			.isInstanceOfSatisfying(ThrowableProblem.class, problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getDetail()).isEqualTo("Sorting on 'communications' is not supported");
+			});
+
+		verifyNoInteractions(errandRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
+	void countErrandsRefusesAFilterReachingAnIndexOnlyAssociation() {
+		final var filter = new FieldNode("decisions.description");
+
+		assertThatThrownBy(() -> service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter))
+			.isInstanceOfSatisfying(ThrowableProblem.class, problem -> {
+				assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+				assertThat(problem.getDetail()).isEqualTo("Filtering on 'decisions' is not supported");
+			});
+
+		verifyNoInteractions(errandRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
 	void findErrandWithoutMatches() {
 		final var filter = new FieldNode("id");
 		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");

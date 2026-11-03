@@ -18,14 +18,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
@@ -81,12 +79,12 @@ class MessageExchangeSyncServiceTest {
 	@Captor
 	private ArgumentCaptor<ConversationEntity> conversationEntityCaptor;
 
-	@InjectMocks
 	private MessageExchangeSyncService service;
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(service, "messageExchangeNamespace", MESSAGE_EXCHANGE_NS);
+		service = new MessageExchangeSyncService(messageExchangeClientMock, attachmentServiceMock, conversationRepositoryMock, eventServiceMock, errandsRepositoryMock,
+			messageExchangeIntegrationConfigRepositoryMock, MESSAGE_EXCHANGE_NS);
 	}
 
 	@Test
