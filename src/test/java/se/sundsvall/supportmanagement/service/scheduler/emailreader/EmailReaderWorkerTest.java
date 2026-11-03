@@ -240,6 +240,66 @@ class EmailReaderWorkerTest {
 	}
 
 	@Test
+	void processEmailWithSoftDeletedErrand() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+		email.setSender("user@domain.com");
+
+		// The errand would have its status changed, were it not soft deleted
+		final var emailConfig = buildBaseConfig().withErrandClosedEmailSender("errandClosedEmailSender").withErrandClosedEmailTemplate("errandClosedEmailTemplate").withErrandClosedEmailHTMLTemplate("errandClosedEmailHTMLTemplate")
+			.withDaysOfInactivityBeforeReject(5).withStatusForNew("NEW").withTriggerStatusChangeOn("SOLVED").withStatusChangeTo("ONGOING").withInactiveStatus("CLOSED");
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withTouched(OffsetDateTime.now()).withDeleted(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+		final var emailRequest = new EmailRequest();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+		when(emailReaderMapperMock.createEmailRequest(any(Email.class), any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(emailRequest);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
+		verify(emailReaderMapperMock).createEmailRequest(same(email), eq(emailConfig.getErrandClosedEmailSender()), eq(emailConfig.getErrandClosedEmailTemplate()), eq(emailConfig.getErrandClosedEmailHTMLTemplate()),
+			eq("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4"));
+		verify(communicationServiceMock).sendEmail(eq(errandEntity), same(emailRequest), isNull());
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
+		assertThat(errandEntity.getStatus()).isEqualTo("SOLVED");
+		verifyNoInteractions(errandServiceMock, eventPublisherMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
+	@Test
+	void processEmailWithSoftDeletedErrandAndNoClosedTemplate() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+		email.setSender("user@domain.com");
+
+		final var emailConfig = buildBaseConfig();
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withCreated(OffsetDateTime.now().minusDays(1)).withTouched(OffsetDateTime.now()).withDeleted(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
+		verifyNoInteractions(errandServiceMock, eventPublisherMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
+	@Test
 	void processEmail_eventServiceFails_emailStillProcessed() {
 		final var email = new Email();
 		email.setSubject("Ärende #PRH-2022-000001 Some subject");

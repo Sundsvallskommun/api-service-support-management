@@ -215,8 +215,12 @@ public class EmailReaderWorker {
 		communicationService.saveAttachment(communicationEntity, errand);
 	}
 
+	/**
+	 * A soft deleted errand is held as closed, whatever its status: what comes in is kept on it, to be seen once it is
+	 * restored, and the sender is told that the errand is closed.
+	 */
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
-		return (config.getInactiveStatus() != null)
+		return errand.getDeleted() != null || (config.getInactiveStatus() != null)
 			&& errand.getStatus().equals(config.getInactiveStatus())
 			&& (config.getDaysOfInactivityBeforeReject() != null)
 			&& errand.getTouched().isBefore(OffsetDateTime.now(ZoneId.systemDefault()).minusDays(config.getDaysOfInactivityBeforeReject()));
@@ -231,6 +235,13 @@ public class EmailReaderWorker {
 
 		if (shouldSuppressConfirmation(email)) {
 			LOG.info("No confirmation for closed errand will be sent for email from '{}'", email.getSender());
+			return null;
+		}
+
+		// A soft deleted errand is held as closed in a namespace that has not configured what to answer a closed errand
+		// with as well, and nothing is sent rather than an empty email
+		if (config.getErrandClosedEmailTemplate() == null && config.getErrandClosedEmailHTMLTemplate() == null) {
+			LOG.info("No confirmation for closed errand will be sent for email from '{}', as namespace '{}' has no template for it", email.getSender(), config.getNamespace());
 			return null;
 		}
 

@@ -103,6 +103,16 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
+	 * Matches errands soft deleted before the sent in point in time. An errand that is not soft deleted is left out.
+	 *
+	 * @param  cutoff the point in time an errand must have been soft deleted before
+	 * @return        specification matching errands soft deleted before the sent in point in time
+	 */
+	public static Specification<ErrandEntity> withDeletedBefore(OffsetDateTime cutoff) {
+		return (root, _, criteriaBuilder) -> criteriaBuilder.lessThan(root.get(DELETED_ATTRIBUTE), cutoff);
+	}
+
+	/**
 	 * Method builds an equal filter if value is not null. If value is null, method returns an always-true predicate
 	 * (meaning no filtering will be applied for sent in attribute)
 	 *

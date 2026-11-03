@@ -35,10 +35,9 @@ class SoftDeleteChokePointTest {
 		// The action worker locks the errand and leaves a soft deleted one waiting itself, and the removal of soft deleted
 		// errands locks the errand before deleting it for good.
 		entry("findWithLockingById", "ActionWorker, which checks the deletion after locking, and the removal of soft deleted errands"),
-		// The removal of soft deleted errands reaches nothing else.
-		entry("findIdsDeletedBefore", "removal of soft deleted errands"),
-		// Incoming email is kept on the errand it answers, soft deleted or not, so that nothing is lost.
-		entry("findByErrandNumberAndNamespaceAndMunicipalityId", "EmailReaderWorker, which keeps incoming email on a soft deleted errand"),
+		// Incoming email is kept on the errand it answers, soft deleted or not, so that nothing is lost. A soft deleted
+		// errand is held as closed, and the sender is told so.
+		entry("findByErrandNumberAndNamespaceAndMunicipalityId", "EmailReaderWorker, which keeps incoming email on a soft deleted errand and holds it as closed"),
 		// A soft deleted errand still wears its labels and phases, so metadata it uses may not be removed, and moving or
 		// merging labels rebuilds its labels as well, for it to come back with the labels of the tree.
 		entry("existsByLabelsMetadataLabelIdIn", "label removal guard"),

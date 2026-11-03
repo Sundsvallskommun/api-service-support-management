@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDeletedBefore;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withIdAfter;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 /**
@@ -200,7 +204,7 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findIdsDeletedBefore() {
+	void deletedBefore() {
 		final var cutoff = OffsetDateTime.now().minusDays(30);
 		final var ids = List.of(
 			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-1").withDeleted(cutoff.minusDays(1))).getId(),
@@ -212,9 +216,10 @@ class ErrandsRepositoryTest {
 		errandsRepository.save(ErrandEntity.create().withNamespace("OTHER-NAMESPACE").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OTHER-NAMESPACE").withDeleted(cutoff.minusDays(1)));
 		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId("2262").withErrandNumber("OTHER-MUNICIPALITY").withDeleted(cutoff.minusDays(1)));
 
-		assertThat(errandsRepository.findIdsDeletedBefore("SOFT-DELETES", MUNICIPALITY_ID, cutoff, "", PageRequest.of(0, 10))).containsExactlyElementsOf(ids);
-		assertThat(errandsRepository.findIdsDeletedBefore("SOFT-DELETES", MUNICIPALITY_ID, cutoff, "", PageRequest.of(0, 2))).containsExactly(ids.get(0), ids.get(1));
-		assertThat(errandsRepository.findIdsDeletedBefore("SOFT-DELETES", MUNICIPALITY_ID, cutoff, ids.get(1), PageRequest.of(0, 2))).containsExactly(ids.get(2));
+		final var deletedBefore = withNamespace("SOFT-DELETES").and(withMunicipalityId(MUNICIPALITY_ID)).and(withDeletedBefore(cutoff));
+
+		assertThat(errandsRepository.findAll(deletedBefore, Sort.by("id"))).extracting(ErrandEntity::getId).containsExactlyElementsOf(ids);
+		assertThat(errandsRepository.findAll(deletedBefore.and(withIdAfter(ids.get(1))), Sort.by("id"))).extracting(ErrandEntity::getId).containsExactly(ids.get(2));
 	}
 
 	@Test
