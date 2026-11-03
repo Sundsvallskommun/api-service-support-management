@@ -4,6 +4,7 @@ import com.turkraft.springfilter.converter.FilterSpecificationConverter;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -11,6 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDeletedBefore;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 /**
@@ -197,6 +201,40 @@ class ErrandsRepositoryTest {
 		assertThat(errandsRepository.existsByIdAndDeletedIsNull(deleted.getId())).isFalse();
 		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(kept.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isPresent();
 		assertThat(errandsRepository.findByIdAndNamespaceAndMunicipalityIdAndDeletedIsNull(deleted.getId(), "SOFT-DELETES", MUNICIPALITY_ID)).isEmpty();
+	}
+
+	@Test
+	void deletedBefore() {
+		final var cutoff = OffsetDateTime.now().minusDays(30);
+		final var ids = List.of(
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-1").withDeleted(cutoff.minusDays(1))).getId(),
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-2").withDeleted(cutoff.minusDays(10))).getId(),
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-3").withDeleted(cutoff.minusMinutes(1))).getId())
+			.stream().sorted().toList();
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("RECENT").withDeleted(cutoff.plusDays(1)));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT"));
+		errandsRepository.save(ErrandEntity.create().withNamespace("OTHER-NAMESPACE").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OTHER-NAMESPACE").withDeleted(cutoff.minusDays(1)));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId("2262").withErrandNumber("OTHER-MUNICIPALITY").withDeleted(cutoff.minusDays(1)));
+
+		final var deletedBefore = withNamespace("SOFT-DELETES").and(withMunicipalityId(MUNICIPALITY_ID)).and(withDeletedBefore(cutoff));
+
+		assertThat(errandsRepository.findAll(deletedBefore, Sort.by("id"))).extracting(ErrandEntity::getId).containsExactlyElementsOf(ids);
+	}
+
+	@Test
+	void findIdsAfter() {
+		final var ids = Stream.of("WALK-1", "WALK-2", "WALK-3", "WALK-4")
+			.map(errandNumber -> errandsRepository.save(ErrandEntity.create().withNamespace("KEYSET-WALK").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber(errandNumber)).getId())
+			.sorted()
+			.toList();
+		errandsRepository.save(ErrandEntity.create().withNamespace("OTHER-NAMESPACE").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("WALK-OTHER"));
+		final var reached = withNamespace("KEYSET-WALK").and(withMunicipalityId(MUNICIPALITY_ID));
+
+		// The first batch starts from the beginning, each following one after the id the previous one ended on, and the
+		// walk ends on an empty batch
+		assertThat(errandsRepository.findIdsAfter(reached, null, 3)).containsExactlyElementsOf(ids.subList(0, 3));
+		assertThat(errandsRepository.findIdsAfter(reached, ids.get(2), 3)).containsExactly(ids.get(3));
+		assertThat(errandsRepository.findIdsAfter(reached, ids.get(3), 3)).isEmpty();
 	}
 
 	@Test

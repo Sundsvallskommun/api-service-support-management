@@ -263,7 +263,7 @@ class EmailReaderMapperTest {
 		final var result = emailReaderMapper.createEmailRequest(email, sender, template, htmlTemplate, subject);
 
 		// Assert
-		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments", "attachmentIds");
+		assertThat(result).isNotNull().hasNoNullFieldsOrPropertiesExcept("senderName", "htmlMessage", "attachments", "attachmentIds", "recipients", "cc");
 		assertThat(result.getMessage()).isEqualTo(template);
 		assertThat(result.getSubject()).isEqualTo(subject);
 		assertThat(result.getRecipient()).isEqualTo(sender); // Because we are sending response to the sender

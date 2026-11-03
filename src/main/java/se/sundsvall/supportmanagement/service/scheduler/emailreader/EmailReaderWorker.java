@@ -31,6 +31,7 @@ import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isAutoReply;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isDeliveryStatusReport;
 import static se.sundsvall.supportmanagement.service.scheduler.emailreader.EmailReaderUtilities.isNoReplyAddress;
@@ -215,11 +216,17 @@ public class EmailReaderWorker {
 		communicationService.saveAttachment(communicationEntity, errand);
 	}
 
+	/**
+	 * Whether an incoming email to the errand is to be handled as one to a closed errand: always for a soft deleted
+	 * errand, and otherwise when the errand has the configured inactive status and has not been touched for the
+	 * configured number of days.
+	 */
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
-		return (config.getInactiveStatus() != null)
-			&& errand.getStatus().equals(config.getInactiveStatus())
-			&& (config.getDaysOfInactivityBeforeReject() != null)
-			&& errand.getTouched().isBefore(OffsetDateTime.now(ZoneId.systemDefault()).minusDays(config.getDaysOfInactivityBeforeReject()));
+		return errand.getDeleted() != null
+			|| (config.getInactiveStatus() != null
+				&& errand.getStatus().equals(config.getInactiveStatus())
+				&& config.getDaysOfInactivityBeforeReject() != null
+				&& errand.getTouched().isBefore(OffsetDateTime.now(ZoneId.systemDefault()).minusDays(config.getDaysOfInactivityBeforeReject())));
 	}
 
 	private boolean isErrandNew(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
@@ -230,7 +237,21 @@ public class EmailReaderWorker {
 	private EmailRequest createEmailClosed(final Email email, final EmailWorkerConfigEntity config) {
 
 		if (shouldSuppressConfirmation(email)) {
-			LOG.info("No confirmation for closed errand will be sent for email from '{}'", email.getSender());
+			LOG.info("No confirmation for closed errand will be sent for email '{}'", email.getId());
+			return null;
+		}
+
+		// A soft deleted errand is held as closed in a namespace that has opted out of rejection mail as well, by leaving
+		// the inactive status out, and that opt-out stands
+		if (config.getInactiveStatus() == null) {
+			LOG.info("No confirmation for closed errand will be sent, as namespace '{}' sends no rejection mail", config.getNamespace());
+			return null;
+		}
+
+		// Nor is anything sent in a namespace that has not configured whom to answer a closed errand from or with what,
+		// rather than an email messaging refuses or an empty one
+		if (isBlank(config.getErrandClosedEmailSender()) || (isBlank(config.getErrandClosedEmailTemplate()) && isBlank(config.getErrandClosedEmailHTMLTemplate()))) {
+			LOG.info("No confirmation for closed errand will be sent, as namespace '{}' has no sender or template for it", config.getNamespace());
 			return null;
 		}
 
@@ -245,7 +266,7 @@ public class EmailReaderWorker {
 		}
 
 		if (shouldSuppressConfirmation(email)) {
-			LOG.info("No confirmation for new errand will be sent for email from '{}'", email.getSender());
+			LOG.info("No confirmation for new errand will be sent for email '{}'", email.getId());
 			return null;
 		}
 

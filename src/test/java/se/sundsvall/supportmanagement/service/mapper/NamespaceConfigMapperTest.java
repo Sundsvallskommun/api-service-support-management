@@ -43,11 +43,13 @@ import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.RESOURCE
 import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS;
 
 class NamespaceConfigMapperTest {
 
 	private static final String BASE_URL = "https://draken.example.com";
 	private static final String REPORTER_PROFILE_ID = "123e4567-e89b-12d3-a456-426614174000";
+	private static final int SOFT_DELETED_RETENTION_IN_DAYS = 90;
 
 	private final NamespaceConfigMapper mapper = new NamespaceConfigMapper();
 
@@ -60,6 +62,7 @@ class NamespaceConfigMapperTest {
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_ACCESS_CONTROL).withType(BOOLEAN).withValue(String.valueOf(accessControl)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_DISPLAY_NAME).withType(STRING).withValue(displayName),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFICATION_TTL_IN_DAYS).withType(INTEGER).withValue(String.valueOf(40)),
+				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS).withType(INTEGER).withValue(String.valueOf(SOFT_DELETED_RETENTION_IN_DAYS)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_NOTIFY_REPORTER).withType(BOOLEAN).withValue(String.valueOf(notifyReporter)),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_SHORT_CODE).withType(STRING).withValue(shortCode),
 				NamespaceConfigValueEmbeddable.create().withKey(PROPERTY_BASE_URL).withType(STRING).withValue(BASE_URL),
@@ -83,6 +86,7 @@ class NamespaceConfigMapperTest {
 		final var config = NamespaceConfig.create()
 			.withDisplayName(displayName)
 			.withNotificationTTLInDays(notificationTTLInDays)
+			.withSoftDeletedRetentionInDays(SOFT_DELETED_RETENTION_IN_DAYS)
 			.withShortCode(shortCode)
 			.withAccessControl(toggleValue)
 			.withNotifyReporter(!toggleValue)
@@ -102,6 +106,7 @@ class NamespaceConfigMapperTest {
 		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_DISPLAY_NAME)).isEqualTo(displayName);
 		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_SHORT_CODE)).isEqualTo(shortCode);
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(notificationTTLInDays);
+		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS)).isEqualTo(SOFT_DELETED_RETENTION_IN_DAYS);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(toggleValue);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(!toggleValue);
 		assertThat((String) ConfigPropertyExtractor.getValue(entity, PROPERTY_BASE_URL)).isEqualTo(BASE_URL);
@@ -136,7 +141,7 @@ class NamespaceConfigMapperTest {
 		assertThat((Integer) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS)).isEqualTo(40);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_ACCESS_CONTROL)).isEqualTo(accessControl);
 		assertThat((Boolean) ConfigPropertyExtractor.getValue(entity, PROPERTY_NOTIFY_REPORTER)).isEqualTo(notifyReporter);
-		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL, PROPERTY_REPORTER_PROFILE_ID, PROPERTY_NEW_SUBSCRIBER_CHANNELS);
+		assertThat(entity.getValues()).extracting(NamespaceConfigValueEmbeddable::getKey).doesNotContain(PROPERTY_BASE_URL, PROPERTY_REPORTER_PROFILE_ID, PROPERTY_NEW_SUBSCRIBER_CHANNELS, PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS);
 	}
 
 	@Test
@@ -166,6 +171,7 @@ class NamespaceConfigMapperTest {
 		assertThat(config.getBaseUrl()).isEqualTo(BASE_URL);
 		assertThat(config.getReporterProfileId()).isEqualTo(REPORTER_PROFILE_ID);
 		assertThat(config.getNewSubscriberChannels()).containsExactly(NotificationChannelType.INTERNAL, NotificationChannelType.EMAIL);
+		assertThat(config.getSoftDeletedRetentionInDays()).isEqualTo(SOFT_DELETED_RETENTION_IN_DAYS);
 	}
 
 	@Test

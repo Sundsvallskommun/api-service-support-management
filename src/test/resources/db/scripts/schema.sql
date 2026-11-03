@@ -1311,8 +1311,11 @@
     create index idx_errand_municipality_id_namespace_touched 
        on errand (municipality_id, namespace, touched);
 
-    create index idx_errand_municipality_id_namespace_id 
+    create index idx_errand_municipality_id_namespace_id
        on errand (municipality_id, namespace, id);
+
+    create index idx_errand_municipality_id_namespace_deleted
+       on errand (municipality_id, namespace, deleted);
 
     alter table if exists errand 
        add constraint uq_errand_number unique (errand_number);

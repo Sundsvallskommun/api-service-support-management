@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.2"
+  version: "18.3"
 servers:
 - url: http://localhost:50630
   description: Generated server url
@@ -11579,8 +11579,10 @@ paths:
     post:
       tags:
       - Errand communication
-      summary: Send email to in context of an errand
-      description: Sends an email message to the recipient specified in the request
+      summary: Send email in context of an errand
+      description: "Sends one email message to all recipients (To) and carbon copy\
+        \ recipients (Cc) specified in the request, and stores it as one communication\
+        \ on the errand"
       operationId: sendEmail
       parameters:
       - name: namespace
@@ -11671,8 +11673,10 @@ paths:
       tags:
       - Errand communication
       summary: Send email to multiple recipients in context of an errand
-      description: Sends a single email message to all recipients specified in the
-        request
+      description: "Sends a separate email message to each recipient specified in\
+        \ the request, and stores one communication per recipient on the errand. Recipients\
+        \ do not see each other. To send one email message to several recipients, use\
+        \ the email endpoint instead"
       operationId: sendBulkEmail
       parameters:
       - name: namespace
@@ -24011,6 +24015,15 @@ components:
           description: Time to live (in days) for notifications created in this namespace
           examples:
           - 40
+        softDeletedRetentionInDays:
+          type: integer
+          format: int32
+          description: "Days a soft deleted errand in this namespace is kept before\
+            \ it is deleted for good. Leaving it out keeps soft deleted errands until\
+            \ they are restored or deleted."
+          examples:
+          - 90
+          minimum: 1
         created:
           type: string
           format: date-time
@@ -28428,9 +28441,28 @@ components:
         recipient:
           type: string
           format: email
-          description: Email address for recipient
+          deprecated: true
+          description: "Email address for recipient. Deprecated, use 'recipients'\
+            \ instead. At least one of 'recipient' and 'recipients' must be set."
           examples:
           - recipient@recipient.se
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+            description: Email addresses for recipients (To). At least one of 'recipient'
+              and 'recipients' must be set.
+            examples:
+            - recipient@recipient.se
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+            description: Email addresses for carbon copy recipients (Cc)
+            examples:
+            - cc-recipient@recipient.se
         subject:
           type: string
           description: Subject
@@ -28482,7 +28514,6 @@ components:
       required:
       - htmlMessage
       - message
-      - recipient
       - sender
       - subject
     BulkEmailRequest:

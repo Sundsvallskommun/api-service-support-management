@@ -17,7 +17,6 @@ import static java.util.Objects.nonNull;
 public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
-	private static final String ID_ATTRIBUTE = "id";
 	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
 	private static final String DELETED_ATTRIBUTE = "deleted";
 	private static final String DELETED_BY_ATTRIBUTE = "deletedBy";
@@ -92,14 +91,13 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
-	 * Matches errands whose id sorts after the sent in one, which lets a walk over a namespace carry on from where the
-	 * previous batch ended.
+	 * Matches errands soft deleted before the sent in point in time. An errand that is not soft deleted is left out.
 	 *
-	 * @param  id the id the previous batch ended on
-	 * @return    specification matching errands that come after the sent in id
+	 * @param  cutoff the point in time an errand must have been soft deleted before
+	 * @return        specification matching errands soft deleted before the sent in point in time
 	 */
-	public static Specification<ErrandEntity> withIdAfter(String id) {
-		return (root, _, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get(ID_ATTRIBUTE), id);
+	public static Specification<ErrandEntity> withDeletedBefore(OffsetDateTime cutoff) {
+		return (root, _, criteriaBuilder) -> criteriaBuilder.lessThan(root.get(DELETED_ATTRIBUTE), cutoff);
 	}
 
 	/**

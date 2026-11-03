@@ -15,7 +15,6 @@ import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.JobService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
@@ -25,6 +24,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -168,7 +168,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, 2));
 
-		verify(errandsRepositoryMock).findBy(anySpecification(), any());
+		verify(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 		verify(jobServiceMock).complete(JOB_ID, "Removed 2 of 2 errands reached, 0 could not be removed");
 	}
 
@@ -181,7 +181,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, null));
 
-		verify(errandsRepositoryMock).findBy(anySpecification(), any());
+		verify(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 		verify(jobServiceMock).updateProgress(JOB_ID, 2);
 		verify(jobServiceMock, never()).complete(any(), any());
 		verify(jobServiceMock, never()).fail(any(), any());
@@ -190,7 +190,7 @@ class ErrandPurgeWorkerTest {
 	@Test
 	@DisplayName("Verification that a database that cannot be read ends the job as failed with the reason, rather than throwing on a thread with nobody to catch it")
 	void runWhenReadingErrandsFails() {
-		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findBy(anySpecification(), any());
+		doThrow(new RuntimeException("Database is unreachable")).when(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 
 		worker().run(run(false, null));
 
@@ -202,7 +202,7 @@ class ErrandPurgeWorkerTest {
 	void runThatLeavesTheJobRunning() {
 		final var purgeWorker = worker();
 		final var purgeRun = run(false, null);
-		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findBy(anySpecification(), any());
+		doThrow(new StackOverflowError()).when(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 
 		// Only the run itself is left inside the lambda, so the assertion cannot be met by anything else throwing.
 		assertThatThrownBy(() -> purgeWorker.run(purgeRun)).isInstanceOf(StackOverflowError.class);
@@ -220,7 +220,7 @@ class ErrandPurgeWorkerTest {
 
 		worker().run(run(false, null));
 
-		verify(errandsRepositoryMock).findBy(anySpecification(), any());
+		verify(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 		verify(jobServiceMock).fail(JOB_ID, "Purge ended after removing 2 errands: access control was switched on for the namespace while it was running");
 		verify(jobServiceMock, never()).complete(any(), any());
 	}
@@ -233,29 +233,16 @@ class ErrandPurgeWorkerTest {
 	}
 
 	@SafeVarargs
-	private void batches(final List<IdProjection>... batches) {
+	private void batches(final List<String>... batches) {
 		var stubbing = doReturn(batches[0]);
 		for (var index = 1; index < batches.length; index++) {
 			stubbing = stubbing.doReturn(batches[index]);
 		}
-		stubbing.when(errandsRepositoryMock).findBy(anySpecification(), any());
+		stubbing.when(errandsRepositoryMock).findIdsAfter(any(), any(), anyInt());
 	}
 
-	private static List<IdProjection> ids(final String... ids) {
-		return List.of(ids).stream()
-			.map(id -> (IdProjection) new IdProjection() {
-
-				@Override
-				public String getId() {
-					return id;
-				}
-
-				@Override
-				public void setId(final String value) {
-					// Nothing reads a value set here.
-				}
-			})
-			.toList();
+	private static List<String> ids(final String... ids) {
+		return List.of(ids);
 	}
 
 	private static PurgeRun run(final boolean dryRun, final Integer maxErrands) {
@@ -263,7 +250,7 @@ class ErrandPurgeWorkerTest {
 	}
 
 	/**
-	 * Matches any specification, typed so that it picks one of the several counts and findBys of the repository.
+	 * Matches any specification, typed so that it picks one of the several counts of the repository.
 	 */
 	private static Specification<ErrandEntity> anySpecification() {
 		return ArgumentMatchers.any();

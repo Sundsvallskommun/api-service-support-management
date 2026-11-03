@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -15,6 +17,9 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+
+import static org.springframework.data.domain.Sort.Direction.ASC;
 
 @CircuitBreaker(name = "errandsRepository")
 public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
@@ -90,4 +95,30 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
+	/**
+	 * The ids of the next batch of a keyset walk over the errands the specification reaches: in ascending id order,
+	 * starting after the id the previous batch ended on, and no more than the limit. Only the ids are read.
+	 * <p>
+	 *
+	 * @param  specification the errands the walk reaches
+	 * @param  cursor        the id the previous batch ended on, or null for the first batch
+	 * @param  limit         the most ids to return
+	 * @return               the ids of the next batch, empty when the walk has reached its end
+	 */
+	default List<String> findIdsAfter(final Specification<ErrandEntity> specification, final String cursor, final int limit) {
+		final var idAttribute = "id";
+		final var reached = Optional.ofNullable(cursor)
+			.map(id -> specification.and((root, _, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get(idAttribute), id)))
+			.orElse(specification);
+
+		return findBy(reached, query -> query
+			.project(idAttribute)
+			.sortBy(Sort.by(ASC, idAttribute))
+			.limit(limit)
+			.as(IdProjection.class)
+			.all())
+			.stream()
+			.map(IdProjection::getId)
+			.toList();
+	}
 }

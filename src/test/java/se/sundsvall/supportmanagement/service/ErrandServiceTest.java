@@ -5,6 +5,7 @@ import com.turkraft.springfilter.parser.node.FieldNode;
 import generated.se.sundsvall.relation.Relation;
 import generated.se.sundsvall.relation.ResourceIdentifier;
 import jakarta.persistence.LockModeType;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -135,6 +136,7 @@ class ErrandServiceTest {
 	private static final String ACTION_LABEL_ID = "8a1f4c2e-0000-4000-8000-000000000004";
 	private static final String EVENT_LOG_DELETE_ERRAND = "Ärendet har raderats.";
 	private static final String EVENT_LOG_SOFT_DELETE_ERRAND = "Ärendet har mjukraderats.";
+	private static final OffsetDateTime SOFT_DELETE_CUTOFF = OffsetDateTime.parse("2026-10-01T03:00:00+02:00");
 	private static final String EVENT_LOG_RESTORE_ERRAND = "Ärendet har återställts.";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_TYPE = "case";
 	private static final String REFERRED_FROM_RESOURCE_IDENTIFIER_SERVICE = "supportmanagement";
@@ -1510,6 +1512,92 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).findByIdAndNamespaceAndMunicipalityId(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
 		verify(errandRepositoryMock, never()).deleteById(any());
 		verifyNoInteractions(errandDataDeleterMock, revisionServiceMock, eventServiceMock, accessControlServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that an errand soft deleted before the cutoff is deleted as a delete does it, without an access check, with its attachments taken off the entity")
+	void deleteSoftDeletedErrand() {
+		final var cutoff = now();
+		final var entity = buildErrandEntity()
+			.withDeleted(cutoff.minusDays(1))
+			.withAttachments(List.of(AttachmentEntity.create().withId("attachmentId")));
+
+		when(errandRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(entity));
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+
+		final var deleted = service.deleteSoftDeletedErrand(ERRAND_ID, cutoff);
+
+		assertThat(deleted).isTrue();
+		verify(errandRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(decisionValidatorMock).validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), ERRAND_ID);
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("attachmentId")));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+		verifyNoMoreInteractions(eventServiceMock);
+		verifyNoInteractions(accessControlServiceMock, errandAttachmentServiceMock);
+	}
+
+	@Test
+	@DisplayName("Verification that a soft deleted errand is still deleted when the event log is unreachable")
+	void deleteSoftDeletedErrandWhenEventLogFails() {
+		final var cutoff = now();
+		final var entity = buildErrandEntity().withDeleted(cutoff.minusDays(1));
+
+		when(errandRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(entity));
+		when(revisionServiceMock.getLatestErrandRevision(any())).thenReturn(currentRevisionMock);
+		doThrow(new RuntimeException("Event log down")).when(eventServiceMock)
+			.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+
+		final var deleted = service.deleteSoftDeletedErrand(ERRAND_ID, cutoff);
+
+		assertThat(deleted).isTrue();
+		verify(errandRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(emptyList()));
+		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
+		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
+		verify(errandRepositoryMock).deleteById(ERRAND_ID);
+		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
+	}
+
+	@Test
+	@DisplayName("Verification that a soft deleted errand a locked decision belongs to is not deleted, and nothing is removed")
+	void deleteSoftDeletedErrandHoldingALockedDecision() {
+		final var cutoff = now();
+		final var entity = buildErrandEntity().withDeleted(cutoff.minusDays(1));
+
+		when(errandRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(entity));
+		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), ERRAND_ID);
+
+		assertThatExceptionOfType(ThrowableProblem.class)
+			.isThrownBy(() -> service.deleteSoftDeletedErrand(ERRAND_ID, cutoff))
+			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(CONFLICT));
+
+		verify(errandRepositoryMock, never()).deleteById(any());
+		verifyNoInteractions(errandDataDeleterMock, revisionServiceMock, eventServiceMock);
+	}
+
+	@ParameterizedTest
+	@MethodSource("errandsNotToDeleteArguments")
+	@DisplayName("Verification that an errand that is gone, restored or soft deleted at or after the cutoff is left as it is")
+	void deleteSoftDeletedErrandLeavesErrandAsItIs(final Optional<ErrandEntity> entity) {
+		when(errandRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(entity);
+
+		final var deleted = service.deleteSoftDeletedErrand(ERRAND_ID, SOFT_DELETE_CUTOFF);
+
+		assertThat(deleted).isFalse();
+		verify(errandRepositoryMock).findWithLockingById(ERRAND_ID);
+		verify(errandRepositoryMock, never()).deleteById(any());
+		verifyNoInteractions(decisionValidatorMock, errandDataDeleterMock, revisionServiceMock, eventServiceMock);
+	}
+
+	private static Stream<Arguments> errandsNotToDeleteArguments() {
+		return Stream.of(
+			argumentSet("gone", Optional.empty()),
+			argumentSet("restored", Optional.of(buildErrandEntity())),
+			argumentSet("soft deleted at the cutoff", Optional.of(buildErrandEntity().withDeleted(SOFT_DELETE_CUTOFF))),
+			argumentSet("soft deleted after the cutoff", Optional.of(buildErrandEntity().withDeleted(SOFT_DELETE_CUTOFF.plusSeconds(1)))));
 	}
 
 	@Test

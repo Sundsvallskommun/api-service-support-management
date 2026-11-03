@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api.model.config;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Pattern;
@@ -36,6 +37,12 @@ public class NamespaceConfig {
 
 	@Schema(description = "Time to live (in days) for notifications created in this namespace", examples = "40")
 	private Integer notificationTTLInDays;
+
+	@Min(1)
+	@Schema(
+		description = "Days a soft deleted errand in this namespace is kept before it is deleted for good. Leaving it out keeps soft deleted errands until they are restored or deleted.",
+		examples = "90")
+	private Integer softDeletedRetentionInDays;
 
 	@Schema(description = "Timestamp when the configuration was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)
 	private OffsetDateTime created;
@@ -188,6 +195,19 @@ public class NamespaceConfig {
 
 	public NamespaceConfig withNotificationTTLInDays(final Integer notificationTTLInDays) {
 		this.notificationTTLInDays = notificationTTLInDays;
+		return this;
+	}
+
+	public Integer getSoftDeletedRetentionInDays() {
+		return softDeletedRetentionInDays;
+	}
+
+	public void setSoftDeletedRetentionInDays(final Integer softDeletedRetentionInDays) {
+		this.softDeletedRetentionInDays = softDeletedRetentionInDays;
+	}
+
+	public NamespaceConfig withSoftDeletedRetentionInDays(final Integer softDeletedRetentionInDays) {
+		this.softDeletedRetentionInDays = softDeletedRetentionInDays;
 		return this;
 	}
 
@@ -441,7 +461,8 @@ public class NamespaceConfig {
 	@Override
 	public int hashCode() {
 		return Objects.hash(accessControl, created, displayName,
-			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand, excludeEventDescriptionsInEmail,
+			limitedReadAccess, modified, municipalityId, namespace, notificationTTLInDays, softDeletedRetentionInDays, notifyReporter, processConsumer, processTriggers, reporterAccess, resourceAccessControl, singleDecisionPerErrand,
+			excludeEventDescriptionsInEmail,
 			smsNotificationsEnabled, baseUrl,
 			reporterProfileId, newSubscriberChannels, roleFieldRestrictions, roleBasedMapping,
 			shortCode,
@@ -453,9 +474,10 @@ public class NamespaceConfig {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final NamespaceConfig other)) { return false; }
 		return accessControl == other.accessControl && Objects.equals(created, other.created) && Objects.equals(displayName, other.displayName) && Objects.equals(modified, other.modified) && Objects.equals(municipalityId, other.municipalityId) && Objects
-			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && notifyReporter == other.notifyReporter && Objects.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
-				other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
-					other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail
+			.equals(namespace, other.namespace) && Objects.equals(notificationTTLInDays, other.notificationTTLInDays) && Objects.equals(softDeletedRetentionInDays, other.softDeletedRetentionInDays) && notifyReporter == other.notifyReporter && Objects
+				.equals(processConsumer, other.processConsumer) && Objects.equals(processTriggers,
+					other.processTriggers) && Objects.equals(limitedReadAccess, other.limitedReadAccess) && Objects.equals(reporterAccess,
+						other.reporterAccess) && resourceAccessControl == other.resourceAccessControl && singleDecisionPerErrand == other.singleDecisionPerErrand && excludeEventDescriptionsInEmail == other.excludeEventDescriptionsInEmail
 			&& smsNotificationsEnabled == other.smsNotificationsEnabled && Objects.equals(
 				baseUrl, other.baseUrl) && Objects.equals(reporterProfileId, other.reporterProfileId) && Objects.equals(newSubscriberChannels, other.newSubscriberChannels) && Objects.equals(roleFieldRestrictions,
 					other.roleFieldRestrictions) && roleBasedMapping == other.roleBasedMapping
@@ -466,8 +488,9 @@ public class NamespaceConfig {
 	public String toString() {
 		final var builder = new StringBuilder();
 		builder.append("NamespaceConfig [namespace=").append(namespace).append(", municipalityId=").append(municipalityId).append(", displayName=").append(displayName).append(", shortCode=").append(shortCode).append(", notificationTTLInDays=").append(
-			notificationTTLInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
-				roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
+			notificationTTLInDays).append(", softDeletedRetentionInDays=").append(softDeletedRetentionInDays).append(", created=").append(created).append(", modified=").append(modified).append(", accessControl=").append(accessControl).append(
+				", notifyReporter=").append(notifyReporter).append(", roleBasedMapping=").append(
+					roleBasedMapping).append(", resourceAccessControl=").append(resourceAccessControl).append(", singleDecisionPerErrand=").append(singleDecisionPerErrand).append(", excludeEventDescriptionsInEmail=").append(excludeEventDescriptionsInEmail)
 			.append(", smsNotificationsEnabled=").append(smsNotificationsEnabled).append(", baseUrl=").append(baseUrl).append(", reporterProfileId=").append(reporterProfileId).append(", newSubscriberChannels=").append(newSubscriberChannels).append(
 				", processConsumer=").append(processConsumer).append(
 					", processTriggers=")
