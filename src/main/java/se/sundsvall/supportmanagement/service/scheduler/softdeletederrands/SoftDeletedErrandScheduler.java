@@ -14,13 +14,13 @@ public class SoftDeletedErrandScheduler {
 
 	private final SoftDeletedErrandWorker softDeletedErrandWorker;
 	private final Dept44HealthUtility healthUtility;
+	private final String jobName;
 
-	@Value("${scheduler.soft-deleted-errands.name}")
-	private String jobName;
-
-	public SoftDeletedErrandScheduler(final SoftDeletedErrandWorker softDeletedErrandWorker, final Dept44HealthUtility healthUtility) {
+	public SoftDeletedErrandScheduler(final SoftDeletedErrandWorker softDeletedErrandWorker, final Dept44HealthUtility healthUtility,
+		@Value("${scheduler.soft-deleted-errands.name}") final String jobName) {
 		this.softDeletedErrandWorker = softDeletedErrandWorker;
 		this.healthUtility = healthUtility;
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

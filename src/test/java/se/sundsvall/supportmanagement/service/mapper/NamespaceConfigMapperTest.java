@@ -38,12 +38,12 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_PROCESS_TRIGGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_REPORTER_PROFILE_ID;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS;
 import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.FIELD;
 import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.RESOURCE;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
-import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS;
 
 class NamespaceConfigMapperTest {
 
