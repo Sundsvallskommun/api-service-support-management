@@ -99,8 +99,6 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	 * The ids of the next batch of a keyset walk over the errands the specification reaches: in ascending id order,
 	 * starting after the id the previous batch ended on, and no more than the limit. Only the ids are read.
 	 * <p>
-	 * Keyset paging rather than offset, so that an errand removed while the walk goes on does not shift the batches after
-	 * it, and so that an errand that could not be handled is passed rather than met again on the next batch.
 	 *
 	 * @param  specification the errands the walk reaches
 	 * @param  cursor        the id the previous batch ended on, or null for the first batch

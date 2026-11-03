@@ -217,8 +217,9 @@ public class EmailReaderWorker {
 	}
 
 	/**
-	 * A soft deleted errand is held as closed, whatever its status: what comes in is kept on it, to be seen once it is
-	 * restored, and the sender is told that the errand is closed if the namespace sends rejection mail at all.
+	 * Whether an incoming email to the errand is to be handled as one to a closed errand: always for a soft deleted
+	 * errand, and otherwise when the errand has the configured inactive status and has not been touched for the
+	 * configured number of days.
 	 */
 	private boolean isErrandInactive(final ErrandEntity errand, final EmailWorkerConfigEntity config) {
 		return errand.getDeleted() != null

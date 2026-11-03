@@ -32,16 +32,14 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
  * Each namespace sets how many days its soft deleted errands are kept. A namespace that sets none keeps them until
  * they are restored or deleted, and is passed over.
  * <p>
- * Errands are read in batches of ids but deleted one at a time, each in a transaction of its own. An errand that cannot
- * be deleted is counted as failed, its id is logged, and the walk carries on. The batch query is keyed on the id of the
- * last errand reached, so the walk passes an errand that failed instead of meeting it again on the next batch.
+ * Errands are read in batches of ids but deleted one at a time, each in a transaction of its own. An errand that
+ * cannot be deleted is counted as failed, its id is logged, and the walk carries on. It is not tried again until
+ * the next run.
  * <p>
- * A run deletes no more than a set number of errands in each namespace, as every delete reaches into other services
- * and a backlog would otherwise outlast the run, and keep the namespaces after it waiting. The rest is left to the runs
- * that follow.
+ * A run deletes no more than {@code scheduler.soft-deleted-errands.max-errands-per-namespace} errands in each
+ * namespace, and leaves the rest to the runs that follow.
  * <p>
- * A namespace whose walk is aborted is logged and passed, so that it does not keep the namespaces after it from being
- * walked, and is accounted for in what the run returns.
+ * A namespace whose walk is aborted is logged and passed, and is named in what the run returns.
  */
 @Component
 public class SoftDeletedErrandWorker {
@@ -71,7 +69,7 @@ public class SoftDeletedErrandWorker {
 	/**
 	 * Deletes, in every namespace that sets how long it keeps them, the errands soft deleted for longer than that.
 	 *
-	 * @return an account of the namespaces whose walk was aborted, or empty if every namespace was walked to its end
+	 * @return an account of the namespaces whose walk was aborted, or empty if none was
 	 */
 	public Optional<String> deleteSoftDeletedErrands() {
 		final var aborted = new ArrayList<String>();
@@ -95,8 +93,8 @@ public class SoftDeletedErrandWorker {
 	}
 
 	/**
-	 * Walks a single namespace, and says whether it reached the end. A walk that cannot read its next batch, such as while
-	 * the database is out of reach, is aborted and logged, and the namespaces after it are walked all the same.
+	 * Walks a single namespace, and says whether the walk got through without being aborted. A walk that cannot read its
+	 * next batch, such as while the database is out of reach, is aborted and logged rather than thrown.
 	 */
 	private boolean deleteSoftDeletedErrands(final NamespaceConfigEntity config, final int retentionInDays) {
 		try {

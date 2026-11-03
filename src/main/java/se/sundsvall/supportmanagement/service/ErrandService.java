@@ -408,16 +408,14 @@ public class ErrandService {
 	 * Deletes an errand for good once it has been soft deleted for long enough, the way
 	 * {@link #deleteErrand(String, String, String, String)} does.
 	 * <p>
-	 * Called by the scheduled removal of soft deleted errands. As for the purge no access check is made, since there is no
-	 * caller to authorize, and the errand was held to RW when it was soft deleted. It is held to the same locked decision
-	 * rule as a delete, the deletion is written to the event log and the process consumer is told that the errand is gone.
+	 * No access check is made. The errand is held to the same locked decision rule as a delete, the deletion is
+	 * written to the event log and the process consumer is told that the errand is gone.
 	 * <p>
-	 * The errand is read with a lock, so that a restore made at the same time either comes first, and leaves the errand in
-	 * place, or waits for the removal. An errand that is gone, has been restored or was soft deleted at or after the given
-	 * point in time is left as it is, and answered with false.
+	 * An errand that is gone, has been restored or was soft deleted at or after the given point in time is left as
+	 * it is, and answered with false. A restore made at the same time either takes effect first, and the errand is
+	 * left as it is, or waits until the removal is done.
 	 * <p>
-	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
-	 * removed nor stops the run.
+	 * Runs in a transaction of its own, independent of any transaction of the caller.
 	 *
 	 * @param  id                                             id of the errand to remove.
 	 * @param  deletedBefore                                  the errand is removed only when it was soft deleted before
@@ -446,8 +444,8 @@ public class ErrandService {
 	}
 
 	/**
-	 * Removes an errand and writes the deletion to the event log, which also tells the process of the errand that it is
-	 * gone. Shared by the single errand delete and the removal of soft deleted errands.
+	 * Removes an errand along with the given attachments and writes the deletion to the event log, which also tells the
+	 * process of the errand that it is gone. A failure to write the event is logged and not thrown.
 	 *
 	 * @param entity        the errand to remove.
 	 * @param attachmentIds ids of the attachments to remove along with it.
