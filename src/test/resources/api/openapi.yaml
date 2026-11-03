@@ -24015,6 +24015,15 @@ components:
           description: Time to live (in days) for notifications created in this namespace
           examples:
           - 40
+        softDeletedRetentionInDays:
+          type: integer
+          format: int32
+          description: "Days a soft deleted errand in this namespace is kept before\
+            \ it is deleted for good. Leaving it out keeps soft deleted errands until\
+            \ they are restored or deleted."
+          examples:
+          - 90
+          minimum: 1
         created:
           type: string
           format: date-time

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import generated.se.sundsvall.eventlog.EventType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -396,6 +397,60 @@ public class ErrandService {
 		validateIfMatch(ifMatch, entity.getVersion());
 		decisionValidator.validateErrandRemovable(namespace, municipalityId, id);
 
+		// Attachments are read through the attachment service rather than off the entity, so that the access check
+		// guarding them applies to a caller deleting them along with the errand.
+		removeAndLogDeletion(entity, errandAttachmentService.readAttachmentsOfErrandToDelete(namespace, municipalityId, id).stream()
+			.map(ErrandAttachment::getId)
+			.toList());
+	}
+
+	/**
+	 * Deletes an errand for good once it has been soft deleted for long enough, the way
+	 * {@link #deleteErrand(String, String, String, String)} does.
+	 * <p>
+	 * No access check is made. The errand is held to the same locked decision rule as a delete, the deletion is
+	 * written to the event log and the process consumer is told that the errand is gone.
+	 * <p>
+	 * An errand that is gone, has been restored or was soft deleted at or after the given point in time is left as
+	 * it is, and answered with false. A restore made at the same time either takes effect first, and the errand is
+	 * left as it is, or waits until the removal is done.
+	 * <p>
+	 * Runs in a transaction of its own, independent of any transaction of the caller.
+	 *
+	 * @param  id                                             id of the errand to remove.
+	 * @param  deletedBefore                                  the errand is removed only when it was soft deleted before
+	 *                                                        this.
+	 * @return                                                true if the errand was removed, false if it was left as it is.
+	 * @throws org.springframework.web.ErrorResponseException 409 when a locked decision belongs to the errand.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public boolean deleteSoftDeletedErrand(final String id, final OffsetDateTime deletedBefore) {
+		final var entity = repository.findWithLockingById(id)
+			.filter(errand -> nonNull(errand.getDeleted()) && errand.getDeleted().isBefore(deletedBefore))
+			.orElse(null);
+
+		if (isNull(entity)) {
+			return false;
+		}
+
+		decisionValidator.validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), id);
+
+		// Taken straight off the entity, since there is no caller to authorize.
+		removeAndLogDeletion(entity, ofNullable(entity.getAttachments()).orElse(emptyList()).stream()
+			.map(AttachmentEntity::getId)
+			.toList());
+
+		return true;
+	}
+
+	/**
+	 * Removes an errand along with the given attachments and writes the deletion to the event log, which also tells the
+	 * process of the errand that it is gone. A failure to write the event is logged and not thrown.
+	 *
+	 * @param entity        the errand to remove.
+	 * @param attachmentIds ids of the attachments to remove along with it.
+	 */
+	private void removeAndLogDeletion(final ErrandEntity entity, final List<String> attachmentIds) {
 		// Read before the removal, which takes the revisions with it, since the event written at the end of this method
 		// points at the latest one. The event outlives the revision it names, which is the accepted cost of not keeping a
 		// full snapshot of a deleted errand.
@@ -408,11 +463,7 @@ public class ErrandService {
 		final var externalTags = List.copyOf(ofNullable(entity.getExternalTags()).orElse(emptyList()));
 		final var labels = labelsByIdOf(entity);
 
-		// Attachments are read through the attachment service rather than off the entity, so that the access check
-		// guarding them applies to a caller deleting them along with the errand.
-		removeErrand(entity, errandAttachmentService.readAttachmentsOfErrandToDelete(namespace, municipalityId, id).stream()
-			.map(ErrandAttachment::getId)
-			.toList());
+		removeErrand(entity, attachmentIds);
 
 		entity.setExternalTags(externalTags);
 		entity.setLabels(labels);
@@ -420,7 +471,7 @@ public class ErrandService {
 		try {
 			eventService.createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, latestRevision, null, false, ERRAND);
 		} catch (final Exception e) {
-			final var sanitizedId = sanitizeForLogging(id);
+			final var sanitizedId = sanitizeForLogging(entity.getId());
 			LOG.warn("Failed to log DELETE event for errand {}: {}", sanitizedId, e.getMessage());
 		}
 	}

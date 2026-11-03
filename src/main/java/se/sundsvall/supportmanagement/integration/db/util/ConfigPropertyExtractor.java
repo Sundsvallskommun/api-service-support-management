@@ -16,6 +16,7 @@ public class ConfigPropertyExtractor {
 	public static final String PROPERTY_DISPLAY_NAME = "DISPLAY_NAME";
 	public static final String PROPERTY_SHORT_CODE = "SHORT_CODE";
 	public static final String PROPERTY_NOTIFICATION_TTL_IN_DAYS = "NOTIFICATION_TTL_IN_DAYS";
+	public static final String PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS = "SOFT_DELETED_RETENTION_IN_DAYS";
 	public static final String PROPERTY_ACCESS_CONTROL = "ACCESS_CONTROL";
 	public static final String PROPERTY_NOTIFY_REPORTER = "NOTIFY_REPORTER";
 	public static final String PROPERTY_ROLE_BASED_MAPPING = "ROLE_BASED_MAPPING";

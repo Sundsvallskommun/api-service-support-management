@@ -77,6 +77,15 @@ scheduler:
     cron: 0 0 * * * *
     shedlock-lock-at-most-for: PT4M
     maximum-execution-time: PT2M
+  soft-deleted-errands:
+    name: delete_soft_deleted_errands
+    # Nightly, after the search reindex and the process event cleanup. How long soft deleted errands are kept is set per
+    # namespace, as softDeletedRetentionInDays in its configuration, and a namespace that sets none keeps them
+    cron: 0 0 3 * * *
+    shedlock-lock-at-most-for: PT2H
+    maximum-execution-time: PT1H
+    # Every delete reaches into other services, so a namespace with a backlog is worked off over several nights
+    max-errands-per-namespace: 500
   telia-ace-work-item:
     name: deliver_telia_ace_work_items
     enabled: false
