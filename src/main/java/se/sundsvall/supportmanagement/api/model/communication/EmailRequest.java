@@ -9,11 +9,15 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 import se.sundsvall.supportmanagement.api.validation.ValidEmailRecipients;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 
 @ValidEmailRecipients
 @Schema(description = "EmailRequest model")
@@ -141,6 +145,32 @@ public class EmailRequest {
 	public EmailRequest withCc(final List<String> cc) {
 		this.cc = cc;
 		return this;
+	}
+
+	/**
+	 * Returns the recipients from the deprecated {@code recipient} and from {@code recipients}, in that order, without
+	 * blank addresses and duplicates.
+	 *
+	 * @return the recipients, or an empty list if there are none
+	 */
+	public List<String> allRecipients() {
+		return nonBlankDistinct(Stream.concat(Stream.ofNullable(recipient), ofNullable(recipients).orElse(emptyList()).stream()));
+	}
+
+	/**
+	 * Returns the carbon copy recipients from {@code cc}, without blank addresses and duplicates.
+	 *
+	 * @return the carbon copy recipients, or an empty list if there are none
+	 */
+	public List<String> allCc() {
+		return nonBlankDistinct(ofNullable(cc).orElse(emptyList()).stream());
+	}
+
+	private static List<String> nonBlankDistinct(final Stream<String> addresses) {
+		return addresses
+			.filter(StringUtils::isNotBlank)
+			.distinct()
+			.toList();
 	}
 
 	public String getSubject() {

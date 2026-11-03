@@ -6,17 +6,20 @@ import se.sundsvall.supportmanagement.api.model.communication.EmailRequest;
 import se.sundsvall.supportmanagement.api.validation.ValidEmailRecipients;
 
 import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.springframework.util.CollectionUtils.isEmpty;
 
 public class ValidEmailRecipientsConstraintValidator implements ConstraintValidator<ValidEmailRecipients, EmailRequest> {
 
 	@Override
 	public boolean isValid(final EmailRequest emailRequest, final ConstraintValidatorContext context) {
-		if (isNull(emailRequest)) {
+		if (isNull(emailRequest) || !emailRequest.allRecipients().isEmpty()) {
 			return true;
 		}
 
-		return isNotBlank(emailRequest.getRecipient()) || !isEmpty(emailRequest.getRecipients());
+		// Reported on recipients rather than on the request itself, so that a client can tie it to a field
+		context.disableDefaultConstraintViolation();
+		context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
+			.addPropertyNode("recipients")
+			.addConstraintViolation();
+		return false;
 	}
 }

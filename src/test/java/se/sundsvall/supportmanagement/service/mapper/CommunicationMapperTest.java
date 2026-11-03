@@ -174,6 +174,23 @@ class CommunicationMapperTest {
 	}
 
 	@Test
+	void toCommunicationEntityFromEmailRequestWithBlankAndDuplicateRecipientsAndCc() {
+		final var emailRequest = new EmailRequest()
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"))
+			.withCc(List.of("", "cc@example.com", "cc@example.com"))
+			.withSender("sender")
+			.withSubject("subject")
+			.withMessage("message");
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
+
+		assertThat(communicationEntity.getTarget()).isEqualTo("first@example.com");
+		assertThat(communicationEntity.getRecipients()).containsExactly("first@example.com");
+		assertThat(communicationEntity.getCcRecipients()).containsExactly("cc@example.com");
+	}
+
+	@Test
 	void toCommunicationEntityFromSmsRequest() {
 		final var smsRequest = new SmsRequest()
 			.withRecipient("recipient")

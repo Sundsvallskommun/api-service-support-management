@@ -27,9 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationTy
 import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
 import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
 
-import static java.util.Optional.ofNullable;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingMapper.toRecipients;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 
 @Component
@@ -111,6 +109,8 @@ public class CommunicationMapper {
 	}
 
 	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final EmailRequest request) {
+		final var recipients = request.allRecipients();
+
 		return CommunicationEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
@@ -122,9 +122,9 @@ public class CommunicationMapper {
 			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))
 			.withSubject(request.getSubject())
 			.withType(CommunicationType.EMAIL)
-			.withTarget(ofNullable(toRecipients(request)).map(List::getFirst).orElse(null))
-			.withRecipients(toRecipients(request))
-			.withCcRecipients(request.getCc())
+			.withTarget(recipients.stream().findFirst().orElse(null))
+			.withRecipients(recipients)
+			.withCcRecipients(request.allCc())
 			.withInternal(request.getInternal())
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false);

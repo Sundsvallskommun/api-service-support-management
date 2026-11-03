@@ -76,4 +76,38 @@ class EmailRequestTest {
 		assertThat(EmailRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
 		assertThat(new EmailRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
 	}
+
+	@Test
+	void allRecipientsCombinesRecipientAndRecipientsWithoutBlanksAndDuplicates() {
+		final var emailRequest = EmailRequest.create()
+			.withRecipient("first@example.com")
+			.withRecipients(List.of("", "second@example.com", " ", "first@example.com"));
+
+		assertThat(emailRequest.allRecipients()).containsExactly("first@example.com", "second@example.com");
+	}
+
+	@Test
+	void allRecipientsLeavesOutBlankRecipient() {
+		final var emailRequest = EmailRequest.create()
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"));
+
+		assertThat(emailRequest.allRecipients()).containsExactly("first@example.com");
+	}
+
+	@Test
+	void allCcWithoutBlanksAndDuplicates() {
+		final var emailRequest = EmailRequest.create()
+			.withCc(List.of("", "cc@example.com", "cc@example.com"));
+
+		assertThat(emailRequest.allCc()).containsExactly("cc@example.com");
+	}
+
+	@Test
+	void allRecipientsAndAllCcWhenNoneAreSet() {
+		final var emailRequest = EmailRequest.create();
+
+		assertThat(emailRequest.allRecipients()).isEmpty();
+		assertThat(emailRequest.allCc()).isEmpty();
+	}
 }

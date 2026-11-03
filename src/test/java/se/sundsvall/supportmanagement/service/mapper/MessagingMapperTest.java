@@ -128,17 +128,16 @@ class MessagingMapperTest {
 	}
 
 	@Test
-	void toRecipientsCombinesRecipientAndRecipientsWithoutDuplicates() {
-		final var emailRequest = EmailRequest.create()
-			.withRecipient("first@example.com")
-			.withRecipients(List.of("second@example.com", "first@example.com"));
+	void toEmailRequestWithBlankAndDuplicateRecipientsAndCc() {
+		final var emailRequest = createEmailRequest(true, HTML_MESSAGE)
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"))
+			.withCc(List.of("", "cc@example.com", "cc@example.com"));
 
-		assertThat(MessagingMapper.toRecipients(emailRequest)).containsExactly("first@example.com", "second@example.com");
-	}
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), emailRequest, List.of());
 
-	@Test
-	void toRecipientsWhenNoneAreSet() {
-		assertThat(MessagingMapper.toRecipients(EmailRequest.create())).isNull();
+		assertThat(result.getRecipients()).containsExactly("first@example.com");
+		assertThat(result.getCc()).containsExactly("cc@example.com");
 	}
 
 	@Test
