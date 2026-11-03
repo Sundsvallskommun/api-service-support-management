@@ -66,7 +66,7 @@ class SoftDeletedErrandWorkerTest {
 			.thenReturn(firstBatch, List.of("id-restored", "id-failing", "id-last"), emptyList(), List.of("id-short"), emptyList());
 		when(errandServiceMock.deleteSoftDeletedErrand(any(), any())).thenReturn(true);
 		when(errandServiceMock.deleteSoftDeletedErrand(eq("id-restored"), any())).thenReturn(false);
-		when(errandServiceMock.deleteSoftDeletedErrand(eq("id-failing"), any())).thenThrow(new IllegalStateException("locked decision"));
+		when(errandServiceMock.deleteSoftDeletedErrand(eq("id-failing"), any())).thenThrow(new IllegalStateException("database unavailable"));
 
 		assertThat(worker.deleteSoftDeletedErrands()).isEmpty();
 
@@ -113,7 +113,7 @@ class SoftDeletedErrandWorkerTest {
 		when(errandsRepositoryMock.findIdsAfter(any(), any(), anyInt()))
 			.thenReturn(List.of("id-a", "id-failing", "id-c", "id-d"), List.of("id-e"), emptyList());
 		when(errandServiceMock.deleteSoftDeletedErrand(any(), any())).thenReturn(true);
-		when(errandServiceMock.deleteSoftDeletedErrand(eq("id-failing"), any())).thenThrow(new IllegalStateException("locked decision"));
+		when(errandServiceMock.deleteSoftDeletedErrand(eq("id-failing"), any())).thenThrow(new IllegalStateException("database unavailable"));
 
 		assertThat(worker.deleteSoftDeletedErrands()).isEmpty();
 

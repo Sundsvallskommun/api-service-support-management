@@ -724,51 +724,80 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An errand whose process has ended holds a decision that can no longer be changed, so the errand is kept, together
-	 * with the decision, and no row is written for its process.
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is deleted all the same,
+	 * together with the decision. Its process is told that the errand is gone.
 	 */
 	@Test
-	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not deleted, and the decision stays")
-	void test12_anErrandHoldingALockedDecisionCannotBeDeleted() {
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is deleted with its decision, and its process is told")
+	void test12_anErrandHoldingALockedDecisionIsDeleted() {
 		setupCall()
 			.withServicePath(errandPath(ENDED_ERRAND_ID))
 			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(CONFLICT)
-			.withExpectedResponse("response-locked.json")
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequest();
 
 		setupCall()
 			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response-ended-decision.json")
+			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(outboxRepository.findAll()).isEmpty();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where errand_id = ?", Integer.class, ENDED_ERRAND_ID)).isZero();
+		assertDeletionTold(ENDED_ERRAND_ID);
 	}
 
 	/**
-	 * A decision concluded on an errand whose process still runs is locked as well, so the errand is kept, together with
-	 * its decisions, and no row is written for its process.
+	 * A decision concluded on an errand whose process still runs is locked as well, and the errand is deleted all the
+	 * same, together with its decisions. Its process is told that the errand is gone.
 	 */
 	@Test
-	@DisplayName("Verification that an errand with a live process and a concluded decision is not deleted, and its decisions stay")
-	void test13_anErrandWithALiveProcessAndAConcludedDecisionCannotBeDeleted() {
+	@DisplayName("Verification that an errand with a live process and a concluded decision is deleted with its decisions, and its process is told")
+	void test13_anErrandWithALiveProcessAndAConcludedDecisionIsDeleted() {
 		setupCall()
 			.withServicePath(errandPath(RUNNING_ERRAND_ID))
 			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(CONFLICT)
-			.withExpectedResponse("response-locked.json")
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequest();
 
 		setupCall()
 			.withServicePath(decisionsPath(RUNNING_ERRAND_ID))
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(DECISIONS_RESPONSE_FILE)
+			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(outboxRepository.findAll()).isEmpty();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where errand_id = ?", Integer.class, RUNNING_ERRAND_ID)).isZero();
+		assertDeletionTold(RUNNING_ERRAND_ID);
+	}
+
+	/**
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is soft deleted all the same.
+	 * The decision is kept with it, so that a restore brings both back.
+	 */
+	@Test
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is soft deleted, and keeps its decision")
+	void test14_anErrandHoldingALockedDecisionIsSoftDeleted() {
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/soft-delete")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jdbcTemplate.queryForObject("select deleted is not null from errand where id = ?", Boolean.class, ENDED_ERRAND_ID)).isTrue();
+		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where id = ?", Integer.class, ENDED_DECISION_ID)).isOne();
+	}
+
+	private void assertDeletionTold(final String errandId) {
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(errandId);
+				assertThat(row.getProcessService()).isEqualTo(PROCESS_SERVICE);
+				assertThat(row.getProcessKey()).isEqualTo(PROCESS_KEY);
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+				assertThat(row.isStartAllowed()).isFalse();
+			});
 	}
 
 	/**

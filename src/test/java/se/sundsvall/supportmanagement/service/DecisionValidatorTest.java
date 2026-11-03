@@ -516,72 +516,6 @@ class DecisionValidatorTest {
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 	}
 
-	/**
-	 * An errand holding no decision is removable after a single lookup, without the process rows being read.
-	 */
-	@Test
-	void anErrandWithoutDecisionsIsRemovable() {
-
-		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-		verify(decisionRepositoryMock).existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		verifyNoMoreInteractions(decisionRepositoryMock);
-		verifyNoInteractions(processRepositoryMock);
-	}
-
-	@Test
-	void anErrandWithDecisionsButWithoutAProcessIsRemovable() {
-
-		// Arrange
-		givenDecisionHeld();
-		givenProcesses();
-
-		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-	}
-
-	@Test
-	void anErrandWhoseDecisionsAreNotYetCompletedIsRemovableWhileTheProcessLives() {
-
-		// Arrange
-		givenDecisionHeld();
-		givenProcesses(RUNNING);
-
-		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-		verify(decisionRepositoryMock).existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ItemStatus.COMPLETED);
-	}
-
-	@Test
-	void anErrandHoldingACompletedDecisionOnAnErrandWithAProcessIsNotRemovable() {
-
-		// Arrange
-		givenDecisionHeld();
-		givenProcesses(RUNNING);
-		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityIdAndStatus(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, ItemStatus.COMPLETED)).thenReturn(true);
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
-		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' holds a decision that can no longer be changed, and cannot be removed");
-	}
-
-	@Test
-	void anErrandHoldingAnyDecisionIsNotRemovableOnceTheProcessHasRunToItsEnd() {
-
-		// Arrange
-		givenDecisionHeld();
-		givenProcesses(COMPLETED);
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
-	}
-
 	@Test
 	void anErrandWithoutAProcessIsSoftDeletable() {
 
@@ -589,17 +523,22 @@ class DecisionValidatorTest {
 		givenProcesses();
 
 		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(ERRAND_ID));
 	}
 
+	/**
+	 * A process that has run to its end locks every decision of its errand, and the errand is soft deletable all the same:
+	 * its decisions are not even read.
+	 */
 	@Test
-	void anErrandWhoseProcessHasRunToItsEndIsSoftDeletable() {
+	void anErrandWhoseProcessHasRunToItsEndIsSoftDeletableWhateverItsDecisions() {
 
 		// Arrange
 		givenProcesses(COMPLETED);
 
 		// Act & Verify
-		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(ERRAND_ID));
+		verifyNoInteractions(decisionRepositoryMock);
 	}
 
 	@Test
@@ -609,30 +548,11 @@ class DecisionValidatorTest {
 		givenProcesses(RUNNING);
 
 		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
+		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(ERRAND_ID));
 
 		// Verify
 		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
 		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' has a process that is still running, and cannot be soft deleted");
-	}
-
-	@Test
-	void anErrandThatIsNotRemovableIsNotSoftDeletable() {
-
-		// Arrange
-		givenDecisionHeld();
-		givenProcesses(COMPLETED);
-
-		// Act
-		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID));
-
-		// Verify
-		assertThat(problem.getStatus()).isEqualTo(CONFLICT);
-		assertThat(problem.getDetail()).isEqualTo("Errand with id '" + ERRAND_ID + "' holds a decision that can no longer be changed, and cannot be removed");
-	}
-
-	private void givenDecisionHeld() {
-		when(decisionRepositoryMock.existsByNamespaceAndMunicipalityIdAndErrandEntityId(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID)).thenReturn(true);
 	}
 
 	private void givenInvestigationRestedOn() {
