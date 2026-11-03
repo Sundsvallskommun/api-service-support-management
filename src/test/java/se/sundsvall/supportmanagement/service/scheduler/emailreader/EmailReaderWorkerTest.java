@@ -8,9 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -273,14 +276,25 @@ class EmailReaderWorkerTest {
 		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
 	}
 
-	@Test
-	void processEmailWithSoftDeletedErrandAndNoClosedTemplate() {
+	private static Stream<Arguments> processEmailWithSoftDeletedErrandAndIncompleteClosedMailArguments() {
+		return Stream.of(
+			Arguments.of(null, null, null),
+			Arguments.of("errandClosedEmailSender", null, null),
+			Arguments.of("errandClosedEmailSender", "", " "),
+			Arguments.of(null, "errandClosedEmailTemplate", "errandClosedEmailHTMLTemplate"),
+			Arguments.of(" ", "errandClosedEmailTemplate", "errandClosedEmailHTMLTemplate"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("processEmailWithSoftDeletedErrandAndIncompleteClosedMailArguments")
+	void processEmailWithSoftDeletedErrandAndIncompleteClosedMail(final String sender, final String template, final String htmlTemplate) {
 		final var email = new Email();
 		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
 		email.setId("id");
 		email.setSender("user@domain.com");
 
-		final var emailConfig = buildBaseConfig();
+		final var emailConfig = buildBaseConfig().withInactiveStatus("CLOSED")
+			.withErrandClosedEmailSender(sender).withErrandClosedEmailTemplate(template).withErrandClosedEmailHTMLTemplate(htmlTemplate);
 		final var errandEntity = ErrandEntity.create().withId("id").withStatus("ONGOING").withCreated(OffsetDateTime.now().minusDays(1)).withTouched(OffsetDateTime.now()).withDeleted(OffsetDateTime.now());
 		final var communicationEntity = CommunicationEntity.create();
 
@@ -288,6 +302,37 @@ class EmailReaderWorkerTest {
 		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
 
 		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
+		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));
+		verify(communicationServiceMock).saveAttachment(same(communicationEntity), same(errandEntity));
+		verify(communicationServiceMock).saveCommunication(same(communicationEntity));
+		verify(emailReaderClientMock).deleteEmail(MUNICIPALITY_ID, email.getId());
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Meddelande mottaget via e-post"), same(errandEntity), isNull(), eq(MESSAGE_EMAIL_EXTERNAL), eq(new ErrandEventOptions(true, null, Set.of(), "Nytt meddelande")));
+		verifyNoInteractions(errandServiceMock, eventPublisherMock);
+		verifyNoMoreInteractions(emailReaderClientMock, errandRepositoryMock, emailReaderMapperMock, communicationServiceMock, emailWorkerConfigRepositoryMock, eventServiceMock);
+	}
+
+	@Test
+	void processEmailWithSoftDeletedErrandInNamespaceWithoutRejectionMail() {
+		final var email = new Email();
+		email.setSubject("Ärende #PRH-2022-000002 Ansökan om bygglov för fastighet KATARINA 4");
+		email.setId("id");
+		email.setSender("user@domain.com");
+
+		// Without an inactive status no rejection mail is sent, even though the templates are there; the errand is still
+		// held as closed, so its status is left alone
+		final var emailConfig = buildBaseConfig().withErrandClosedEmailSender("errandClosedEmailSender").withErrandClosedEmailTemplate("errandClosedEmailTemplate").withErrandClosedEmailHTMLTemplate("errandClosedEmailHTMLTemplate")
+			.withTriggerStatusChangeOn("SOLVED").withStatusChangeTo("ONGOING");
+		final var errandEntity = ErrandEntity.create().withId("id").withStatus("SOLVED").withCreated(OffsetDateTime.now().minusDays(1)).withTouched(OffsetDateTime.now()).withDeleted(OffsetDateTime.now());
+		final var communicationEntity = CommunicationEntity.create();
+
+		when(errandRepositoryMock.findByErrandNumberAndNamespaceAndMunicipalityId(anyString(), anyString(), anyString())).thenReturn(Optional.of(errandEntity));
+		when(emailReaderMapperMock.toCommunicationEntity(any(), any())).thenReturn(communicationEntity);
+
+		emailReaderWorker.processEmail(email, emailConfig, consumerMock);
+
+		assertThat(errandEntity.getStatus()).isEqualTo("SOLVED");
 
 		verify(errandRepositoryMock).findByErrandNumberAndNamespaceAndMunicipalityId("PRH-2022-000002", NAMESPACE, MUNICIPALITY_ID);
 		verify(emailReaderMapperMock).toCommunicationEntity(same(email), same(errandEntity));

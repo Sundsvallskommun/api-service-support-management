@@ -38,7 +38,7 @@ public class NamespaceConfig {
 	@Schema(description = "Time to live (in days) for notifications created in this namespace", examples = "40")
 	private Integer notificationTTLInDays;
 
-	@Min(0)
+	@Min(1)
 	@Schema(
 		description = "Days a soft deleted errand in this namespace is kept before it is deleted for good. Leaving it out keeps soft deleted errands until they are restored or deleted.",
 		examples = "90")

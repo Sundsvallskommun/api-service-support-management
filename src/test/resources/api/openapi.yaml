@@ -24023,7 +24023,7 @@ components:
             \ they are restored or deleted."
           examples:
           - 90
-          minimum: 0
+          minimum: 1
         created:
           type: string
           format: date-time

@@ -35,6 +35,9 @@ class SoftDeleteChokePointTest {
 		// The action worker locks the errand and leaves a soft deleted one waiting itself, and the removal of soft deleted
 		// errands locks the errand before deleting it for good.
 		entry("findWithLockingById", "ActionWorker, which checks the deletion after locking, and the removal of soft deleted errands"),
+		// The keyset walks reach whatever their specification reaches, and it is the specification that decides on soft
+		// deleted errands: the retention purge reaches them too, and the removal of soft deleted errands only them.
+		entry("findIdsAfter", "keyset walks of the retention purge and the removal of soft deleted errands, deciding through the specification"),
 		// Incoming email is kept on the errand it answers, soft deleted or not, so that nothing is lost. A soft deleted
 		// errand is held as closed, and the sender is told so.
 		entry("findByErrandNumberAndNamespaceAndMunicipalityId", "EmailReaderWorker, which keeps incoming email on a soft deleted errand and holds it as closed"),

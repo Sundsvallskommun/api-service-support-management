@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
@@ -221,9 +223,12 @@ class NamespaceConfigResourceFailureTest {
 		verifyNoInteractions(serviceMock);
 	}
 
-	@Test
-	void createWithNegativeSoftDeletedRetentionInDays() {
-		final var namespaceConfig = NamespaceConfig.create().withDisplayName(DISPLAY_NAME).withShortCode(SHORT_CODE).withSoftDeletedRetentionInDays(-1);
+	@ParameterizedTest
+	@ValueSource(ints = {
+		-1, 0
+	})
+	void createWithSoftDeletedRetentionInDaysBelowOne(final int softDeletedRetentionInDays) {
+		final var namespaceConfig = NamespaceConfig.create().withDisplayName(DISPLAY_NAME).withShortCode(SHORT_CODE).withSoftDeletedRetentionInDays(softDeletedRetentionInDays);
 
 		final var response = webTestClient.post()
 			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
@@ -240,7 +245,7 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactly(tuple("softDeletedRetentionInDays", "must be greater than or equal to 0"));
+			.containsExactly(tuple("softDeletedRetentionInDays", "must be greater than or equal to 1"));
 
 		verifyNoInteractions(serviceMock);
 	}
