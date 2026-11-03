@@ -1,7 +1,9 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -122,6 +125,39 @@ class ErrandAttachmentMapperTest {
 			assertThat(result.getMimeType()).isEqualTo("application/octet-stream");
 			assertThat(result.getChannel()).isEqualTo("MY_PAGES");
 			assertThat(result.getErrandEntity()).isSameAs(errandEntity);
+		}
+	}
+
+	@Test
+	void toAttachmentEntityFromResponseEntityLeavesWholeFileToBlob() throws IOException {
+		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
+
+		// Larger than what detection reads of the head of the file
+		final var content = new byte[100_000];
+		final var header = "%PDF-1.7\n".getBytes();
+		System.arraycopy(header, 0, content, 0, header.length);
+
+		// Like a response stream: readable once, not markable
+		final var responseStream = new FilterInputStream(new ByteArrayInputStream(content)) {
+			@Override
+			public boolean markSupported() {
+				return false;
+			}
+		};
+		final var file = ResponseEntity.ok()
+			.header("Content-Type", "application/pdf")
+			.body(new InputStreamResource(responseStream));
+		final var blobStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
+
+		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
+			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
+			when(lobHelperMock.createBlob(blobStreamCaptor.capture(), anyLong())).thenReturn(blobMock);
+
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, "file.pdf", content.length, "MY_PAGES");
+
+			assertThat(result.getMimeType()).isEqualTo("application/pdf");
+			// The blob reads its stream after the entity is built, as Hibernate does at flush
+			assertThat(blobStreamCaptor.getValue().readAllBytes()).isEqualTo(content);
 		}
 	}
 
