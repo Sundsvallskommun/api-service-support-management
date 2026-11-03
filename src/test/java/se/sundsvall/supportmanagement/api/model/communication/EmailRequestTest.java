@@ -33,6 +33,8 @@ class EmailRequestTest {
 		final var htmlMessage = "htmlMessage";
 		final var message = "message";
 		final var recipient = "recipient";
+		final var recipients = List.of("recipient1", "recipient2");
+		final var cc = List.of("cc1", "cc2");
 		final var sender = "sender";
 		final var senderName = "senderName";
 		final var subject = "subject";
@@ -45,6 +47,8 @@ class EmailRequestTest {
 			.withHtmlMessage(htmlMessage)
 			.withMessage(message)
 			.withRecipient(recipient)
+			.withRecipients(recipients)
+			.withCc(cc)
 			.withSender(sender)
 			.withSenderName(senderName)
 			.withSubject(subject)
@@ -57,6 +61,8 @@ class EmailRequestTest {
 		assertThat(bean.getHtmlMessage()).isEqualTo(htmlMessage);
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
+		assertThat(bean.getRecipients()).isEqualTo(recipients);
+		assertThat(bean.getCc()).isEqualTo(cc);
 		assertThat(bean.getSender()).isEqualTo(sender);
 		assertThat(bean.getSenderName()).isEqualTo(senderName);
 		assertThat(bean.getSubject()).isEqualTo(subject);

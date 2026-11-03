@@ -418,4 +418,22 @@ class ErrandCommunicationIT extends AbstractAppTest {
 
 		assertThat(hits.path("content").valueStream().map(errand -> errand.path("errandNumber").asString())).containsExactly("KC-23020003");
 	}
+
+	@Test
+	void test28_sendEmailToRecipientsAndCc() {
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6/communication/email")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.withExpectedResponseBodyIsNull()
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(PATH + "/1be673c0-6ba3-4fb0-af4a-43acf23389f6/communication")
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

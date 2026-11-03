@@ -69,13 +69,31 @@ public class MessagingMapper {
 			.attachments(Stream.of(attachments, toAttachments(emailRequest.getAttachments()))
 				.flatMap(List::stream)
 				.toList())
-			.recipients(ofNullable(emailRequest.getRecipient()).map(List::of).orElse(null))
+			.recipients(toRecipients(emailRequest))
+			.cc(ofNullable(emailRequest.getCc()).orElse(emptyList()))
 			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
 			.party(toEmailRequestParty(errandEntity))
 			.sender(toEmailSender(emailRequest))
 			.headers(toEmailHeaders(emailRequest.getEmailHeaders()))
 			.subject(emailRequest.getSubject());
+	}
+
+	/**
+	 * Gathers the recipients of the email, both those in the list and the deprecated single recipient, which still is
+	 * honored so that a request with one recipient works as before. An address given in both places is only kept once.
+	 *
+	 * @param  emailRequest the email to get the recipients of
+	 * @return              the recipients, or null if the email has none
+	 */
+	public static List<String> toRecipients(final se.sundsvall.supportmanagement.api.model.communication.EmailRequest emailRequest) {
+		final var recipients = Stream.concat(
+			Stream.ofNullable(emailRequest.getRecipient()),
+			ofNullable(emailRequest.getRecipients()).orElse(emptyList()).stream())
+			.distinct()
+			.toList();
+
+		return recipients.isEmpty() ? null : recipients;
 	}
 
 	private static se.sundsvall.supportmanagement.api.model.communication.EmailRequest toEmailRequest(final String subject, final String message, String emailDestination, final MessagingSettings messagingSettings) {
