@@ -4,15 +4,22 @@ import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.mime.MimeTypes;
 import org.hibernate.Hibernate;
 import org.hibernate.LobHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -29,6 +36,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Named.named;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -37,6 +45,8 @@ import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntit
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentMapperTest {
+
+	private static final int MIME_DETECTION_HEAD_SIZE = MimeTypes.getDefaultMimeTypes().getMinLength();
 
 	private static final String ATTACHMENT_ID = "attachmentId";
 
@@ -128,37 +138,73 @@ class ErrandAttachmentMapperTest {
 		}
 	}
 
+	@ParameterizedTest
+	@MethodSource("responseBodies")
+	void toAttachmentEntityFromResponseEntityLeavesWholeFileToBlob(final Function<byte[], InputStream> responseBody) throws Exception {
+		// Below, at, just past and well past what detection reads of the head of the file
+		for (final var size : List.of(10, MIME_DETECTION_HEAD_SIZE, MIME_DETECTION_HEAD_SIZE + 1, 100_000)) {
+			final var content = new byte[size];
+			final var header = "%PDF-1.7\n".getBytes(StandardCharsets.ISO_8859_1);
+			System.arraycopy(header, 0, content, 0, header.length);
+
+			final var file = ResponseEntity.ok()
+				.header("Content-Type", "application/pdf")
+				.body(new InputStreamResource(responseBody.apply(content)));
+
+			// No file extension, so the type can only come from the content
+			final var result = ErrandAttachmentMapper.toAttachmentEntity(buildErrandEntity().withAttachments(new ArrayList<>()), file, "file", size, "MY_PAGES");
+
+			assertThat(result.getMimeType()).isEqualTo("application/pdf");
+			final var blob = result.getAttachmentData().getFile();
+			assertThat(blob.length()).isEqualTo((long) size);
+			// Read once, after the entity is built, as Hibernate does at flush. Hibernate marks a stream that supports mark for
+			// its whole length, which would keep the whole file in memory.
+			try (final var blobStream = blob.getBinaryStream()) {
+				assertThat(blobStream.readAllBytes()).isEqualTo(content);
+				assertThat(blobStream.markSupported()).isFalse();
+			}
+		}
+	}
+
 	@Test
-	void toAttachmentEntityFromResponseEntityLeavesWholeFileToBlob() throws IOException {
-		final var errandEntity = buildErrandEntity().withAttachments(new ArrayList<>());
-
-		// Larger than what detection reads of the head of the file
+	void toAttachmentEntityFromResponseEntityDetectsTypeFromPastTheStartOfTheFile() {
+		// The signature of a tar file is at offset 257, so a head too small for detection gives another type
 		final var content = new byte[100_000];
-		final var header = "%PDF-1.7\n".getBytes();
-		System.arraycopy(header, 0, content, 0, header.length);
+		final var signature = "ustar\u000000".getBytes(StandardCharsets.ISO_8859_1);
+		System.arraycopy(signature, 0, content, 257, signature.length);
+		final var file = ResponseEntity.ok()
+			.header("Content-Type", "application/x-tar")
+			.body(new InputStreamResource(new ByteArrayInputStream(content)));
 
-		// Like a response stream: readable once, not markable
-		final var responseStream = new FilterInputStream(new ByteArrayInputStream(content)) {
+		final var result = ErrandAttachmentMapper.toAttachmentEntity(buildErrandEntity().withAttachments(new ArrayList<>()), file, "file", content.length, "MY_PAGES");
+
+		assertThat(result.getMimeType()).isEqualTo("application/x-tar");
+	}
+
+	/**
+	 * The mapper detects the type from the head of the file only, sized by what {@link MimeTypes} reads. A detector from
+	 * another Tika module may need more than that, such as the whole of a zip or OOXML file, and would then type large
+	 * files
+	 * wrongly without anything failing. If this test fails, the head has to be revisited.
+	 */
+	@Test
+	void mimeDetectionReadsNoMoreThanTheHeadOfTheFile() {
+		assertThat(new DefaultDetector().getDetectors()).allMatch(MimeTypes.class::isInstance);
+	}
+
+	private static Stream<Arguments> responseBodies() {
+		final Function<byte[], InputStream> decoded = ByteArrayInputStream::new;
+		final Function<byte[], InputStream> streamed = bytes -> new FilterInputStream(new ByteArrayInputStream(bytes)) {
 			@Override
 			public boolean markSupported() {
 				return false;
 			}
 		};
-		final var file = ResponseEntity.ok()
-			.header("Content-Type", "application/pdf")
-			.body(new InputStreamResource(responseStream));
-		final var blobStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
-
-		try (MockedStatic<Hibernate> hibernateMock = Mockito.mockStatic(Hibernate.class)) {
-			hibernateMock.when(Hibernate::getLobHelper).thenReturn(lobHelperMock);
-			when(lobHelperMock.createBlob(blobStreamCaptor.capture(), anyLong())).thenReturn(blobMock);
-
-			final var result = ErrandAttachmentMapper.toAttachmentEntity(errandEntity, file, "file.pdf", content.length, "MY_PAGES");
-
-			assertThat(result.getMimeType()).isEqualTo("application/pdf");
-			// The blob reads its stream after the entity is built, as Hibernate does at flush
-			assertThat(blobStreamCaptor.getValue().readAllBytes()).isEqualTo(content);
-		}
+		return Stream.of(
+			// What the Feign decoder of dept44 hands over: the whole body read into memory
+			Arguments.of(named("decoded body", decoded)),
+			// A body read straight from the connection: readable once, not markable
+			Arguments.of(named("streamed body", streamed)));
 	}
 
 	@Test

@@ -1,11 +1,13 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tika.mime.MimeTypes;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +28,15 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static se.sundsvall.supportmanagement.service.mapper.Channels.WEB_UI;
+import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeTypeFromStream;
 
 public final class ErrandAttachmentMapper {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ErrandAttachmentMapper.class);
+
+	/** How much of the head of a file MIME detection reads at most. */
+	private static final int MIME_DETECTION_HEAD_SIZE = MimeTypes.getDefaultMimeTypes().getMinLength();
 
 	private ErrandAttachmentMapper() {}
 
@@ -61,15 +67,19 @@ public final class ErrandAttachmentMapper {
 			return null;
 		}
 
-		// The response stream can be read only once, and the blob reads it lazily at flush. Detection reads the head of the
-		// file, so it gets a markable stream to read it through and reset, which leaves the whole file to the blob.
+		// The stream can be read only once and the blob reads it at flush, so detection gets a copy of the head of the file
+		// and the blob the head followed by the rest. The blob's stream must not support mark: Hibernate marks such a stream
+		// for its whole length, which keeps every byte read at flush in memory.
+		final byte[] head;
 		final InputStream content;
 		try {
-			content = new BufferedInputStream(errandAttachment.getBody().getInputStream());
-		} catch (final Exception _) {
+			final var stream = errandAttachment.getBody().getInputStream();
+			head = stream.readNBytes(MIME_DETECTION_HEAD_SIZE);
+			content = new SequenceInputStream(new ByteArrayInputStream(head), stream);
+		} catch (final IOException | IllegalStateException e) {
+			LOGGER.warn("Exception when reading file", e);
 			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
-		final var mimeType = detectMimeTypeFromStream(fileName, content);
 
 		return AttachmentEntity.create()
 			.withErrandEntity(errandEntity)
@@ -78,7 +88,7 @@ public final class ErrandAttachmentMapper {
 			.withFileSize(fileSize)
 			.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(content, fileSize)))
 			.withFileName(fileName)
-			.withMimeType(mimeType)
+			.withMimeType(detectMimeType(fileName, head))
 			.withChannel(channel);
 	}
 
