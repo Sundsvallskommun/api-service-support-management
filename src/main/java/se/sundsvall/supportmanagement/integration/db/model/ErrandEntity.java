@@ -79,7 +79,10 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched"),
 		// Carries the retention purge, which walks a namespace in id order a batch at a time and would otherwise have to
 		// work through the whole namespace to find where the previous batch ended.
-		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id")
+		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id"),
+		// Carries the removal of soft deleted errands, which asks a namespace for the errands soft deleted before a point
+		// in time and would otherwise have to work through the whole namespace to find the few that are.
+		@Index(name = "idx_errand_municipality_id_namespace_deleted", columnList = "municipality_id,namespace,deleted")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {

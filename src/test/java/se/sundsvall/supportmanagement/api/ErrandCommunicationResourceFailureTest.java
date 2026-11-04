@@ -495,7 +495,7 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("htmlMessage", "must not be blank"),
 			tuple("message", "must not be blank"),
-			tuple("recipient", "must not be null"),
+			tuple("recipients", "at least one of recipient and recipients must be set"),
 			tuple("sender", "must not be null"),
 			tuple("subject", "must not be blank"));
 
@@ -525,6 +525,60 @@ class ErrandCommunicationResourceFailureTest {
 		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
 			tuple("recipient", "must be a well-formed email address"),
 			tuple("sender", "must be a well-formed email address"));
+
+		// Verification
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void sendEmailWithInvalidRecipientsAndCc() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailRequest()
+				.withRecipient(null)
+				.withRecipients(List.of("recipient@recipient.com", "not_an_email"))
+				.withCc(List.of("not_an_email")))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
+			tuple("recipients[1]", "must be a well-formed email address"),
+			tuple("cc[0]", "must be a well-formed email address"));
+
+		// Verification
+		verifyNoInteractions(communicationServiceMock, conversationServiceMock);
+	}
+
+	@Test
+	void sendEmailWithOnlyBlankRecipients() {
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH_PREFIX + PATH_EMAIL).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(emailRequest()
+				.withRecipient(null)
+				.withRecipients(List.of("")))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo(CONSTRAINT_VIOLATION);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
+			tuple("recipients", "at least one of recipient and recipients must be set"));
 
 		// Verification
 		verifyNoInteractions(communicationServiceMock, conversationServiceMock);

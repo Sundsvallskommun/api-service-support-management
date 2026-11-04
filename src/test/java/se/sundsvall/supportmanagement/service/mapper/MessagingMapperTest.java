@@ -88,6 +88,7 @@ class MessagingMapperTest {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64), List.of());
 
 		assertThat(result.getRecipients()).containsExactly(RECIPIENT);
+		assertThat(result.getCc()).isEmpty();
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
@@ -106,6 +107,33 @@ class MessagingMapperTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
 			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
+	}
+
+	@Test
+	void toEmailRequestWithRecipientsAndCc() {
+		final var emailRequest = createEmailRequest(true, HTML_MESSAGE)
+			.withRecipient(null)
+			.withRecipients(List.of("first@example.com", "second@example.com"))
+			.withCc(List.of("cc@example.com"));
+
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), emailRequest, List.of());
+
+		assertThat(result.getRecipients()).containsExactly("first@example.com", "second@example.com");
+		assertThat(result.getCc()).containsExactly("cc@example.com");
+		assertThat(result.getEmailAddress()).isNull();
+	}
+
+	@Test
+	void toEmailRequestWithBlankAndDuplicateRecipientsAndCc() {
+		final var emailRequest = createEmailRequest(true, HTML_MESSAGE)
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"))
+			.withCc(List.of("", "cc@example.com", "cc@example.com"));
+
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), emailRequest, List.of());
+
+		assertThat(result.getRecipients()).containsExactly("first@example.com");
+		assertThat(result.getCc()).containsExactly("cc@example.com");
 	}
 
 	@Test
