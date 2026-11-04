@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -60,12 +61,15 @@ public final class ErrandAttachmentMapper {
 			return null;
 		}
 
+		// The response stream can be read only once, and the blob reads it lazily at flush. Detection reads the head of the
+		// file, so it gets a markable stream to read it through and reset, which leaves the whole file to the blob.
 		final InputStream content;
 		try {
-			content = errandAttachment.getBody().getInputStream();
+			content = new BufferedInputStream(errandAttachment.getBody().getInputStream());
 		} catch (final Exception _) {
 			throw Problem.valueOf(BAD_REQUEST, "Could not read input stream!");
 		}
+		final var mimeType = detectMimeTypeFromStream(fileName, content);
 
 		return AttachmentEntity.create()
 			.withErrandEntity(errandEntity)
@@ -74,7 +78,7 @@ public final class ErrandAttachmentMapper {
 			.withFileSize(fileSize)
 			.withAttachmentData(new AttachmentDataEntity().withFile(Hibernate.getLobHelper().createBlob(content, fileSize)))
 			.withFileName(fileName)
-			.withMimeType(detectMimeTypeFromStream(fileName, content))
+			.withMimeType(mimeType)
 			.withChannel(channel);
 	}
 
