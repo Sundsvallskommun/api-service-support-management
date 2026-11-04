@@ -299,18 +299,18 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a job of one kind being under way says nothing about another kind, so that two unrelated jobs do not rule each other out")
-	void hasActiveJobOfType() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), any())).thenReturn(true);
+	@DisplayName("Verification that a job of any kind being under way in the namespace is reported, asking only about the active statuses")
+	void hasActiveJob() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndStatusIn(NAMESPACE, MUNICIPALITY_ID, List.of(PENDING, RUNNING))).thenReturn(true);
 
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).isTrue();
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).isTrue();
 	}
 
 	@Test
-	void hasActiveJobOfTypeReturnsFalseWhenNoneActive() {
-		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_PURGE), any())).thenReturn(false);
+	void hasActiveJobReturnsFalseWhenNoneActive() {
+		when(jobRepositoryMock.existsByNamespaceAndMunicipalityIdAndStatusIn(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(false);
 
-		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).isFalse();
+		assertThat(jobService.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).isFalse();
 	}
 
 	@Test

@@ -87,7 +87,7 @@ class LabelRestructureRunnerTest {
 	@BeforeEach
 	void createRunner() {
 		runner = new LabelRestructureRunner(metadataLabelRepositoryMock, errandsRepositoryMock, errandServiceMock, metadataServiceMock, jobServiceMock, eventServiceMock,
-			new LabelRestructureProperties(BATCH_SIZE, 2, PROGRESS_INTERVAL, Duration.ofSeconds(20), 10000),
+			new LabelRestructureProperties(BATCH_SIZE, 2, PROGRESS_INTERVAL, 10000),
 			mock(LabelRestructureRunner.class));
 		// Self-invokes through this field (see the class's own javadoc) rather than through 'this', so that a plain
 		// constructor call here - which cannot resolve a mock of the very class under construction - would otherwise

@@ -855,7 +855,7 @@ public class MetadataService {
 		// Both asked unconditionally, rather than short-circuited: a stale lease reclaimed by the first call must not
 		// suppress the second.
 		final var reclaimed = jobService.stealStaleLease(namespace, municipalityId, RESTRUCTURE_LABEL_TREE, jobStaleAfter);
-		final var activeInNamespace = jobService.hasActiveJob(namespace, municipalityId, RESTRUCTURE_LABEL_TREE);
+		final var activeInNamespace = jobService.hasActiveJob(namespace, municipalityId);
 		if (!reclaimed || activeInNamespace) {
 			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
 		}

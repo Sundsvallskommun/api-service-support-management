@@ -27,10 +27,10 @@ public class JobResponse {
 	@Schema(description = "Total number of items to process")
 	private Integer total;
 
-	@Schema(description = "Number of items processed so far")
+	@Schema(description = "Number of items the run has got through. On a FAILED label restructure, which is applied in one transaction, this is how far the run got before everything was rolled back, not how much was applied")
 	private Integer processed;
 
-	@Schema(description = "Error message, populated on FAILED status")
+	@Schema(description = "Outcome of the run: a summary when it has COMPLETED, and on FAILED what went wrong. For a label restructure, a FAILED message states that the run was rolled back and no changes were applied")
 	private String message;
 
 	@Schema(description = "When the job was created")

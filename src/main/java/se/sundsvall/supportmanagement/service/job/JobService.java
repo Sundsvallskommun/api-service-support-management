@@ -278,17 +278,9 @@ public class JobService {
 	}
 
 	/**
-	 * Whether a job of one kind is already under way in the namespace. Jobs of other kinds are not considered.
-	 */
-	public boolean hasActiveJob(final String namespace, final String municipalityId, final JobType type) {
-		return jobRepository.existsByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
-	}
-
-	/**
-	 * Type-agnostic sibling of {@link #hasActiveJob(String, String, JobType)} - for work that can race against a job of
-	 * any kind in the namespace, not just another of its own: a label move, merge, and tree restructure can all touch
-	 * overlapping parts of the same label tree, so each guards against every one of the others starting at once, not
-	 * only another of its own kind.
+	 * Whether a job of any kind is already under way in the namespace - for work that can race against a job of any
+	 * kind there, not just another of its own: a label restructure must not start beside another job in the namespace,
+	 * including a move or merge left active from before the restructure took them over.
 	 */
 	public boolean hasActiveJob(final String namespace, final String municipalityId) {
 		return jobRepository.existsByNamespaceAndMunicipalityIdAndStatusIn(namespace, municipalityId, ACTIVE_STATUSES);
@@ -298,7 +290,7 @@ public class JobService {
 	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
 	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
 	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
-	 * {@code V1_61__add_active_job_guard.sql} (or its counterpart for another type) is what makes it exclusive.
+	 * {@code V1_77__add_active_job_guard.sql} is what makes it exclusive.
 	 * <p>
 	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
 	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is

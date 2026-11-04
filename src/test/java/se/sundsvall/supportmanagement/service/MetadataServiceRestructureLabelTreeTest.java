@@ -344,7 +344,7 @@ class MetadataServiceRestructureLabelTreeTest {
 	void startLabelTreeRestructure_activeJobInNamespace_throws409() {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any())).thenReturn(true);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE)).thenReturn(true);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		final var request = LabelRestructureRequest.create().withDryRun(false).withSteps(List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY")));
 
@@ -353,7 +353,7 @@ class MetadataServiceRestructureLabelTreeTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()));
 
 		verify(jobServiceMock).stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any());
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
@@ -362,7 +362,7 @@ class MetadataServiceRestructureLabelTreeTest {
 	void startLabelTreeRestructure_staleLeaseReclaimedButAnotherJobStillActive_throws409() {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any())).thenReturn(true);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE)).thenReturn(true);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		final var request = LabelRestructureRequest.create().withDryRun(false).withSteps(List.of(addStep(List.of("CATEGORY"), "Category", "CATEGORY")));
 
@@ -371,7 +371,7 @@ class MetadataServiceRestructureLabelTreeTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()));
 
 		verify(jobServiceMock).stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any());
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
@@ -388,7 +388,7 @@ class MetadataServiceRestructureLabelTreeTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(CONFLICT.value()));
 
 		verify(jobServiceMock).stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any());
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
 	}
 
@@ -401,7 +401,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of(category, destination));
 		when(actionConfigRepositoryMock.findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any())).thenReturn(true);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(errandsRepositoryMock.findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("category-id"))).thenReturn(errandIds(5));
 		when(labelRestructurePropertiesMock.maxAffectedErrands()).thenReturn(3);
 
@@ -412,7 +412,7 @@ class MetadataServiceRestructureLabelTreeTest {
 			.satisfies(p -> assertThat(p.getStatus().value()).isEqualTo(BAD_REQUEST.value()));
 
 		verify(jobServiceMock).stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any());
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 		verify(actionConfigRepositoryMock).findAllByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID);
 		verify(errandsRepositoryMock, times(2)).findDistinctIdsByLabelsMetadataLabelIdIn(Set.of("category-id"));
 		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
@@ -429,7 +429,7 @@ class MetadataServiceRestructureLabelTreeTest {
 
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(NAMESPACE, MUNICIPALITY_ID)).thenReturn(List.of());
 		when(jobServiceMock.stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any())).thenReturn(true);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE)).thenReturn(false);
+		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID)).thenReturn(false);
 		when(jobServiceMock.launch(any(), any(), any(), any(), any())).thenReturn(jobResponse);
 		var identifier = Identifier.create().withType(callerType).withValue("joe01doe");
 		Identifier.set(identifier);
@@ -456,7 +456,7 @@ class MetadataServiceRestructureLabelTreeTest {
 		verify(labelRestructureRunnerMock).run(run);
 
 		verify(jobServiceMock).stealStaleLease(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(RESTRUCTURE_LABEL_TREE), any());
-		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID, RESTRUCTURE_LABEL_TREE);
+		verify(jobServiceMock).hasActiveJob(NAMESPACE, MUNICIPALITY_ID);
 	}
 
 	@AfterEach
