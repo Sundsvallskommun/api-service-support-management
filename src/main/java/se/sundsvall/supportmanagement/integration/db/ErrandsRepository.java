@@ -61,13 +61,9 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	// accessLabels holds only an errand's own leaf-level tags, which is exactly that question.
 	boolean existsByAccessLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
-	long countByLabelsMetadataLabelId(String metadataLabelId);
-
 	// Distinct: an errand tagged with more than one of the given ids (e.g. the moved label itself and one of its
 	// descendants, both stored per the ancestor-chain-expansion invariant) must still be counted once.
 	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
-
-	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
 
 	// accessLabels is lazy by default; the label-move worker reads it on an already-detached entity (the page fetch and
 	// the persist that follows it are each their own transaction), so it must come back populated with the page itself.

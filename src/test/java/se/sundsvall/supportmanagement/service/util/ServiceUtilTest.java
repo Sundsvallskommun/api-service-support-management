@@ -7,13 +7,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -185,20 +182,6 @@ class ServiceUtilTest {
 		assertThat(notifiedDuringWork[0]).isEqualTo(expectedDuringWork);
 		assertThat(ServiceUtil.shouldNotify()).isEqualTo(notifiedBefore);
 		ServiceUtil.clearNotify();
-	}
-
-	@ParameterizedTest
-	@MethodSource("toValidUuidsStreamArguments")
-	void isValidUuid(String uuid, boolean expectedResult) {
-		assertThat(ServiceUtil.isValidUuid(uuid)).isEqualTo(expectedResult);
-	}
-
-	private static Stream<Arguments> toValidUuidsStreamArguments() {
-		return Stream.of(
-			Arguments.of(UUID.randomUUID().toString(), true),
-			Arguments.of("not-valid-uuid", false),
-			Arguments.of("", false),
-			Arguments.of(null, false));
 	}
 
 	@Test

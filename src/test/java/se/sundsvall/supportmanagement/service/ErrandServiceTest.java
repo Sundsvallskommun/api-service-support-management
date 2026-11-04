@@ -89,7 +89,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -769,7 +768,6 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 	}
 

@@ -58,14 +58,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.within;
 import static org.assertj.core.groups.Tuple.tuple;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotification;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.api.model.errand.Priority.HIGH;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrand;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
-import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrands;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toReferredFromRelation;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
@@ -505,66 +503,6 @@ class ErrandMapperTest {
 	}
 
 	@Test
-	void testToErrands() {
-		final var errands = toErrands(List.of(createEntity()));
-
-		assertThat(errands).hasSize(1)
-			.extracting(
-				Errand::getAssignedGroupId,
-				Errand::getAssignedUserId,
-				Errand::getClassification,
-				Errand::getCreated,
-				Errand::getStakeholders,
-				Errand::getExternalTags,
-				Errand::getParameters,
-				Errand::getId,
-				Errand::getModified,
-				Errand::getPriority,
-				Errand::getReporterUserId,
-				Errand::getStatus,
-				Errand::getTitle,
-				Errand::getTouched,
-				Errand::getResolution,
-				Errand::getDescription,
-				Errand::getChannel,
-				Errand::getEscalationEmail,
-				Errand::getBusinessRelated,
-				Errand::getContactReason,
-				Errand::getErrandNumber,
-				Errand::getLabels,
-				Errand::getActiveNotifications)
-			.containsExactly(tuple(
-				ASSIGNED_GROUP_ID,
-				ASSIGNED_USER_ID,
-				Classification.create().withCategory(CATEGORY).withType(TYPE),
-				CREATED,
-				List.of(createStakeHolder()),
-				List.of(ExternalTag.create().withKey(TAG_KEY).withValue(TAG_VALUE)),
-				List.of(Parameter.create().withKey(PARAMETER_NAME).withValues(List.of(PARAMETER_VALUE))),
-				ID,
-				MODIFIED,
-				Priority.valueOf(PRIORITY),
-				REPORTER_USER_ID,
-				STATUS,
-				TITLE,
-				TOUCHED,
-				RESOLUTION,
-				DESCRIPTION,
-				CHANNEL,
-				ESCALATION_EMAIL,
-				BUSINESS_RELATED,
-				CONTACT_REASON,
-				ERRAND_NUMBER,
-				List.of(LABEL_1, LABEL_2),
-				List.of(createNotification(notification -> {
-					notification.setErrandNumber("ERRAND-NUMBER");
-					notification.setErrandId("cb20c51f-fcf3-42c0-b613-de563634a8ec");
-				}))));
-
-		assertThat(errands.getFirst()).hasNoNullFieldsOrPropertiesExcept("notifications", "activePhaseId", "version", "process");
-	}
-
-	@Test
 	void testToErrandsWithAccessControl() {
 		final var roleMapped = createEntity().withErrandNumber("role-mapped");
 		final var fullyMapped = createEntity().withErrandNumber("full").withBusinessRelated(false);
@@ -583,11 +521,6 @@ class ErrandMapperTest {
 				assertThat(errand.getBusinessRelated()).isFalse();
 			}
 		});
-	}
-
-	@Test
-	void testToErrandsFromNull() {
-		assertThat(toErrands(null)).isEmpty();
 	}
 
 	@Test
