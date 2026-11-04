@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -231,7 +232,8 @@ class CommunicationServiceTest {
 	}
 
 	@BeforeEach
-	void setup() {
+	@AfterEach
+	void clearIdentifier() {
 		Identifier.remove();
 	}
 
