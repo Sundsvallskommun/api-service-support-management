@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.3"
+  version: "18.4"
 servers:
 - url: http://localhost:50630
   description: Generated server url
@@ -8163,9 +8163,8 @@ paths:
       description: "Soft deletes the errand that matches the provided id. The errand\
         \ is kept with everything belonging to it, but is left out of every read until\
         \ it is restored, apart from a listing whose filter names deleted. It can\
-        \ still be deleted for good. An errand with a process cannot be soft deleted\
-        \ once one of its decisions can no longer be changed, as it cannot be deleted,\
-        \ nor while a process is still running on it."
+        \ still be deleted for good. An errand cannot be soft deleted while a process\
+        \ is still running on it."
       operationId: softDeleteErrand
       parameters:
       - name: namespace
@@ -8251,9 +8250,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, the errand holds\
-            \ a decision that can no longer be changed, or it has a process that is\
-            \ still running"
+          description: "Conflict — resource modified concurrently, or the errand has\
+            \ a process that is still running"
           content:
             application/problem+json:
               schema:
@@ -16710,9 +16708,8 @@ paths:
       - Errands
       summary: Delete errand
       description: "Deletes the errand that matches the provided id for good, whether\
-        \ it is soft deleted or not. An errand with a process cannot be deleted once\
-        \ one of its decisions can no longer be changed - when the process has run\
-        \ to its end, or the decision is completed."
+        \ it is soft deleted or not, together with its decisions, also those that\
+        \ can no longer be changed."
       operationId: deleteErrand
       parameters:
       - name: namespace
@@ -16792,8 +16789,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "409":
-          description: "Conflict — resource modified concurrently, or the errand holds\
-            \ a decision that can no longer be changed"
+          description: Conflict — resource modified concurrently
           content:
             application/problem+json:
               schema:
