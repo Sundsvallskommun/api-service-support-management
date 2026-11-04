@@ -528,24 +528,30 @@ class DecisionValidatorTest {
 
 	/**
 	 * A process that has run to its end locks every decision of its errand, and the errand is soft deletable all the same:
-	 * its decisions are not even read.
+	 * its decisions are not even read. Nor does a failed process hold it back.
 	 */
-	@Test
-	void anErrandWhoseProcessHasRunToItsEndIsSoftDeletableWhateverItsDecisions() {
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = {
+		"COMPLETED", "FAILED"
+	})
+	void anErrandWhoseProcessNoLongerRunsIsSoftDeletableWhateverItsDecisions(final ProcessStatus status) {
 
 		// Arrange
-		givenProcesses(COMPLETED);
+		givenProcesses(status);
 
 		// Act & Verify
 		assertThatNoException().isThrownBy(() -> validator.validateErrandSoftDeletable(ERRAND_ID));
 		verifyNoInteractions(decisionRepositoryMock);
 	}
 
-	@Test
-	void anErrandWithALiveProcessIsNotSoftDeletable() {
+	@ParameterizedTest
+	@EnumSource(value = ProcessStatus.class, names = {
+		"COMPLETED", "FAILED"
+	}, mode = EXCLUDE)
+	void anErrandWithALiveProcessIsNotSoftDeletable(final ProcessStatus status) {
 
 		// Arrange
-		givenProcesses(RUNNING);
+		givenProcesses(status);
 
 		// Act
 		final var problem = catchThrowableOfType(ThrowableProblem.class, () -> validator.validateErrandSoftDeletable(ERRAND_ID));

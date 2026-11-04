@@ -21,6 +21,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.service.ProcessRules.hasCompletedProcess;
+import static se.sundsvall.supportmanagement.service.ProcessRules.hasLiveProcess;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getAdUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 
@@ -176,8 +177,8 @@ public class DecisionValidator {
 	}
 
 	/**
-	 * Rejects removing an attachment of the errand that a decision which can no longer be changed has linked. Only removal
-	 * through the API is held to this - the purge of an errand removes everything.
+	 * Rejects removing an attachment of the errand that a decision which can no longer be changed has linked. Only removing
+	 * the attachment by itself is held to this - removing the errand, in whichever way, takes everything with it.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId municipality of the errand.
@@ -213,7 +214,7 @@ public class DecisionValidator {
 	 * @param errandId the errand about to be soft deleted.
 	 */
 	public void validateErrandSoftDeletable(final String errandId) {
-		if (processRepository.findByErrandIdOrderByCreatedDesc(errandId).stream().anyMatch(ErrandProcessEntity::isLive)) {
+		if (hasLiveProcess(processRepository.findByErrandIdOrderByCreatedDesc(errandId))) {
 			throw Problem.valueOf(CONFLICT, ERRAND_WITH_LIVE_PROCESS.formatted(errandId));
 		}
 	}

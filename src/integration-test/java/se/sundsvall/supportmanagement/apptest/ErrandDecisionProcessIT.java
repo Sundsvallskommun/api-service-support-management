@@ -16,9 +16,11 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static java.time.OffsetDateTime.now;
 import static java.util.Objects.isNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.ETAG;
@@ -96,6 +98,9 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 
 	@Autowired
 	private ProcessEngineProperties processEngineProperties;
+
+	@Autowired
+	private ErrandService errandService;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -737,12 +742,17 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 			.sendRequest();
 
 		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
 			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where errand_id = ?", Integer.class, ENDED_ERRAND_ID)).isZero();
 		assertDeletionTold(ENDED_ERRAND_ID);
 	}
 
@@ -760,12 +770,17 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 			.sendRequest();
 
 		setupCall()
+			.withServicePath(errandPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
 			.withServicePath(decisionsPath(RUNNING_ERRAND_ID))
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where errand_id = ?", Integer.class, RUNNING_ERRAND_ID)).isZero();
 		assertDeletionTold(RUNNING_ERRAND_ID);
 	}
 
@@ -781,10 +796,55 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 			.withHttpMethod(POST)
 			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
 			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/restore")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponse("response-ended-decision.json")
+			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is deleted for good all the
+	 * same once it has been soft deleted for long enough, together with the decision. Its process is told that the errand
+	 * is gone.
+	 */
+	@Test
+	@DisplayName("Verification that a soft deleted errand holding a decision that can no longer be changed is deleted for good, and its process is told")
+	void test15_aSoftDeletedErrandHoldingALockedDecisionIsDeletedForGood() {
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/soft-delete")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		assertThat(errandService.deleteSoftDeletedErrand(ENDED_ERRAND_ID, now().plusMinutes(1))).isTrue();
+
+		// A soft deleted errand would be restored, so the restore failing shows the errand gone for good
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/restore")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(jdbcTemplate.queryForObject("select deleted is not null from errand where id = ?", Boolean.class, ENDED_ERRAND_ID)).isTrue();
-		assertThat(jdbcTemplate.queryForObject("select count(*) from decision where id = ?", Integer.class, ENDED_DECISION_ID)).isOne();
+		assertDeletionTold(ENDED_ERRAND_ID);
 	}
 
 	private void assertDeletionTold(final String errandId) {
