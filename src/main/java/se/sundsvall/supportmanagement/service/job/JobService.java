@@ -290,7 +290,7 @@ public class JobService {
 	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
 	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
 	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
-	 * {@code V1_77__add_active_job_guard.sql} is what makes it exclusive.
+	 * {@code V1_78__add_active_job_guard.sql} is what makes it exclusive.
 	 * <p>
 	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
 	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is
