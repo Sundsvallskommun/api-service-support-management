@@ -51,17 +51,12 @@ public class SoftDeletedErrandWorker {
 	private static final String ABORTED_ACCOUNT = "Deleting soft deleted errands was aborted in namespace %s";
 	private static final String NAMESPACE_IN_ACCOUNT = "%s for municipality %s";
 
-	// Only errands deleted count towards it, so that errands which cannot be deleted, and which the walk meets first every
-	// night, cannot keep a namespace from getting any further
-	@Value("${scheduler.soft-deleted-errands.max-errands-per-namespace:500}")
-	private int maxErrandsPerNamespace = 500;
-
 	private final ErrandsRepository errandsRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
 	private final ErrandService errandService;
 
-	// Only errands deleted count towards it, so that errands which cannot be deleted, such as ones with a locked decision,
-	// and which the walk meets first every night, cannot keep a namespace from getting any further
+	// Only errands deleted count towards it, so that errands which cannot be deleted, and which the walk meets first every
+	// night, cannot keep a namespace from getting any further
 	private final int maxErrandsPerNamespace;
 
 	public SoftDeletedErrandWorker(final ErrandsRepository errandsRepository, final NamespaceConfigRepository namespaceConfigRepository, final ErrandService errandService,
