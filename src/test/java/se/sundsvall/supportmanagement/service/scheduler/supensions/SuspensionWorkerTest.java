@@ -84,8 +84,12 @@ class SuspensionWorkerTest {
 		verify(errandsRepositoryMock).markSuspensionEndNotified(ERRAND_ID, SUSPENDED_TO);
 	}
 
+	/**
+	 * Covers only what EventService lets through, such as a failure to publish to the process. A failure to write to the
+	 * event log or to notify is swallowed there, and the errand is marked.
+	 */
 	@Test
-	void announceSuspensionEndDoesNotMarkWhenTheEventFails() {
+	void announceSuspensionEndDoesNotMarkWhenEventServiceThrows() {
 		final var errand = endedSuspension();
 		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(errand));
 		doThrow(new IllegalStateException("failure")).when(eventServiceMock).createErrandEvent(any(), any(), any(), isNull(), isNull(), eq(SUSPENSION));

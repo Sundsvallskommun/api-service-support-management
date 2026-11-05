@@ -40,7 +40,9 @@ public class SuspensionWorker {
 
 	/**
 	 * Runs in a transaction of its own, so that an errand that fails neither undoes what the others have announced, which
-	 * would announce it again on the next run, nor stops the run. An errand that fails is tried again on the next run.
+	 * would announce it again on the next run, nor stops the run. An errand is tried again on the next run only if this
+	 * throws. Failing to write to the event log or to notify the assigned user does not: {@link EventService} logs that and
+	 * carries on, so the errand counts as announced.
 	 *
 	 * @param errandId id of the errand to announce the end of the suspension for.
 	 */
