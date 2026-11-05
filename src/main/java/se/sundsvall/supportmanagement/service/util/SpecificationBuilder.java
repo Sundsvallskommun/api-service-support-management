@@ -1,17 +1,13 @@
 package se.sundsvall.supportmanagement.service.util;
 
 import com.turkraft.springfilter.converter.FilterSpecification;
-import com.turkraft.springfilter.parser.node.FieldNode;
 import com.turkraft.springfilter.parser.node.FilterNode;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
 import org.apache.commons.lang3.Strings;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class SpecificationBuilder<T> {
@@ -116,15 +112,7 @@ public class SpecificationBuilder<T> {
 	 * Whether the parsed filter names the sent in field, or a path beneath it, anywhere in its tree.
 	 */
 	private static boolean namesField(FilterNode node, String field) {
-		if (isNull(node)) {
-			return false;
-		}
-
-		if (node instanceof final FieldNode fieldNode && (field.equals(fieldNode.getName()) || Strings.CS.startsWith(fieldNode.getName(), field + "."))) {
-			return true;
-		}
-
-		return Optional.ofNullable(node.getChildren()).orElse(List.of()).stream()
-			.anyMatch(child -> namesField(child, field));
+		return FilterFields.fieldsOf(node)
+			.anyMatch(name -> field.equals(name) || Strings.CS.startsWith(name, field + "."));
 	}
 }

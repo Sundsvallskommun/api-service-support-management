@@ -24,7 +24,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 

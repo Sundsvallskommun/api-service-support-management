@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.ClassUtils;
@@ -85,7 +86,10 @@ class ErrandFiltersTest {
 		// Further in, behind another operator
 		"not (status:'NEW' or (title:'x' and communications.subject~'%x%'))",
 		// Two filter parameters, as spring-filter joins them
-		"(title:'x') and (communications.subject~'%secret%')"
+		"(title:'x') and (communications.subject~'%secret%')",
+		// Among the patterns of a like against a list, which spring-filter resolves as fields like any other
+		"title ~ ['%', communications.subject]",
+		"title ~~ ['%', decisions.justification]"
 	})
 	void filtersReachingAnIndexOnlyAssociationAreRefused(final String filter) {
 		final var filterNode = filterParser.parse(filter);
@@ -98,7 +102,7 @@ class ErrandFiltersTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"created", "touched", "status", "errandNumber", "stakeholders.firstName", "parameters.values", "decisionsCount"
+		"created", "touched", "status", "errandNumber", "stakeholders.firstName", "parameters.values", "measures.type"
 	})
 	void orderingsThatStayOnTheErrandPass(final String property) {
 		assertThatCode(() -> ErrandFilters.verifySortable(PageRequest.of(0, 20, Sort.by(property)))).doesNotThrowAnyException();
@@ -122,7 +126,11 @@ class ErrandFiltersTest {
 		"statements.responseText",
 		"investigations.summary",
 		"communications",
-		"stakeholders.errandEntity.communications.messageBody"
+		"stakeholders.errandEntity.communications.messageBody",
+		// Spelled as the repository resolves it rather than as it is named
+		"Communications.subject",
+		"communications_subject",
+		"communicationsSubject"
 	})
 	void orderingsReachingAnIndexOnlyAssociationAreRefused(final String property) {
 		final var pageable = PageRequest.of(0, 20, Sort.by(property).descending());
@@ -131,6 +139,27 @@ class ErrandFiltersTest {
 
 		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(e.getDetail()).matches("Sorting on '(communications|decisions|statements|investigations)' is not supported");
+	}
+
+	/** The entities are guarded on whichever association reaches them, not only on the associations of the errand. */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"measures.decisionEntity.justification", "measures.statementEntity"
+	})
+	void orderingsReachingAGuardedEntityThroughAnotherAssociationAreRefused(final String property) {
+		final var pageable = PageRequest.of(0, 20, Sort.by(property));
+
+		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifySortable(pageable));
+
+		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(e.getDetail()).matches("Sorting on '(decisionEntity|statementEntity)' is not supported");
+	}
+
+	@Test
+	void orderingOnAPropertyTheErrandDoesNotHaveIsRefused() {
+		final var pageable = PageRequest.of(0, 20, Sort.by("decisionsCount"));
+
+		assertThrows(PropertyReferenceException.class, () -> ErrandFilters.verifySortable(pageable));
 	}
 
 	/** Every order of the sort is asked, not only the first. */

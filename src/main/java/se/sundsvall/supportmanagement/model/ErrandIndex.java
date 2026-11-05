@@ -1,4 +1,4 @@
-package se.sundsvall.supportmanagement.integration.db.search;
+package se.sundsvall.supportmanagement.model;
 
 import java.util.List;
 
@@ -68,14 +68,16 @@ public final class ErrandIndex {
 	public static final String ACCESS_LABEL_ID = ACCESS_LABELS + "." + METADATA_LABEL_ID;
 	/**
 	 * How many access labels an errand carries, which is what lets the index ask that every one of them is among the
-	 * labels a user holds. Written by {@link AccessLabelCountBinder}, and bound to no field of the errand, so a search may
+	 * labels a user holds. Written by {@link se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder},
+	 * and bound to no field of the errand, so a search may
 	 * no more name it than it may name the labels themselves.
 	 */
 	public static final String ACCESS_LABEL_COUNT = "accessLabelCount";
 
 	/**
 	 * The field a search looks in when the route answering it leaves no field of the errand open - a role seeing the
-	 * status alone, say, which is searched by name and not by word. Declared by {@link NoOpenFieldBinder} and written on
+	 * status alone, say, which is searched by name and not by word. Declared by
+	 * {@link se.sundsvall.supportmanagement.integration.db.search.NoOpenFieldBinder} and written on
 	 * no errand ever, so a word without a field finds nothing here while the fielded terms, the disjunctions and the
 	 * negations of the query still compose.
 	 */

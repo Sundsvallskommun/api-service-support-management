@@ -18,6 +18,7 @@ public final class Constants {
 	 * their resources to errands here write the same name, without a hyphen.
 	 */
 	public static final String RELATION_SERVICE = "supportmanagement";
+	public static final int PROCESS_KEY_LENGTH = 128;
 	public static final String UNKNOWN = "UNKNOWN";
 	public static final String EXTERNAL_TAG_KEY_CASE_ID = "CaseId";
 	public static final String EXTERNAL_TAG_KEY_NOTE_ID = "NoteId";

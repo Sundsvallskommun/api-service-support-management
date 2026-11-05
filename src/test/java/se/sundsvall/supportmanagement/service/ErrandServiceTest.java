@@ -338,7 +338,7 @@ class ErrandServiceTest {
 	})
 	void findErrandWithMatches(boolean limited) {
 		final var filter = new FieldNode("id");
-		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
+		final var sort = Sort.by(DESC, "created", "title");
 		final Pageable pageable = PageRequest.of(1, 2, sort);
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
@@ -410,7 +410,7 @@ class ErrandServiceTest {
 	@Test
 	void findErrandWithoutMatches() {
 		final var filter = new FieldNode("id");
-		final var sort = Sort.by(DESC, "attribute.1", "attribute.2");
+		final var sort = Sort.by(DESC, "created", "title");
 		final Pageable pageable = PageRequest.of(3, 7, sort);
 		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
 		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");

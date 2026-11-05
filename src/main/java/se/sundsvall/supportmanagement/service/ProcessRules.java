@@ -12,6 +12,7 @@ import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static se.sundsvall.supportmanagement.Constants.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.ERRAND_DRAFT;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
@@ -20,7 +21,6 @@ import static se.sundsvall.supportmanagement.api.model.process.ProcessStartabili
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_BLOCKED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_COMPLETED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
-import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.DRAFT;
 import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.service.model.ProcessStartOptions.unavailable;
