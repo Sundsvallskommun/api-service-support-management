@@ -20,15 +20,15 @@ import se.sundsvall.supportmanagement.integration.db.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MessageExchangeIntegrationConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.MESSAGE_CONVERSATION_INTERNAL;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.mergeIntoConversationEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ConversationMapper.toMessageSubtype;
 import static se.sundsvall.supportmanagement.service.mapper.IdentifierMapper.resolveChannel;
@@ -52,11 +52,11 @@ public class MessageExchangeSyncService {
 	private final ErrandsRepository errandsRepository;
 	private final MessageExchangeIntegrationConfigRepository messageExchangeIntegrationConfigRepository;
 
-	@Value("${integration.message-exchange.namespace:supportmanagement}")
-	private String messageExchangeNamespace;
+	private final String messageExchangeNamespace;
 
 	public MessageExchangeSyncService(final MessageExchangeClient messageExchangeClient, final ErrandAttachmentService attachmentService, final ConversationRepository conversationRepository, final EventService eventService,
-		final ErrandsRepository errandsRepository, final MessageExchangeIntegrationConfigRepository messageExchangeIntegrationConfigRepository) {
+		final ErrandsRepository errandsRepository, final MessageExchangeIntegrationConfigRepository messageExchangeIntegrationConfigRepository,
+		@Value("${integration.messageexchange.namespace}") final String messageExchangeNamespace) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.attachmentService = attachmentService;
@@ -64,6 +64,7 @@ public class MessageExchangeSyncService {
 		this.eventService = eventService;
 		this.errandsRepository = errandsRepository;
 		this.messageExchangeIntegrationConfigRepository = messageExchangeIntegrationConfigRepository;
+		this.messageExchangeNamespace = messageExchangeNamespace;
 	}
 
 	/**

@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.integration.db.converter;
 
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

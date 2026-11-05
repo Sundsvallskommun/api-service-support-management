@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;

@@ -30,9 +30,9 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 /**
  * Label-tree restructure IT tests.

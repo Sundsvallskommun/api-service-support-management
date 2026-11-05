@@ -41,11 +41,11 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.HandoverIdempotencyEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;

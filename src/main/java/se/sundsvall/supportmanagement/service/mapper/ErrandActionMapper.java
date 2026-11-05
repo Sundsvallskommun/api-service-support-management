@@ -12,7 +12,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigCondition
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigKeyValues;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 
 public class ErrandActionMapper {
 

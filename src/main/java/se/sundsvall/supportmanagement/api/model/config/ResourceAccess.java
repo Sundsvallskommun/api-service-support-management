@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.api.model.config;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 @Schema(description = "Resource a role may reach, and what it may do with it")
 public class ResourceAccess {

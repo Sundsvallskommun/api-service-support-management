@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.STATUS;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.STATUS;
 
 @ExtendWith(MockitoExtension.class)
 class ValidationServiceTest {

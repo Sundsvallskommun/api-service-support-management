@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.integration.db.converter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
+import se.sundsvall.supportmanagement.model.enums.RoleAccessType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,20 +18,16 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NotificationDispatchRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
@@ -38,6 +35,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Notificati
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -50,8 +49,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationDispatchWorkerTest {
@@ -63,6 +62,9 @@ class NotificationDispatchWorkerTest {
 	private static final String EVENT_TYPE = "CREATE";
 	private static final String DESCRIPTION = "Bilaga har skapats";
 	private static final String SUB_TYPE = "ATTACHMENT";
+	// The defaults the worker is configured with
+	private static final Duration TRANSACTION_BUFFER = Duration.ofSeconds(10);
+	private static final Duration MAX_AGE = Duration.ofDays(30);
 
 	@Mock
 	private NotificationDispatchRepository dispatchRepositoryMock;
@@ -79,7 +81,6 @@ class NotificationDispatchWorkerTest {
 	@Mock
 	private AccessControlService accessControlServiceMock;
 
-	@InjectMocks
 	private NotificationDispatchWorker worker;
 
 	@Captor
@@ -87,6 +88,15 @@ class NotificationDispatchWorkerTest {
 
 	@Captor
 	private ArgumentCaptor<OffsetDateTime> offsetDateTimeCaptor;
+
+	@BeforeEach
+	void setUp() {
+		worker = workerWith(TRANSACTION_BUFFER, MAX_AGE);
+	}
+
+	private NotificationDispatchWorker workerWith(final Duration transactionBuffer, final Duration maxAge) {
+		return new NotificationDispatchWorker(dispatchRepositoryMock, subscriptionRepositoryMock, errandsRepositoryMock, channelDispatcherMock, accessControlServiceMock, transactionBuffer, maxAge);
+	}
 
 	private static NotificationDispatchEntity buildEntry(final String executingUserId) {
 		return NotificationDispatchEntity.create()
@@ -515,7 +525,6 @@ class NotificationDispatchWorkerTest {
 	void processGroupSkipsEntriesOlderThanMaxAge() {
 
 		// Arrange
-		ReflectionTestUtils.setField(worker, "maxAge", Duration.ofDays(30));
 		final var stale = buildEntry("other-user").withId("entry-1").withCreated(now().minusDays(31));
 		final var fresh = buildEntry("other-user").withId("entry-2").withCreated(now().minusDays(29));
 		final var subscriber = buildSubscriber("joe01doe", null);
@@ -533,7 +542,6 @@ class NotificationDispatchWorkerTest {
 	void processGroupWithOnlyStaleEntriesSendsNothingAndDeletesThem() {
 
 		// Arrange
-		ReflectionTestUtils.setField(worker, "maxAge", Duration.ofDays(30));
 		final var stale = buildEntry("other-user").withCreated(now().minusDays(31));
 		final var subscriber = buildSubscriber("joe01doe", null);
 		mockDispatchOf(buildSubscription(subscriber, null));
@@ -586,7 +594,7 @@ class NotificationDispatchWorkerTest {
 	void fetchProcessableAppliesTransactionBuffer() {
 
 		// Arrange
-		ReflectionTestUtils.setField(worker, "transactionBuffer", Duration.ofSeconds(30));
+		worker = workerWith(Duration.ofSeconds(30), MAX_AGE);
 		final var before = now().minusSeconds(30);
 
 		// Act

@@ -21,6 +21,7 @@
 		<tika-core.version>4.2.0</tika-core.version>
 		<flipkart.zjsonpatch.version>0.4.16</flipkart.zjsonpatch.version>
 		<commons-validator.version>1.11.0</commons-validator.version>
+		<archunit.version>1.5.0</archunit.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 	</properties>
@@ -116,6 +117,12 @@
 			<groupId>org.opensearch</groupId>
 			<artifactId>opensearch-testcontainers</artifactId>
 			<version>${opensearch-testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit-junit5</artifactId>
+			<version>${archunit.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

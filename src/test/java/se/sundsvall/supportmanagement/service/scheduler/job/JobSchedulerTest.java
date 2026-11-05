@@ -5,10 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 
 import static org.mockito.Mockito.verify;
@@ -27,12 +25,11 @@ class JobSchedulerTest {
 	@Mock
 	private Dept44HealthUtility healthUtilityMock;
 
-	@InjectMocks
 	private JobScheduler scheduler;
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(scheduler, "jobName", JOB_NAME);
+		scheduler = new JobScheduler(jobWorkerMock, healthUtilityMock, JOB_NAME);
 	}
 
 	@Test

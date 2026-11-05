@@ -35,8 +35,8 @@ import static org.springframework.web.context.request.RequestAttributes.SCOPE_RE
 import static org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_MUNICIPALITY_ID;
 import static se.sundsvall.supportmanagement.api.validation.impl.AbstractTagConstraintValidator.PATHVARIABLE_NAMESPACE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.TYPE;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.TYPE;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ValidClassificationConstraintValidatorTest {

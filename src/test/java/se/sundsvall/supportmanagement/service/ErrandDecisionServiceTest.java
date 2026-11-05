@@ -30,8 +30,8 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;
@@ -56,9 +56,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.DecisionMethod.AUTOMATIC;
+import static se.sundsvall.supportmanagement.model.enums.DecisionMethod.MANUAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
 
 /**
  * The decision itself and its terms - the attachment and JSON parameter side is ErrandDecisionServiceArtefactTest's.

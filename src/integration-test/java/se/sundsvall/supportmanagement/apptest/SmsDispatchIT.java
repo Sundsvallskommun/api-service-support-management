@@ -14,7 +14,7 @@ import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.Not
 import se.sundsvall.supportmanagement.service.scheduler.notificationdispatch.NotificationDispatchWorker;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS;
 
 @WireMockAppTestSuite(files = "classpath:/SmsDispatchIT/", classes = Application.class)
 @Sql({

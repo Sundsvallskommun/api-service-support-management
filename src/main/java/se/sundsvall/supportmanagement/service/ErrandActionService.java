@@ -17,7 +17,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.action.ActionExecutor;
 import se.sundsvall.supportmanagement.service.action.DueAction;

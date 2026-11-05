@@ -30,8 +30,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobType.ERRAND_PURGE;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandPurgeServiceTest {

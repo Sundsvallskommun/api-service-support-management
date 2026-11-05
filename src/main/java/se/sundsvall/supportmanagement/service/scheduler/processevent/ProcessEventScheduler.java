@@ -16,13 +16,13 @@ public class ProcessEventScheduler {
 	private final ProcessEventCleanup processEventCleanup;
 	private final Dept44HealthUtility healthUtility;
 
-	@Value("${scheduler.process-event.name}")
-	private String relayJobName;
+	private final String relayJobName;
 
-	public ProcessEventScheduler(final ProcessEventRelay processEventRelay, final ProcessEventCleanup processEventCleanup, final Dept44HealthUtility healthUtility) {
+	public ProcessEventScheduler(final ProcessEventRelay processEventRelay, final ProcessEventCleanup processEventCleanup, final Dept44HealthUtility healthUtility, @Value("${scheduler.process-event.name}") final String relayJobName) {
 		this.processEventRelay = processEventRelay;
 		this.processEventCleanup = processEventCleanup;
 		this.healthUtility = healthUtility;
+		this.relayJobName = relayJobName;
 	}
 
 	/**

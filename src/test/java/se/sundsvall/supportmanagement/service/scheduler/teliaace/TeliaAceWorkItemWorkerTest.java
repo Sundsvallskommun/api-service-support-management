@@ -1,17 +1,18 @@
 package se.sundsvall.supportmanagement.service.scheduler.teliaace;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -55,8 +56,12 @@ class TeliaAceWorkItemWorkerTest {
 	@Mock
 	private TeliaAceClient teliaAceClientMock;
 
-	@InjectMocks
 	private TeliaAceWorkItemWorker worker;
+
+	@BeforeEach
+	void setUp() {
+		worker = new TeliaAceWorkItemWorker(workItemRepositoryMock, contactRepositoryMock, errandsRepositoryMock, teliaAceClientMock, Duration.ofDays(3));
+	}
 
 	@Captor
 	private ArgumentCaptor<AddWorkItemRequest> addRequestCaptor;

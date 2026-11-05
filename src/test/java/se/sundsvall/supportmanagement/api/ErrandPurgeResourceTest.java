@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.service.ErrandPurgeService;
 
 import static java.time.OffsetDateTime.now;
@@ -20,9 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobType.ERRAND_PURGE;
 
 @ResourceTest
 class ErrandPurgeResourceTest {

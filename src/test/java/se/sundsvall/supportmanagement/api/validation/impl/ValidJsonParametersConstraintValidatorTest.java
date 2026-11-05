@@ -4,13 +4,13 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Answers;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -21,6 +21,7 @@ import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.supportmanagement.api.model.errand.JsonParameter;
 import se.sundsvall.supportmanagement.integration.jsonschema.JsonSchemaClient;
+import se.sundsvall.supportmanagement.service.JsonSchemaValidationService;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -55,8 +56,12 @@ class ValidJsonParametersConstraintValidatorTest {
 	@Mock
 	private RequestAttributes requestAttributesMock;
 
-	@InjectMocks
 	private ValidJsonParametersConstraintValidator validator;
+
+	@BeforeEach
+	void setUp() {
+		validator = new ValidJsonParametersConstraintValidator(new JsonSchemaValidationService(jsonSchemaClientMock));
+	}
 
 	@Test
 	void validWithNullList() {

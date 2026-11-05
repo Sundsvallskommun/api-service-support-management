@@ -25,8 +25,8 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.ROLE;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.ROLE;
 
 @WireMockAppTestSuite(files = "classpath:/NamespaceConfigIT/", classes = Application.class)
 @Sql({

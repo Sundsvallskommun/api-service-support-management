@@ -19,8 +19,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandActionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.action.ActionExecutor;
 import se.sundsvall.supportmanagement.service.action.DueAction;
@@ -37,10 +37,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.CREATE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.DELETE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.READ;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.OperationType.UPDATE;
+import static se.sundsvall.supportmanagement.model.enums.OperationType.CREATE;
+import static se.sundsvall.supportmanagement.model.enums.OperationType.DELETE;
+import static se.sundsvall.supportmanagement.model.enums.OperationType.READ;
+import static se.sundsvall.supportmanagement.model.enums.OperationType.UPDATE;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandActionServiceTest {

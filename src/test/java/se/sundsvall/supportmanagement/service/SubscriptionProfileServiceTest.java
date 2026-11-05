@@ -105,7 +105,7 @@ class SubscriptionProfileServiceTest {
 		verify(subscriptionProfileRepositoryMock).saveAndFlush(entityCaptor.capture());
 		assertThat(entityCaptor.getValue().getMunicipalityId()).isEqualTo(MUNICIPALITY_ID);
 		assertThat(entityCaptor.getValue().getNamespace()).isEqualTo(NAMESPACE);
-		assertThat(entityCaptor.getValue().getChannels()).containsExactly(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL);
+		assertThat(entityCaptor.getValue().getChannels()).containsExactly(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL);
 	}
 
 	@Test

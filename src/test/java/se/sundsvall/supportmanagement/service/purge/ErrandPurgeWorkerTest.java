@@ -32,8 +32,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 /**
  * The walk of the purge worker: how far it goes, what it counts and what it tells the job it reports against. Which

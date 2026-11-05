@@ -13,8 +13,8 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -23,10 +23,10 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 @Service
 public class JobService {

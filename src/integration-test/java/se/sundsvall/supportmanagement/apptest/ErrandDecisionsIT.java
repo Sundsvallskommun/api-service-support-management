@@ -10,7 +10,7 @@ import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
+import se.sundsvall.supportmanagement.model.enums.DecisionMethod;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.ETAG;

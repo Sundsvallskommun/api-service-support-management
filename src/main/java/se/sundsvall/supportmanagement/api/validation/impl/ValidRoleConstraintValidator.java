@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.validation.ValidRole;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static java.util.Collections.emptyList;

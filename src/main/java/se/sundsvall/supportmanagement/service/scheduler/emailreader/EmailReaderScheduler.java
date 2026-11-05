@@ -16,13 +16,9 @@ public class EmailReaderScheduler {
 	private final EmailReaderWorker emailReaderWorker;
 	private final Consumer<String> emailSetUnHealthyConsumer;
 
-	@Value("${scheduler.emailreader.name}")
-	private String jobName;
-
-	public EmailReaderScheduler(final EmailReaderWorker emailReaderWorker, final Dept44HealthUtility dept44HealthUtility) {
+	public EmailReaderScheduler(final EmailReaderWorker emailReaderWorker, final Dept44HealthUtility dept44HealthUtility, @Value("${scheduler.emailreader.name}") final String jobName) {
 		this.emailReaderWorker = emailReaderWorker;
 		this.emailSetUnHealthyConsumer = msg -> dept44HealthUtility.setHealthIndicatorUnhealthy(jobName, String.format("Email error: %s", msg));
-
 	}
 
 	@Dept44Scheduled(cron = "${scheduler.emailreader.cron}",

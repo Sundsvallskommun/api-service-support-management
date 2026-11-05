@@ -40,11 +40,11 @@ import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 @Validated
 @RequestMapping("/{municipalityId}/message-exchange-sync-config")
 @Tag(name = "Configuration message-exchange sync", description = "Configuration for message-exchange scheduled syncing job")
-public class MessageExchangeSyncConfigResource {
+class MessageExchangeSyncConfigResource {
 
 	private final MessageExchangeSyncConfigService service;
 
-	public MessageExchangeSyncConfigResource(final MessageExchangeSyncConfigService service) {
+	MessageExchangeSyncConfigResource(final MessageExchangeSyncConfigService service) {
 		this.service = service;
 	}
 

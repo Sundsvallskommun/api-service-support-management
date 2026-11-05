@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service;
 
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import com.turkraft.springfilter.parser.node.FilterNode;
 import generated.se.sundsvall.eventlog.EventType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -32,12 +34,12 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandPhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
 import se.sundsvall.supportmanagement.integration.db.util.ErrandNumberGeneratorService;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
@@ -61,22 +63,24 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ASSIGNMENT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_ACTIVATION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_DELETION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND_RESTORATION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.LABEL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.PHASE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.STATUS;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.DRAFT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ASSIGNMENT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_ACTIVATION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_DELETION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND_RESTORATION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.LABEL;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.PHASE;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.STATUS;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.toErrandsWithAccessControl;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandMapper.updateEntity;
 import static se.sundsvall.supportmanagement.service.mapper.LabelClassificationMapper.applyClassificationDisplayNames;
 import static se.sundsvall.supportmanagement.service.util.ETagUtil.validateIfMatch;
+import static se.sundsvall.supportmanagement.service.util.ErrandFilters.verifyFilterable;
+import static se.sundsvall.supportmanagement.service.util.ErrandFilters.verifySortable;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerIdentity;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
@@ -123,6 +127,7 @@ public class ErrandService {
 	private final LabelClassificationService labelClassificationService;
 	private final EntityManager entityManager;
 	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
+	private final FilterSpecificationConverter filterSpecificationConverter;
 
 	public ErrandService(
 		final ErrandsRepository repository,
@@ -144,7 +149,8 @@ public class ErrandService {
 		final DecisionValidator decisionValidator,
 		final LabelClassificationService labelClassificationService,
 		final EntityManager entityManager,
-		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator,
+		final FilterSpecificationConverter filterSpecificationConverter) {
 
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
@@ -166,6 +172,7 @@ public class ErrandService {
 		this.labelClassificationService = labelClassificationService;
 		this.entityManager = entityManager;
 		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
+		this.filterSpecificationConverter = filterSpecificationConverter;
 	}
 
 	@Transactional
@@ -216,7 +223,10 @@ public class ErrandService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<Errand> findErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter, final Pageable pageable) {
+	public Page<Errand> findErrands(final String namespace, final String municipalityId, final FilterNode filterNode, final Pageable pageable) {
+		verifyFilterable(filterNode);
+		verifySortable(pageable);
+		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
@@ -535,11 +545,20 @@ public class ErrandService {
 	}
 
 	@Transactional(readOnly = true)
-	public Long countErrands(final String namespace, final String municipalityId, final Specification<ErrandEntity> filter) {
+	public Long countErrands(final String namespace, final String municipalityId, final FilterNode filterNode) {
+		verifyFilterable(filterNode);
+		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
 		final var fullFilter = ofNullable(filter).map(baseFilter::and).orElse(baseFilter);
 		return repository.count(fullFilter);
+	}
+
+	/**
+	 * The filter of a search as a specification of the errands searched, or null for a search without a filter.
+	 */
+	private Specification<ErrandEntity> toSpecification(final FilterNode filterNode) {
+		return isNull(filterNode) ? null : filterSpecificationConverter.convert(filterNode);
 	}
 
 	/**

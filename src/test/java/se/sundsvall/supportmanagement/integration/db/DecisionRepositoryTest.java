@@ -10,8 +10,8 @@ import org.springframework.test.context.jdbc.Sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.DRAFT;
+import static se.sundsvall.supportmanagement.model.enums.ItemStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ItemStatus.DRAFT;
 
 /**
  * Tests the queries asking whether a decision links an attachment, which traverse the join table between them, and

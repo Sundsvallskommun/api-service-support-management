@@ -14,6 +14,7 @@ import org.hibernate.search.mapper.pojo.bridge.mapping.programmatic.PropertyBind
 import org.hibernate.search.mapper.pojo.bridge.runtime.PropertyBridgeWriteContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 
 import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer.TEXT;
 

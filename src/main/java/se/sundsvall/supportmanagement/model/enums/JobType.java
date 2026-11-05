@@ -1,0 +1,8 @@
+package se.sundsvall.supportmanagement.model.enums;
+
+public enum JobType {
+	MOVE_LABEL,
+	MERGE_LABELS,
+	ERRAND_PURGE,
+	RESTRUCTURE_LABEL_TREE
+}

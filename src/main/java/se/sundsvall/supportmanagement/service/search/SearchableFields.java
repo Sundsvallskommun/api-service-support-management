@@ -5,8 +5,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndexBindings;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static java.util.Objects.isNull;
 
@@ -58,17 +59,17 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 
 		final var closedResource = guardedResources()
 			.filter(resource -> !resources.contains(resource))
-			.filter(resource -> resource.getSearchFields().stream().anyMatch(binding -> covers(binding, bare)))
+			.filter(resource -> ErrandIndexBindings.searchFields(resource).stream().anyMatch(binding -> covers(binding, bare)))
 			.findFirst();
 		if (closedResource.isPresent()) {
 			return Optional.of(RESOURCE.formatted(closedResource.get().getPath()));
 		}
 
 		final var boundFields = Stream.of(ErrandField.values())
-			.filter(field -> field.getSearchFields().stream().anyMatch(binding -> covers(binding, bare)))
+			.filter(field -> ErrandIndexBindings.searchFields(field).stream().anyMatch(binding -> covers(binding, bare)))
 			.toList();
 		final var boundResource = guardedResources()
-			.anyMatch(resource -> resource.getSearchFields().stream().anyMatch(binding -> covers(binding, bare)));
+			.anyMatch(resource -> ErrandIndexBindings.searchFields(resource).stream().anyMatch(binding -> covers(binding, bare)));
 
 		if (boundFields.isEmpty()) {
 			// A resource of its own carries fields no ErrandField names, such as the subject of a communication
@@ -96,8 +97,8 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 	Optional<String> wholeFieldRefusal(final ErrandField field) {
 		final var closedResource = guardedResources()
 			.filter(resource -> !resources.contains(resource))
-			.filter(resource -> resource.getSearchFields().stream()
-				.anyMatch(binding -> field.getSearchFields().stream().anyMatch(name -> covers(binding, name))))
+			.filter(resource -> ErrandIndexBindings.searchFields(resource).stream()
+				.anyMatch(binding -> ErrandIndexBindings.searchFields(field).stream().anyMatch(name -> covers(binding, name))))
 			.findFirst();
 		if (closedResource.isPresent()) {
 			return Optional.of(RESOURCE.formatted(closedResource.get().getPath()));
@@ -131,7 +132,7 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 			return Optional.empty();
 		}
 
-		if (!field.getIndex().keysArePaths()) {
+		if (!ErrandIndexBindings.of(field).keysArePaths()) {
 			// Every key of this field writes into the same index field, so single keys open none of it
 			return Optional.of(FIELD_BEYOND_KEYS.formatted(field.getPropertyName()));
 		}
@@ -144,7 +145,7 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 	 * dots (see {@code JSON_PARAMETER_KEY_REGEXP}), so the key is the first segment of that path, whole.
 	 */
 	private Optional<String> keyRefusal(final ErrandField field, final String name, final Set<String> keys) {
-		final var prefix = field.getSearchFields().stream()
+		final var prefix = ErrandIndexBindings.searchFields(field).stream()
 			.filter(binding -> binding.endsWith(".") && covers(binding, name))
 			.findFirst();
 
@@ -177,6 +178,6 @@ record SearchableFields(Map<ErrandField, Set<String>> readable, Set<ProtectedRes
 
 	/** The resources that carry fields of the index, which are the ones a search can be held to. */
 	private static Stream<ProtectedResource> guardedResources() {
-		return Stream.of(ProtectedResource.values()).filter(resource -> !resource.getSearchFields().isEmpty());
+		return Stream.of(ProtectedResource.values()).filter(resource -> !ErrandIndexBindings.searchFields(resource).isEmpty());
 	}
 }

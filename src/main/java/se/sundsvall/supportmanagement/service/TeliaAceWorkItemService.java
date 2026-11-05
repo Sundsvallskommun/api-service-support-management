@@ -33,8 +33,7 @@ public class TeliaAceWorkItemService {
 	// A global kill switch independent of the per-namespace toggle, so the feature can be turned on for every
 	// namespace at once once it is ready for production, without editing namespace config rows before then. Off by
 	// default: the feature must be deliberately enabled, not accidentally left on.
-	@Value("${scheduler.telia-ace-work-item.enabled:false}")
-	private boolean enabled = false;
+	private final boolean enabled;
 
 	private final TeliaAceWorkItemRepository workItemRepository;
 	private final NamespaceConfigRepository namespaceConfigRepository;
@@ -42,12 +41,14 @@ public class TeliaAceWorkItemService {
 	private final TransactionTemplate requiresNewTransaction;
 
 	public TeliaAceWorkItemService(final TeliaAceWorkItemRepository workItemRepository, final NamespaceConfigRepository namespaceConfigRepository, final NamespaceConfigMapper namespaceConfigMapper,
-		final PlatformTransactionManager transactionManager) {
+		final PlatformTransactionManager transactionManager,
+		@Value("${scheduler.telia-ace-work-item.enabled:false}") final boolean enabled) {
 		this.workItemRepository = workItemRepository;
 		this.namespaceConfigRepository = namespaceConfigRepository;
 		this.namespaceConfigMapper = namespaceConfigMapper;
 		this.requiresNewTransaction = new TransactionTemplate(transactionManager);
 		this.requiresNewTransaction.setPropagationBehavior(PROPAGATION_REQUIRES_NEW);
+		this.enabled = enabled;
 	}
 
 	/**

@@ -40,13 +40,13 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandar
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.TypeBinding;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 import se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.NoOpenFieldBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
+import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.EnumType.STRING;

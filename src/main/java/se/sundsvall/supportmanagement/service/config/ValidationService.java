@@ -6,7 +6,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ValidationRepository;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.mapper.ValidationMapper;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;

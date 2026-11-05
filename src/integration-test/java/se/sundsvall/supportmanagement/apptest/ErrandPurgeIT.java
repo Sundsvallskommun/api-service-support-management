@@ -20,7 +20,7 @@ import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.service.scheduler.job.JobScheduler;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
@@ -39,9 +39,9 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 /**
  * Errand purge IT tests.

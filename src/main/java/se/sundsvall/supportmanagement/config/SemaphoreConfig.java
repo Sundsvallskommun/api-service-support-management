@@ -8,11 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SemaphoreConfig {
 
-	@Value("${semaphore.maxMemoryUsage}")
-	private int maxMemoryUsage;
-
 	@Bean
-	Semaphore semaphore() {
+	Semaphore semaphore(@Value("${semaphore.maxMemoryUsage}") final int maxMemoryUsage) {
 		return new Semaphore(maxMemoryUsage);
 	}
 }

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 
 @Schema(description = "Field of an errand exposed to a role")
 public class FieldAccess {

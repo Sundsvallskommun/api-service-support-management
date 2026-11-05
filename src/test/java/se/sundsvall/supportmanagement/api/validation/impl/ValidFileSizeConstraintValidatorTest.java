@@ -4,10 +4,8 @@ import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,12 +22,9 @@ class ValidFileSizeConstraintValidatorTest {
 	@Mock
 	private ConstraintViolationBuilder constraintViolationBuilderMock;
 
-	@InjectMocks
-	private ValidFileSizeConstraintValidator validator;
-
 	@Test
 	void validFileSize() {
-		ReflectionTestUtils.setField(validator, "maximumByteSize", 10);
+		final var validator = new ValidFileSizeConstraintValidator(10);
 
 		final var base64Data = "dGVzdHN0cmluZw=="; // Translates to 'Teststring'
 
@@ -40,7 +35,7 @@ class ValidFileSizeConstraintValidatorTest {
 
 	@Test
 	void fileSizeToLarge() {
-		ReflectionTestUtils.setField(validator, "maximumByteSize", 9);
+		final var validator = new ValidFileSizeConstraintValidator(9);
 
 		final var base64Data = "dGVzdHN0cmluZw=="; // Translates to 'Teststring'
 
@@ -55,6 +50,8 @@ class ValidFileSizeConstraintValidatorTest {
 
 	@Test
 	void nullData() {
+		final var validator = new ValidFileSizeConstraintValidator(10);
+
 		assertThat(validator.isValid(null, constraintValidatorContextMock)).isTrue();
 
 		verifyNoInteractions(constraintValidatorContextMock, constraintViolationBuilderMock);
@@ -62,6 +59,7 @@ class ValidFileSizeConstraintValidatorTest {
 
 	@Test
 	void notBase64Data() {
+		final var validator = new ValidFileSizeConstraintValidator(10);
 		final var base64Data = "åäö";
 
 		assertThat(validator.isValid(base64Data, constraintValidatorContextMock)).isTrue();

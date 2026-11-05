@@ -28,8 +28,8 @@ import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelTy
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionProfileRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.mapper.NamespaceConfigMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,10 +47,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.PARAMETERS;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField.TITLE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.COMMUNICATION;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.ErrandField.PARAMETERS;
+import static se.sundsvall.supportmanagement.model.enums.ErrandField.TITLE;
+import static se.sundsvall.supportmanagement.model.enums.ProtectedResource.COMMUNICATION;
+import static se.sundsvall.supportmanagement.model.enums.ProtectedResource.ERRAND;
 
 @ExtendWith(MockitoExtension.class)
 class NamespaceConfigServiceTest {

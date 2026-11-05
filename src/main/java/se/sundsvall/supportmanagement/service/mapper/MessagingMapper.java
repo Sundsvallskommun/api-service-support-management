@@ -39,8 +39,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DbExternalTag;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
-import se.sundsvall.supportmanagement.service.model.MessagingSettings;
+import se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettings;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;

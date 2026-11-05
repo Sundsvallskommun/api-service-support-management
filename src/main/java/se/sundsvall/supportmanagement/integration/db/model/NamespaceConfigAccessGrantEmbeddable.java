@@ -4,24 +4,24 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
-import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
+import se.sundsvall.supportmanagement.model.enums.RoleAccessType;
 
 import static java.sql.Types.LONGVARCHAR;
 
 /**
  * A single grant within a namespace configuration. One row per grant, so a scope is extended by adding rows.
  * <p>
- * The scope is either a reserved {@link se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope},
+ * The scope is either a reserved {@link se.sundsvall.supportmanagement.model.enums.AccessGrantScope},
  * resolved per errand by this service, or the name of a role supplied by the access mapper.
  * <p>
- * For a FIELD grant the value is an {@link se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField} name,
+ * For a FIELD grant the value is an {@link se.sundsvall.supportmanagement.model.enums.ErrandField} name,
  * optionally followed by a colon and a key to expose a single entry of a keyed collection, e.g.
  * <code>PARAMETERS:contactChannel</code>. The value is split on the first colon only, so keys may themselves contain
  * colons. The access level of a FIELD grant is optional: set, it holds the field or key below the level the errand
  * itself is held at, and left out the grant simply follows the errand.
  * <p>
  * For a RESOURCE grant the value is an
- * {@link se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource}
+ * {@link se.sundsvall.supportmanagement.model.enums.ProtectedResource}
  * name and the access level states what the role may do with it.
  */
 @Embeddable

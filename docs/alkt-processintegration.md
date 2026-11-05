@@ -633,7 +633,7 @@ Statusen gör mer än att visas i gränssnittet: det är den som avgör om `acti
 separat lista över "vilka statusar räknas som avslutade" är en lista någon glömmer att uppdatera.
 
 ```java
-package se.sundsvall.supportmanagement.integration.db.model.enums;
+package se.sundsvall.supportmanagement.model.enums;
 
 public enum ProcessStatus {
 

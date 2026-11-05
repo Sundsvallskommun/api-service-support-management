@@ -25,8 +25,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.STATUS;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.STATUS;
 
 @ResourceTest
 class NamespaceConfigResourceTest {

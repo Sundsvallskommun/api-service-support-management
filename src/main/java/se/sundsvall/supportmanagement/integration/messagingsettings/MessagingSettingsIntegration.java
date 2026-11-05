@@ -9,13 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
-import se.sundsvall.supportmanagement.service.model.MessagingSettings;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.service.mapper.MessagingSettingsMapper.toFilterString;
+import static se.sundsvall.supportmanagement.integration.messagingsettings.MessagingSettingsMapper.toFilterString;
 
 @Component
 public class MessagingSettingsIntegration {

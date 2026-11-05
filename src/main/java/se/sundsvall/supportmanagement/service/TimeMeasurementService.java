@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.service;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.api.model.errand.TimeMeasurement;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
 import static se.sundsvall.supportmanagement.service.mapper.TimeMeasurementMapper.toTimeMeasurements;

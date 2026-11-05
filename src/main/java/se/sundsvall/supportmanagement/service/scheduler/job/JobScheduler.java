@@ -11,12 +11,12 @@ public class JobScheduler {
 	private final JobWorker jobWorker;
 	private final Dept44HealthUtility healthUtility;
 
-	@Value("${scheduler.job.name}")
-	private String jobName;
+	private final String jobName;
 
-	public JobScheduler(final JobWorker jobWorker, final Dept44HealthUtility healthUtility) {
+	public JobScheduler(final JobWorker jobWorker, final Dept44HealthUtility healthUtility, @Value("${scheduler.job.name}") final String jobName) {
 		this.jobWorker = jobWorker;
 		this.healthUtility = healthUtility;
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

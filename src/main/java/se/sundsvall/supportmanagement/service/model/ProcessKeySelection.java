@@ -1,7 +1,7 @@
 package se.sundsvall.supportmanagement.service.model;
 
 import java.util.List;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
 
 /**
  * What the labels of an errand say about which process it runs, and about who may start it.
