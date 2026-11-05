@@ -12,7 +12,6 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationEntity;
 
-import static java.time.OffsetDateTime.now;
 import static java.time.OffsetDateTime.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
@@ -150,22 +149,6 @@ class NotificationRepositoryTest {
 
 		// Act
 		final var exists = notificationRepository.existsByIdAndNamespaceAndMunicipalityIdAndErrandEntityId("1", "namespace-1", "2281", "ERRAND_ID-1");
-
-		// Assert
-		assertThat(exists).isTrue();
-	}
-
-	@Test
-	void existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter() {
-
-		// Arrange
-		final var errandEntity = ErrandEntity.create()
-			.withId("ERRAND_ID-1")
-			.withErrandNumber("KC-23020001")
-			.withVersion(0L);
-
-		// Act
-		final var exists = notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter("namespace-1", "2281", "owner_id-1", errandEntity, "description-1", now().minusHours(6));
 
 		// Assert
 		assertThat(exists).isTrue();

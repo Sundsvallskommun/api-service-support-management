@@ -3,27 +3,40 @@ package se.sundsvall.supportmanagement.service.scheduler.supensions;
 import generated.se.sundsvall.eventlog.EventType;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.EventService;
-import se.sundsvall.supportmanagement.service.NotificationService;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
 
 @ExtendWith(MockitoExtension.class)
 class SuspensionWorkerTest {
+
+	private static final String ERRAND_ID = "id";
+	private static final String MESSAGE = "Parkering av ärendet har upphört";
+	private static final OffsetDateTime SUSPENDED_TO = OffsetDateTime.now().minusHours(1);
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -31,93 +44,85 @@ class SuspensionWorkerTest {
 	@Mock
 	private EventService eventServiceMock;
 
-	@Mock
-	private NotificationService notificationServiceMock;
-
 	@InjectMocks
 	private SuspensionWorker suspensionWorker;
 
-	@Test
-	void processExpiredSuspensions() {
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(namespace)
-			.withAssignedUserId("assignedUserId")
-			.withId("id")
-			.withMunicipalityId(municipalityId)
-			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
-			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
+	private static ErrandEntity endedSuspension() {
+		return ErrandEntity.create()
+			.withId(ERRAND_ID)
 			.withStatus("SUSPENDED")
-			.withMunicipalityId(municipalityId);
-
-		when(errandsRepositoryMock.findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
-		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
-			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom()))
-			.thenReturn(false);
-
-		suspensionWorker.processExpiredSuspensions();
-
-		verify(errandsRepositoryMock).findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class));
-		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
-			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom());
-		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq("Parkering av ärendet har upphört"), eq(errandEntity), isNull(), isNull(), eq(SUSPENSION));
-
-		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock, eventServiceMock);
+			.withSuspendedTo(SUSPENDED_TO);
 	}
 
 	@Test
-	void processExpiredSuspensionsNotificationExists() {
-		final var namespace = "namespace";
-		final var municipalityId = "municipalityId";
-		final var errandEntity = ErrandEntity.create()
-			.withNamespace(namespace)
-			.withId("id")
-			.withMunicipalityId(municipalityId)
-			.withSuspendedFrom(OffsetDateTime.now().minusDays(1))
-			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
-			.withStatus("SUSPENDED")
-			.withMunicipalityId(municipalityId);
+	void getErrandIdsWithEndedSuspension() {
+		when(errandsRepositoryMock.findIdsWithUnannouncedSuspensionEndAndDeletedIsNull(eq("SUSPENDED"), any(OffsetDateTime.class))).thenReturn(List.of(ERRAND_ID));
 
-		when(errandsRepositoryMock.findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
-		when(notificationServiceMock.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
-			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom()))
-			.thenReturn(true);
+		assertThat(suspensionWorker.getErrandIdsWithEndedSuspension()).containsExactly(ERRAND_ID);
+	}
 
-		suspensionWorker.processExpiredSuspensions();
+	@Test
+	void announceSuspensionEnd() {
+		final var errand = endedSuspension();
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(errand));
 
-		verify(errandsRepositoryMock).findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class));
-		verify(notificationServiceMock).doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(
-			municipalityId, namespace, errandEntity.getAssignedUserId(), errandEntity, "Parkering av ärendet har upphört", errandEntity.getSuspendedFrom());
+		suspensionWorker.announceSuspensionEnd(ERRAND_ID);
+
+		final var inOrder = inOrder(eventServiceMock, errandsRepositoryMock);
+		inOrder.verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq(MESSAGE), eq(errand), isNull(), isNull(), eq(SUSPENSION));
+		inOrder.verify(errandsRepositoryMock).markSuspensionEndNotified(ERRAND_ID, SUSPENDED_TO);
+	}
+
+	@Test
+	void announceSuspensionEndOfANewSuspension() {
+		final var errand = endedSuspension().withSuspensionEndNotifiedFor(SUSPENDED_TO.minusDays(7));
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(errand));
+
+		suspensionWorker.announceSuspensionEnd(ERRAND_ID);
+
+		verify(eventServiceMock).createErrandEvent(eq(EventType.UPDATE), eq(MESSAGE), eq(errand), isNull(), isNull(), eq(SUSPENSION));
+		verify(errandsRepositoryMock).markSuspensionEndNotified(ERRAND_ID, SUSPENDED_TO);
+	}
+
+	@Test
+	void announceSuspensionEndDoesNotMarkWhenTheEventFails() {
+		final var errand = endedSuspension();
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(errand));
+		doThrow(new IllegalStateException("failure")).when(eventServiceMock).createErrandEvent(any(), any(), any(), isNull(), isNull(), eq(SUSPENSION));
+
+		// Left to the scheduler, and the errand is tried again on the next run
+		assertThatThrownBy(() -> suspensionWorker.announceSuspensionEnd(ERRAND_ID)).isInstanceOf(IllegalStateException.class);
+
+		verify(errandsRepositoryMock, never()).markSuspensionEndNotified(any(), any());
+	}
+
+	@Test
+	void announceSuspensionEndForErrandThatIsGone() {
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.empty());
+
+		suspensionWorker.announceSuspensionEnd(ERRAND_ID);
+
 		verifyNoInteractions(eventServiceMock);
-		verifyNoMoreInteractions(errandsRepositoryMock, notificationServiceMock);
+		verify(errandsRepositoryMock, never()).markSuspensionEndNotified(any(), any());
 	}
 
-	@Test
-	void processExpiredSuspensionsNoSuspensions() {
-		when(errandsRepositoryMock.findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of());
+	@ParameterizedTest
+	@MethodSource("errandsChangedSinceTheIdWasRead")
+	void announceSuspensionEndLeavesAnErrandNoLongerDue(final UnaryOperator<ErrandEntity> change) {
+		when(errandsRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(change.apply(endedSuspension())));
 
-		suspensionWorker.processExpiredSuspensions();
+		suspensionWorker.announceSuspensionEnd(ERRAND_ID);
 
-		verify(errandsRepositoryMock).findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class));
-		verifyNoInteractions(eventServiceMock, notificationServiceMock);
-		verifyNoMoreInteractions(errandsRepositoryMock);
+		verifyNoInteractions(eventServiceMock);
+		verify(errandsRepositoryMock, never()).markSuspensionEndNotified(any(), any());
 	}
 
-	@Test
-	void processExpiredSuspensionsNotSuspendedStatus() {
-		final var errandEntity = ErrandEntity.create()
-			.withId("id")
-			.withMunicipalityId("municipalityId")
-			.withSuspendedTo(OffsetDateTime.now().minusHours(1))
-			.withStatus("OPEN");
-
-		when(errandsRepositoryMock.findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class))).thenReturn(List.of(errandEntity));
-
-		suspensionWorker.processExpiredSuspensions();
-
-		verify(errandsRepositoryMock).findAllBySuspendedToBeforeAndDeletedIsNull(any(OffsetDateTime.class));
-		verifyNoInteractions(eventServiceMock, notificationServiceMock);
-		verifyNoMoreInteractions(errandsRepositoryMock);
+	private static Stream<Arguments> errandsChangedSinceTheIdWasRead() {
+		return Stream.of(
+			Arguments.of((UnaryOperator<ErrandEntity>) errand -> errand.withStatus("OPEN")),
+			Arguments.of((UnaryOperator<ErrandEntity>) errand -> errand.withDeleted(OffsetDateTime.now())),
+			Arguments.of((UnaryOperator<ErrandEntity>) errand -> errand.withSuspendedTo(null)),
+			Arguments.of((UnaryOperator<ErrandEntity>) errand -> errand.withSuspendedTo(OffsetDateTime.now().plusDays(1))),
+			Arguments.of((UnaryOperator<ErrandEntity>) errand -> errand.withSuspensionEndNotifiedFor(SUSPENDED_TO)));
 	}
 }
