@@ -73,6 +73,13 @@ class CircularReferenceExclusionStrategyTest {
 	}
 
 	@Test
+	@DisplayName("Verification that what the suspension job has announced stays out of a snapshot")
+	void shouldSkipTheBookkeepingOfTheSuspensionJob() {
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "suspensionEndNotifiedFor", true)))).isTrue();
+		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandEntity.class, "suspendedTo", true)))).isFalse();
+	}
+
+	@Test
 	@DisplayName("Verification that what an errand holds only once it is loaded is skipped, while what is stored in its place is kept")
 	void shouldSkipWhatIsOnlyThereOnceLoaded() {
 		assertThat(INSTANCE.shouldSkipField(new FieldAttributes(FieldUtils.getField(ErrandLabelEmbeddable.class, "metadataLabel", true)))).isTrue();

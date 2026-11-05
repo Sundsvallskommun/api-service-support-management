@@ -56,8 +56,9 @@ public class CircularReferenceExclusionStrategy implements ExclusionStrategy {
 		Map.entry(ErrandLabelEmbeddable.class, Set.of("metadataLabel")),
 		// Besides the status held over from before a change, the collections the errand holds for the search index alone.
 		// They are read and written through resources of their own and have never been part of the snapshot, and the
-		// communications point back at the errand.
-		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus", "decisions", "statements", "investigations", "communications")));
+		// communications point back at the errand. What the suspension job has announced is its own bookkeeping, and would
+		// otherwise make the next save of the errand read as a change nobody made.
+		Map.entry(ErrandEntity.class, Set.of("tempPreviousStatus", "suspensionEndNotifiedFor", "decisions", "statements", "investigations", "communications")));
 
 	public static CircularReferenceExclusionStrategy create() {
 		return new CircularReferenceExclusionStrategy();

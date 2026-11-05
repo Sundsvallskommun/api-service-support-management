@@ -1,6 +1,8 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +57,9 @@ class ErrandsRepositoryTest {
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	@Autowired
 	private FilterSpecificationConverter filterSpecificationConverter;
@@ -238,15 +244,60 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findAllBySuspendedToBeforeAndDeletedIsNull() {
+	void findIdsWithUnannouncedSuspensionEndAndDeletedIsNull() {
 		final var suspendedTo = OffsetDateTime.now().minusDays(1);
-		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("DELETED-3").withSuspendedTo(suspendedTo).withDeleted(OffsetDateTime.now()));
-		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT-3").withSuspendedTo(suspendedTo));
+		final var due = errandsRepository.save(suspended("DUE", "SUSPENDED", suspendedTo).withAssignedUserId("assignedUser"));
+		final var unassigned = errandsRepository.save(suspended("UNASSIGNED", "SUSPENDED", suspendedTo));
+		final var announcedEarlierSuspension = errandsRepository.save(suspended("ANNOUNCED-EARLIER", "SUSPENDED", suspendedTo));
+		final var announced = errandsRepository.save(suspended("ANNOUNCED", "SUSPENDED", suspendedTo));
+		final var softDeleted = errandsRepository.save(suspended("SOFT-DELETED", "SUSPENDED", suspendedTo).withDeleted(OffsetDateTime.now()));
+		final var otherStatus = errandsRepository.save(suspended("OTHER-STATUS", "OPEN", suspendedTo));
+		final var stillSuspended = errandsRepository.save(suspended("STILL-SUSPENDED", "SUSPENDED", OffsetDateTime.now().plusDays(1)));
+		errandsRepository.flush();
 
-		assertThat(errandsRepository.findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime.now()))
-			.extracting(ErrandEntity::getErrandNumber)
-			.contains("KEPT-3")
-			.doesNotContain("DELETED-3");
+		errandsRepository.markSuspensionEndNotified(announcedEarlierSuspension.getId(), suspendedTo.minusDays(7));
+		errandsRepository.markSuspensionEndNotified(announced.getId(), announced.getSuspendedTo());
+
+		assertThat(errandsRepository.findIdsWithUnannouncedSuspensionEndAndDeletedIsNull("SUSPENDED", OffsetDateTime.now()))
+			.contains(due.getId(), unassigned.getId(), announcedEarlierSuspension.getId())
+			.doesNotContain(announced.getId(), softDeleted.getId(), otherStatus.getId(), stillSuspended.getId());
+	}
+
+	@Test
+	void markSuspensionEndNotifiedLeavesTheErrandUntouchedAndSurvivesALaterSave() {
+		final var suspendedTo = OffsetDateTime.now().minusDays(1);
+		final var errand = errandsRepository.saveAndFlush(suspended("MARKED", "SUSPENDED", suspendedTo));
+		final var modified = errand.getModified();
+		final var version = errand.getVersion();
+
+		errandsRepository.markSuspensionEndNotified(errand.getId(), suspendedTo);
+		entityManager.clear();
+
+		final var marked = errandsRepository.findById(errand.getId()).orElseThrow();
+		assertThat(marked.getSuspensionEndNotifiedFor()).isCloseTo(suspendedTo, within(1, MILLIS));
+		assertThat(marked.getModified()).isEqualTo(modified);
+		assertThat(marked.getVersion()).isEqualTo(version);
+
+		// An errand read before the mark holds no value for it, and saving such an errand must not put that back
+		entityManager.clear();
+		final var readBeforeTheMark = errandsRepository.findById(errand.getId()).orElseThrow();
+		readBeforeTheMark.setSuspensionEndNotifiedFor(null);
+		readBeforeTheMark.setTitle("changed");
+		errandsRepository.saveAndFlush(readBeforeTheMark);
+		entityManager.clear();
+
+		final var saved = errandsRepository.findById(errand.getId()).orElseThrow();
+		assertThat(saved.getTitle()).isEqualTo("changed");
+		assertThat(saved.getSuspensionEndNotifiedFor()).isCloseTo(suspendedTo, within(1, MILLIS));
+	}
+
+	private static ErrandEntity suspended(final String errandNumber, final String status, final OffsetDateTime suspendedTo) {
+		return ErrandEntity.create()
+			.withNamespace("SUSPENSIONS")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withErrandNumber(errandNumber)
+			.withStatus(status)
+			.withSuspendedTo(suspendedTo);
 	}
 
 	@ParameterizedTest
