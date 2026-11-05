@@ -1,12 +1,11 @@
 package se.sundsvall.supportmanagement.service.scheduler.supensions;
 
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 
 import static org.mockito.Mockito.doThrow;
@@ -26,8 +25,12 @@ class SuspensionSchedulerTest {
 	@Mock
 	private Dept44HealthUtility healthUtilityMock;
 
-	@InjectMocks
 	private SuspensionScheduler suspensionScheduler;
+
+	@BeforeEach
+	void setUp() {
+		suspensionScheduler = new SuspensionScheduler(suspensionWorkerMock, healthUtilityMock, JOB_NAME);
+	}
 
 	@Test
 	void processExpiredSuspensions() {
@@ -42,7 +45,6 @@ class SuspensionSchedulerTest {
 
 	@Test
 	void processExpiredSuspensionsContinuesAfterAFailure() {
-		ReflectionTestUtils.setField(suspensionScheduler, "jobName", JOB_NAME);
 		when(suspensionWorkerMock.getErrandIdsWithEndedSuspension()).thenReturn(List.of("id-1", "id-2"));
 		doThrow(new IllegalStateException("failure")).when(suspensionWorkerMock).announceSuspensionEnd("id-1");
 
