@@ -1,0 +1,17 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MOVE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE"
+			],
+			"destinationParentPath": [
+				"TEST_CATEGORY",
+				"TEST_TYPE",
+				"TEST_SUBTYPE_OLD"
+			]
+		}
+	]
+}

@@ -35,23 +35,22 @@ import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatu
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 /**
- * Label-tree restructure IT tests.
+ * Label-tree restructure IT tests - the sole surface for move/merge/add/rename/delete label-tree mutations, now that
+ * the standalone {@code /move} and {@code /merge} endpoints have been retired in favor of this one.
  * <p>
- * A real run is answered before it is carried out, so what comes back only says a run was accepted - mirrors
- * {@link LabelMoveIT}/{@link LabelMergeIT}. Every test that carries one out waits for the job to reach a state it
- * cannot leave, then reads the label tree and the errands under it straight from the database.
+ * A real run is answered before it is carried out, so what comes back only says a run was accepted. Every test that
+ * carries one out waits for the job to reach a state it cannot leave, then reads the label tree and the errands
+ * under it straight from the database.
  * <p>
- * Unlike {@link LabelMoveIT}/{@link LabelMergeIT}, this suite does not address the shared fixture's own
- * {@code CATEGORY-1}/{@code TYPE-2}/... tree by path. {@link #SEED_LABELS} plants a small, dedicated tree of its own
- * under NAMESPACE-1/2281 instead, and {@link #SEED_ERRAND_LABELS}/{@link #SEED_ERRAND_ACCESS_LABELS} wire two of the
- * shared fixture's
- * existing errands onto leaves in it - reusing those two errand rows (with their JSON history, notes etc. already
- * seeded) without touching any of the shared tree's own labels.
+ * This suite does not address the shared fixture's own {@code CATEGORY-1}/{@code TYPE-2}/... tree by path.
+ * {@link #SEED_LABELS} plants a small, dedicated tree of its own under NAMESPACE-1/2281 instead, and
+ * {@link #SEED_ERRAND_LABELS}/{@link #SEED_ERRAND_ACCESS_LABELS} wire two of the shared fixture's existing errands onto
+ * leaves in it - reusing those two errand rows (with their JSON history, notes etc. already seeded) without touching
+ * any of the shared tree's own labels.
  * <p>
  * The main scenario (test01/test02) deliberately chains an ADD and a MOVE together: the MOVE's
  * {@code destinationParentPath} names the label the ADD step just created, by path, so it also proves a step can
- * resolve a label an earlier step in the very same request added - the one piece of behaviour that has no equivalent
- * in the standalone {@code /move}/{@code /merge} endpoints.
+ * resolve a label an earlier step in the very same request added.
  */
 @WireMockAppTestSuite(files = "classpath:/LabelRestructureIT/", classes = Application.class)
 @Sql({
@@ -104,7 +103,7 @@ class LabelRestructureIT extends AbstractAppTest {
 		+ "('1be673c0-6ba3-4fb0-af4a-43acf23389f6', 'eeeeeeee-0000-0000-0000-000000000003'), "
 		+ "('147d355f-dc94-4fde-a4cb-9ddd16cb1946', 'eeeeeeee-0000-0000-0000-000000000007')";
 
-	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, label_id, created, modified) "
+	private static final String RUNNING_MOVE_LABEL_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, processed, subject_id, created, modified) "
 		+ "VALUES ('dddddddd-0000-0000-0000-000000000001', '2281', 'NAMESPACE-1', 'MOVE_LABEL', 'RUNNING', 10, 100, 10, 'eeeeeeee-0000-0000-0000-000000000005', NOW(), NOW())";
 
 	private static final String RUNNING_RESTRUCTURE_JOB = "INSERT INTO job(id, municipality_id, namespace, type, status, progress, total, created, modified) "
@@ -208,6 +207,40 @@ class LabelRestructureIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 
 		assertThat(metadataLabelRepository.findById(TEST_RENAME_ME)).hasValueSatisfying(label -> assertThat(label.getDisplayName()).isEqualTo("Rename me"));
+	}
+
+	@Test
+	@DisplayName("Verification that a MOVE step creating a cycle is refused before a job is ever created, leaving the tree exactly as it was")
+	@Sql(statements = SEED_LABELS)
+	void test06_restructureMoveStepCycleIsRefusedAndNothingChanges() {
+		setupCall()
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jobRepository.findAll()).isEmpty();
+		assertThat(metadataLabelRepository.findById(TEST_TYPE)).hasValueSatisfying(label -> assertThat(label.getResourcePath()).isEqualTo("TEST_CATEGORY/TEST_TYPE"));
+	}
+
+	@Test
+	@DisplayName("Verification that a MERGE step naming a destination with children is refused before a job is ever created")
+	@Sql(statements = SEED_LABELS)
+	void test07_restructureMergeStepTargetHasChildren_refused() {
+		setupCall()
+			.withServicePath(PATH)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withContentType(APPLICATION_JSON)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(jobRepository.findAll()).isEmpty();
+		assertThat(metadataLabelRepository.findById(TEST_MERGE_SOURCE)).isPresent();
 	}
 
 	@Test

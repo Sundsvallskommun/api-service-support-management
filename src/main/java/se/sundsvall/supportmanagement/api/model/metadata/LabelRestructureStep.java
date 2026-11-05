@@ -16,8 +16,8 @@ import java.util.Objects;
  * having to round-trip a generated id between steps.
  * <p>
  * Which of the fields below apply depends on {@link #type} - enforced by {@code @ValidRestructureStep} rather than
- * splitting this into five request classes, matching this codebase's existing flat-DTO style (see {@link Label},
- * {@link LabelMoveRequest}) rather than Jackson polymorphic subtypes.
+ * splitting this into five request classes, matching this codebase's existing flat-DTO style (see {@link Label})
+ * rather than Jackson polymorphic subtypes.
  */
 @Schema(description = "One step of a label-tree restructure")
 public class LabelRestructureStep {

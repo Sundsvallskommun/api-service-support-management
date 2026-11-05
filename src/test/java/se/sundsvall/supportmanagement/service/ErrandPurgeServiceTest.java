@@ -1,35 +1,39 @@
 package se.sundsvall.supportmanagement.service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.TaskRejectedException;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.supportmanagement.api.model.errand.purge.ErrandPurgeRequest;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.config.JobProperties;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
-import se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker;
-import se.sundsvall.supportmanagement.service.purge.PurgeRun;
+import se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner;
+import se.sundsvall.supportmanagement.service.job.JobService;
+import se.sundsvall.supportmanagement.service.job.JobSpec;
+import se.sundsvall.supportmanagement.service.job.PurgeRun;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
 
@@ -41,6 +45,8 @@ class ErrandPurgeServiceTest {
 	private static final String JOB_ID = randomUUID().toString();
 	private static final OffsetDateTime OLDER_THAN = OffsetDateTime.parse("2020-08-28T00:00:00+02:00");
 	private static final int TOTAL = 1000;
+	private static final String COULD_NOT_START = "Purge could not be started: %s";
+	private static final Duration JOB_STALE_AFTER = Duration.ofMinutes(30);
 
 	/**
 	 * Accepts what it is handed and never runs it, which leaves the run pending for as long as the test needs it to.
@@ -50,13 +56,16 @@ class ErrandPurgeServiceTest {
 	};
 
 	@Mock
-	private ErrandPurgeWorker workerMock;
+	private ErrandPurgeRunner runnerMock;
 
 	@Mock
 	private JobService jobServiceMock;
 
 	@Mock
 	private NamespaceConfigService namespaceConfigServiceMock;
+
+	@Mock
+	private JobProperties jobPropertiesMock;
 
 	@AfterEach
 	void tearDown() {
@@ -72,86 +81,100 @@ class ErrandPurgeServiceTest {
 
 		assertThat(response.getJobId()).isEqualTo(JOB_ID);
 		assertThat(response.getStatus()).isEqualTo(RUNNING);
-		verify(workerMock).countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN);
-		verify(jobServiceMock).create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL);
-		verify(jobServiceMock).get(NAMESPACE, MUNICIPALITY_ID, JOB_ID);
+		verify(runnerMock).countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN);
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START));
 	}
 
 	@Test
-	@DisplayName("Verification that the run is handed the job it reports against and the settings it was started with")
-	void startPurgeHandsTheRunToTheWorker() {
-		final var handled = new ArrayList<PurgeRun>();
-		final var service = service(Runnable::run);
+	@SuppressWarnings("unchecked")
+	@DisplayName("Verification that the run built for the launch carries the job it reports against and the settings it was started with, and that the runner argument reaches the actual ErrandPurgeRunner")
+	void startPurgeHandsTheRunToTheRunner() {
+		final var service = service(NEVER_RUNS);
 		acceptsRuns();
-		doAnswer(invocation -> handled.add(invocation.getArgument(0))).when(workerMock).run(any(PurgeRun.class));
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		final var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, 500));
 
-		assertThat(handled).hasSize(1);
-		assertThat(handled.getFirst().jobId()).isEqualTo(JOB_ID);
-		assertThat(handled.getFirst().namespace()).isEqualTo(NAMESPACE);
-		assertThat(handled.getFirst().municipalityId()).isEqualTo(MUNICIPALITY_ID);
-		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
-		assertThat(handled.getFirst().settings().olderThan()).isEqualTo(OLDER_THAN);
-		assertThat(handled.getFirst().settings().dryRun()).isFalse();
-		assertThat(handled.getFirst().settings().maxErrands()).isEqualTo(500);
+		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
+		final var runnerCaptor = ArgumentCaptor.forClass(Consumer.class);
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), runnerCaptor.capture(), eq(COULD_NOT_START));
+
+		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
+		assertThat(run.jobId()).isEqualTo(JOB_ID);
+		assertThat(run.namespace()).isEqualTo(NAMESPACE);
+		assertThat(run.municipalityId()).isEqualTo(MUNICIPALITY_ID);
+		// The whole identifier (type and value), not just the value - see startedBy()'s own doc comment for why.
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
+		assertThat(run.settings().olderThan()).isEqualTo(OLDER_THAN);
+		assertThat(run.settings().dryRun()).isFalse();
+		assertThat(run.settings().maxErrands()).isEqualTo(500);
+
+		// The captured runner argument is runnerMock::run bound to the very mock under test - invoking it here is what
+		// proves that binding, since jobServiceMock.launch is stubbed and never calls it on its own.
+		((Consumer<PurgeRun>) runnerCaptor.getValue()).accept(run);
+		verify(runnerMock).run(run);
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	@DisplayName("Verification that the caller is read on the request thread, which is the only thread carrying one")
 	void startPurgeReadsTheCallerBeforeHandingTheRunOver() {
-		final var handled = new ArrayList<PurgeRun>();
-		final var waiting = new ArrayList<Runnable>();
-		// Takes the run and holds it, the way a pool does with a thread that is not the one the request arrived on.
-		final var service = service(waiting::add);
+		final var service = service(NEVER_RUNS);
 		acceptsRuns();
-		doAnswer(invocation -> handled.add(invocation.getArgument(0))).when(workerMock).run(any(PurgeRun.class));
-		Identifier.set(Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe"));
+		final var identifier = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("joe01doe");
+		Identifier.set(identifier);
 
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(false, null));
 
-		// The request is over and its thread carries no identifier any more. Whatever the run is recorded as was settled
-		// while the request was still there to be read - the run itself has nothing left to read.
-		Identifier.remove();
-		waiting.forEach(Runnable::run);
+		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
 
-		assertThat(handled).hasSize(1);
-		assertThat(handled.getFirst().startedBy()).isEqualTo("joe01doe");
+		// The request is over and its thread carries no identifier any more. What the run is recorded as was already
+		// settled when the request built this function - applying it here, after the identifier is gone, is what proves
+		// it was captured rather than left to be read again from the (now empty) thread local.
+		Identifier.remove();
+		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
+
+		assertThat(run.startedBy()).isEqualTo(identifier.toHeaderValue());
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	@DisplayName("Verification that a run started without an identifier is recorded as such rather than as nobody")
 	void startPurgeWithoutAnIdentifier() {
-		final var handled = new ArrayList<PurgeRun>();
-		final var service = service(Runnable::run);
+		final var service = service(NEVER_RUNS);
 		acceptsRuns();
-		doAnswer(invocation -> handled.add(invocation.getArgument(0))).when(workerMock).run(any(PurgeRun.class));
 
 		service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null));
 
-		assertThat(handled.getFirst().startedBy()).isEqualTo("unknown");
+		final var toRunCaptor = ArgumentCaptor.forClass(Function.class);
+		verify(jobServiceMock).launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), toRunCaptor.capture(), any(), eq(COULD_NOT_START));
+
+		final var run = (PurgeRun) toRunCaptor.getValue().apply(JOB_ID);
+		assertThat(run.startedBy()).isEqualTo("unknown");
 	}
 
 	@Test
 	@DisplayName("Verification that a namespace already being purged is refused rather than walked by two runs at once")
 	void startPurgeWhileOneIsAlreadyRunning() {
 		final var service = service(NEVER_RUNS);
-		when(jobServiceMock.hasActiveJob(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE)).thenReturn(true);
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(false);
 
 		assertThatThrownBy(() -> service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null)))
 			.isInstanceOf(ThrowableProblem.class)
 			.hasFieldOrPropertyWithValue("status", CONFLICT)
 			.hasMessageContaining("A purge is already running for namespace 'namespace' in municipality with id '2281'");
 
-		verify(jobServiceMock, never()).create(any(), any(), any(), anyInt());
-		verifyNoInteractions(workerMock);
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
+		verifyNoInteractions(runnerMock);
 	}
 
 	@Test
 	@DisplayName("Verification that a namespace with access control is refused outright rather than being purged past its own guard")
 	void startPurgeWhenAccessControlIsActive() {
 		final var service = service(NEVER_RUNS);
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(true);
 		when(namespaceConfigServiceMock.isAccessControlActive(NAMESPACE, MUNICIPALITY_ID)).thenReturn(true);
 
 		assertThatThrownBy(() -> service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null)))
@@ -159,25 +182,8 @@ class ErrandPurgeServiceTest {
 			.hasFieldOrPropertyWithValue("status", CONFLICT)
 			.hasMessageContaining("Errands in namespace 'namespace' for municipality with id '2281' are under access control and cannot be purged");
 
-		verify(jobServiceMock, never()).create(any(), any(), any(), anyInt());
-		verifyNoInteractions(workerMock);
-	}
-
-	@Test
-	@DisplayName("Verification that a run which cannot be given a thread ends the job it was given, rather than leaving it waiting for work that never comes")
-	void startPurgeWhenNoThreadCanBeGiven() {
-		final var service = service(_ -> {
-			throw new TaskRejectedException("No thread available");
-		});
-		when(workerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL)).thenReturn(JOB_ID);
-
-		assertThatThrownBy(() -> service.startPurge(NAMESPACE, MUNICIPALITY_ID, request(true, null)))
-			.isInstanceOf(ThrowableProblem.class)
-			.hasFieldOrPropertyWithValue("status", INTERNAL_SERVER_ERROR)
-			.hasMessageContaining("Purge could not be started: No thread available");
-
-		verify(jobServiceMock).fail(JOB_ID, "Purge could not be started: No thread available");
+		verify(jobServiceMock, never()).launch(any(), any(), any(), any(), any());
+		verifyNoInteractions(runnerMock);
 	}
 
 	@Test
@@ -196,15 +202,19 @@ class ErrandPurgeServiceTest {
 	 * What the job side answers for a run that gets as far as being accepted.
 	 */
 	private void acceptsRuns() {
-		when(workerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
-		when(jobServiceMock.create(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL)).thenReturn(JOB_ID);
-		when(jobServiceMock.get(NAMESPACE, MUNICIPALITY_ID, JOB_ID)).thenReturn(JobResponse.create()
-			.withJobId(JOB_ID)
-			.withStatus(RUNNING));
+		when(jobServiceMock.stealStaleLease(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, JOB_STALE_AFTER)).thenReturn(true);
+		when(runnerMock.countErrandsToPurge(NAMESPACE, MUNICIPALITY_ID, OLDER_THAN)).thenReturn(TOTAL);
+		when(jobServiceMock.launch(eq(new JobSpec(NAMESPACE, MUNICIPALITY_ID, ERRAND_PURGE, TOTAL, null)), any(), any(), any(), eq(COULD_NOT_START)))
+			.thenReturn(JobResponse.create()
+				.withJobId(JOB_ID)
+				.withStatus(RUNNING));
 	}
 
 	private ErrandPurgeService service(final AsyncTaskExecutor taskExecutor) {
-		return new ErrandPurgeService(workerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor);
+		// staleAfter() is read once, eagerly, in the constructor - stubbed here, immediately before construction,
+		// rather than in a shared @BeforeEach, so every test's own call to service(...) is what actually takes effect.
+		lenient().when(jobPropertiesMock.staleAfter()).thenReturn(JOB_STALE_AFTER);
+		return new ErrandPurgeService(runnerMock, jobServiceMock, namespaceConfigServiceMock, taskExecutor, jobPropertiesMock);
 	}
 
 	private static ErrandPurgeRequest request(final boolean dryRun, final Integer maxErrands) {

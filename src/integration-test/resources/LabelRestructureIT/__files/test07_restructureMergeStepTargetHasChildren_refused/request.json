@@ -1,0 +1,18 @@
+{
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MERGE",
+			"path": [
+				"TEST_CATEGORY",
+				"TEST_TYPE"
+			],
+			"sourcePaths": [
+				[
+					"TEST_CATEGORY",
+					"TEST_MERGE_SOURCE"
+				]
+			]
+		}
+	]
+}

@@ -9,7 +9,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
-import se.sundsvall.supportmanagement.service.JobService;
+import se.sundsvall.supportmanagement.service.job.JobService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;

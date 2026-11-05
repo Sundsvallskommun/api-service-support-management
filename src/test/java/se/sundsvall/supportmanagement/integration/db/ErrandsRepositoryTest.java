@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -417,55 +418,31 @@ class ErrandsRepositoryTest {
 	// '86d459cd-4810-4b4a-b365-97aa0c2c0ff5' = parent/child/resource2
 
 	@Test
-	void findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc_noMatch() {
-		assertThat(errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc("non-existent-label-id", "", PageRequest.ofSize(10)))
-			.isEmpty();
+	void findDistinctIdsByLabelsMetadataLabelIdIn_noMatch() {
+		assertThat(errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(List.of("non-existent-label-id"))).isEmpty();
 	}
 
 	@Test
-	void findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc_pagesByIdAscendingPastTheGivenLowerBound() {
-		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
-		final var ids = List.of(
-			errandsRepository.save(errandWithLabel("errand-keyset-1", labelId)).getId(),
-			errandsRepository.save(errandWithLabel("errand-keyset-2", labelId)).getId(),
-			errandsRepository.save(errandWithLabel("errand-keyset-3", labelId)).getId())
-			.stream().sorted().toList();
-
-		final var firstPage = errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, "", PageRequest.ofSize(2));
-		assertThat(firstPage).extracting(ErrandEntity::getId).containsExactly(ids.get(0), ids.get(1));
-
-		final var secondPage = errandsRepository.findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(labelId, ids.get(1), PageRequest.ofSize(2));
-		assertThat(secondPage).extracting(ErrandEntity::getId).containsExactly(ids.get(2));
-	}
-
-	@Test
-	void findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc_noMatch() {
-		assertThat(errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of("non-existent-label-id"), "", PageRequest.ofSize(10)))
-			.isEmpty();
-	}
-
-	@Test
-	void findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc_matchesAnyOfSeveralLabelIdsAndPagesByIdAscending() {
+	@DisplayName("Verification that an errand tagged with more than one of the given label ids is still counted once")
+	void findDistinctIdsByLabelsMetadataLabelIdIn_matchesEitherLabelAndDedupes() {
 		final var labelIdA = "a0bb7b61-8d55-4857-b619-547572eed26f";
 		final var labelIdB = "86d459cd-4810-4b4a-b365-97aa0c2c0ff5";
-		final var ids = List.of(
-			errandsRepository.save(errandWithLabel("errand-keyset-in-1", labelIdA)).getId(),
-			errandsRepository.save(errandWithLabel("errand-keyset-in-2", labelIdB)).getId(),
-			errandsRepository.save(errandWithLabel("errand-keyset-in-3", labelIdA)).getId())
-			.stream().sorted().toList();
+		final var taggedWithBoth = errandsRepository.save(errandWithLabels("errand-ids-1", List.of(labelIdA, labelIdB)));
+		final var taggedWithOne = errandsRepository.save(errandWithLabel("errand-ids-2", labelIdA));
 
-		final var firstPage = errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of(labelIdA, labelIdB), "", PageRequest.ofSize(2));
-		assertThat(firstPage).extracting(ErrandEntity::getId).containsExactly(ids.get(0), ids.get(1));
-
-		final var secondPage = errandsRepository.findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(List.of(labelIdA, labelIdB), ids.get(1), PageRequest.ofSize(2));
-		assertThat(secondPage).extracting(ErrandEntity::getId).containsExactly(ids.get(2));
+		assertThat(errandsRepository.findDistinctIdsByLabelsMetadataLabelIdIn(List.of(labelIdA, labelIdB)))
+			.containsExactlyInAnyOrder(taggedWithBoth.getId(), taggedWithOne.getId());
 	}
 
 	private ErrandEntity errandWithLabel(final String errandNumber, final String labelId) {
+		return errandWithLabels(errandNumber, List.of(labelId));
+	}
+
+	private ErrandEntity errandWithLabels(final String errandNumber, final List<String> labelIds) {
 		return ErrandEntity.create()
 			.withNamespace("namespace-1")
 			.withMunicipalityId(MUNICIPALITY_ID)
 			.withErrandNumber(errandNumber)
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId(labelId)));
+			.withLabels(labelIds.stream().map(id -> ErrandLabelEmbeddable.create().withMetadataLabelId(id)).toList());
 	}
 }

@@ -27,7 +27,6 @@ import se.sundsvall.supportmanagement.service.ErrandStatementService;
 import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.HandoverPreviewService;
 import se.sundsvall.supportmanagement.service.HandoverService;
-import se.sundsvall.supportmanagement.service.JobService;
 import se.sundsvall.supportmanagement.service.LabelClassificationService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 import se.sundsvall.supportmanagement.service.NotificationService;
@@ -44,6 +43,7 @@ import se.sundsvall.supportmanagement.service.config.MessageExchangeIntegrationC
 import se.sundsvall.supportmanagement.service.config.MessageExchangeSyncConfigService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.config.ValidationService;
+import se.sundsvall.supportmanagement.service.job.JobService;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 

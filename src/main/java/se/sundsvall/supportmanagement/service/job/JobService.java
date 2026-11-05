@@ -1,0 +1,389 @@
+package se.sundsvall.supportmanagement.service.job;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.ZoneId.systemDefault;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+
+@Service
+public class JobService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(JobService.class);
+	private static final int MAX_MESSAGE_LENGTH = 1024;
+	private static final String JOB_NOT_FOUND = "Job with id '%s' not found in namespace '%s' for municipality with id '%s'";
+	private static final String NOT_REPORTED_ON = "Job was not reported on for %s and is taken to have ended with the instance carrying it out";
+	private static final String ACTIVE_JOB_IN_NAMESPACE = "A job is already running for namespace '%s' in municipality with id '%s'";
+
+	/**
+	 * The states in which a job counts as under way, both for the guard that keeps two runs of a kind out of the same
+	 * namespace and for the sweep that ends jobs nobody is reporting on.
+	 */
+	private static final List<JobStatus> ACTIVE_STATUSES = List.of(JobStatus.PENDING, RUNNING);
+
+	private final JobRepository jobRepository;
+
+	/**
+	 * This same bean, reached through its own Spring proxy rather than through {@code this}. {@link #launch} calls
+	 * {@link #fail} and {@link #get} through here so that their {@code @Transactional} requirements - {@code
+	 * REQUIRES_NEW} and {@code readOnly} respectively - actually take effect: a plain {@code this} call bypasses the
+	 * proxy those requirements live on, silently running with whatever transaction happens to be ambient (often none)
+	 * instead. {@code @Lazy} because the proxy this needs is this very bean's own, not yet constructed while its own
+	 * constructor runs.
+	 */
+	private final JobService self;
+
+	JobService(final JobRepository jobRepository, @Lazy final JobService self) {
+		this.jobRepository = jobRepository;
+		this.self = self;
+	}
+
+	/**
+	 * Creates a job's row. The only caller is {@link #launch}, which is deliberately not itself {@code @Transactional}
+	 * (see its own javadoc for why) - so this needs none of its own either: {@code saveAndFlush} on the repository
+	 * carries a transaction of its own regardless of what, if anything, is open in the caller.
+	 * <p>
+	 * The row is flushed at once, so that a job refused by a unique constraint on the table, such as a second active label
+	 * job in the namespace ({@code V1_64__add_active_label_job_guard.sql}), is answered here with 409.
+	 */
+	private String createJob(final String namespace, final String municipalityId, final JobType type, final int total, final String subjectId) {
+		try {
+			return jobRepository.saveAndFlush(JobEntity.create()
+				.withNamespace(namespace)
+				.withMunicipalityId(municipalityId)
+				.withType(type)
+				.withTotal(total)
+				.withSubjectId(subjectId)).getId();
+		} catch (final DataIntegrityViolationException e) {
+			// Every unique constraint this table carries besides its primary key answers a racing caller the same way -
+			// a second request that raced the precheck above and lost is told the same thing a sequential one already is.
+			throw Problem.valueOf(CONFLICT, ACTIVE_JOB_IN_NAMESPACE.formatted(namespace, municipalityId));
+		}
+	}
+
+	@Transactional(readOnly = true)
+	public JobResponse get(final String namespace, final String municipalityId, final String jobId) {
+		return toJobResponse(findOrThrow(namespace, municipalityId, jobId));
+	}
+
+	/**
+	 * Creates a job and dispatches a run against it, in one place - so the transaction boundary the dispatch depends on
+	 * lives here once instead of being reproduced, and possibly gotten subtly wrong, by every caller that starts a job
+	 * of its own. That is exactly what went wrong the last time this was written out twice: one copy was correctly not
+	 * {@code @Transactional} and the other was, and the second one dispatched a run that could not see the job it was
+	 * meant to update.
+	 * <p>
+	 * Deliberately not itself {@code @Transactional}: wrapping this method would hold job creation and the rest of it in
+	 * one transaction, so the row {@link #createJob} flushes would not actually be committed before the run is handed to
+	 * {@code executor} - the run's own {@link #setRunning}, executing on a different thread in its own
+	 * {@code REQUIRES_NEW} transaction, would find no job to update.
+	 *
+	 * @param  spec                 the job to create - namespace, kind, and everything else {@link #createJob} needs.
+	 * @param  executor             the executor to dispatch the run on.
+	 * @param  toRun                builds the run once the job's id is known - the run itself always needs it, and
+	 *                              needs it first.
+	 * @param  runner               carries the run to its end - a {@link JobRunner}'s own {@code run}.
+	 * @param  couldNotStartMessage format string with one {@code %s} for the failure reason, used both to fail the job
+	 *                              and, wrapped in a {@link Problem}, to answer the caller.
+	 * @return                      the job the run reports against.
+	 */
+	public <R> JobResponse launch(
+		final JobSpec spec,
+		final AsyncTaskExecutor executor,
+		final Function<String, R> toRun,
+		final Consumer<R> runner,
+		final String couldNotStartMessage) {
+
+		final var jobId = createJob(spec.namespace(), spec.municipalityId(), spec.type(), spec.total(), spec.subjectId());
+
+		try {
+			executor.execute(() -> runner.accept(toRun.apply(jobId)));
+		} catch (final TaskRejectedException e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			self.fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
+
+			// Left unwrapped, rather than turned into a Problem the way every other failure below is: a pool that has no
+			// thread free right now is answered as 503 with a Retry-After header by ExceptionHandlerConfig, which routes
+			// on this exact exception type - a caller told to try again shortly is a clearer answer than the generic 500
+			// a ThrowableProblem carrying INTERNAL_SERVER_ERROR would give the very same condition.
+			throw e;
+		} catch (final Exception e) {
+			// The job is already there and would otherwise sit waiting for a run that never comes.
+			self.fail(jobId, couldNotStartMessage.formatted(e.getMessage()));
+
+			throw e instanceof final ThrowableProblem problem ? problem : Problem.valueOf(INTERNAL_SERVER_ERROR, couldNotStartMessage.formatted(e.getMessage()));
+		}
+
+		return self.get(spec.namespace(), spec.municipalityId(), jobId);
+	}
+
+	/**
+	 * Guarded the same way {@link #complete(String)} and {@link #fail} are, and for the same reason: a job {@link #stop}
+	 * reached while it was still {@code PENDING} - between {@link #launch} creating the row and the executor thread
+	 * actually picking the run up - must stay stopped rather than being woken back into {@code RUNNING} once this call
+	 * finally lands.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void setRunning(final String jobId) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(RUNNING);
+				jobRepository.save(job);
+			}
+		}, () -> LOG.warn("setRunning called with unknown jobId '{}'", jobId));
+	}
+
+	@Transactional(propagation = REQUIRES_NEW)
+	public void updateProgress(final String jobId, final int processed) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			final var total = job.getTotal();
+			final var rawProgress = (total == null || total == 0) ? 100 : (processed * 100 / total);
+			job.setProcessed(processed);
+			job.setProgress(Math.min(100, Math.max(0, rawProgress)));
+			jobRepository.save(job);
+		}, () -> LOG.warn("updateProgress called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * A job that has already reached a state it cannot leave keeps it, same as {@link #stop} - a completion arriving
+	 * late, after something else already stopped or failed this job (a caller's own {@link #stop}, or a lease
+	 * {@code stealStaleLease}/{@code failStaleJobs} reclaimed out from under a run that was only slow), must not
+	 * rewrite that outcome. The run behind it is expected to notice the same way and stop itself; this is what keeps
+	 * the noticing from mattering were it to lose that race.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void complete(final String jobId) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(COMPLETED);
+				job.setProgress(100);
+				jobRepository.save(job);
+			}
+		}, () -> LOG.warn("complete called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * Ends a job that reached its end with something worth saying about the outcome, such as how much of what it walked
+	 * it actually removed.
+	 * <p>
+	 * Guarded the same way the other overload is - see its own javadoc for why.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void complete(final String jobId, final String message) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(COMPLETED);
+				job.setProgress(100);
+				job.setMessage(toStoredMessage(message));
+				jobRepository.save(job);
+			}
+		}, () -> LOG.warn("complete called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * Asks a job to stop. It is marked as stopped straight away, and the work itself ends once it notices, whichever
+	 * instance is carrying it out.
+	 * <p>
+	 * The job is looked up by its kind as well, so an id that belongs to another kind of job is answered as not found.
+	 *
+	 * @param  namespace      namespace the job belongs to.
+	 * @param  municipalityId id of the municipality the job belongs to.
+	 * @param  jobId          id of the job to stop.
+	 * @param  type           the kind of job the caller is stopping.
+	 * @return                the job as it stands once asked to stop.
+	 */
+	@Transactional
+	public JobResponse stop(final String namespace, final String municipalityId, final String jobId, final JobType type) {
+		final var job = findOrThrow(namespace, municipalityId, jobId, type);
+
+		// A job that has already reached a state it cannot leave keeps it, so that a late stop does not rewrite the
+		// outcome of a job that was already done.
+		if (ACTIVE_STATUSES.contains(job.getStatus())) {
+			job.setStatus(STOPPED);
+			jobRepository.save(job);
+		}
+
+		return toJobResponse(job);
+	}
+
+	/**
+	 * The state a job is in, for work that needs to know whether it is still wanted. Empty for a job that is not there.
+	 * <p>
+	 * {@code REQUIRES_NEW} rather than the default propagation: a caller whose own work runs inside one long
+	 * transaction - {@code LabelRestructureRunner}, since the atomicity redesign - would otherwise have this call join that
+	 * same transaction and reuse its snapshot, under MySQL's default {@code REPEATABLE READ}. A stop or a lease steal
+	 * committed by some other request after that long transaction began would then never become visible to it, no
+	 * matter how often this is asked, which defeats the stop check entirely. A fresh transaction here always reads the
+	 * latest committed state instead. Harmless for a caller with no transaction of its own already open, such as
+	 * {@code ErrandPurgeRunner}.
+	 */
+	@Transactional(propagation = REQUIRES_NEW, readOnly = true)
+	public Optional<JobStatus> statusOf(final String jobId) {
+		return jobRepository.findById(jobId).map(JobEntity::getStatus);
+	}
+
+	/**
+	 * Guarded the same way {@link #complete(String)} is, and for the same reason: a run's own failure, caught late,
+	 * must not overwrite an outcome something else already reached first - a caller's own {@link #stop}, or a lease
+	 * reclaimed out from under this run by {@code stealStaleLease}/{@code failStaleJobs}.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void fail(final String jobId, final String message) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				job.setStatus(FAILED);
+				job.setMessage(toStoredMessage(message));
+				jobRepository.save(job);
+			}
+		}, () -> LOG.warn("fail called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * What a job is allowed to keep as its message: line breaks and control characters are taken out, and a message
+	 * longer than {@code MAX_MESSAGE_LENGTH} characters is cut and ended with an ellipsis.
+	 */
+	private static String toStoredMessage(final String message) {
+		return ofNullable(sanitizeForLogging(message))
+			.map(sanitized -> sanitized.length() > MAX_MESSAGE_LENGTH ? sanitized.substring(0, MAX_MESSAGE_LENGTH) + "..." : sanitized)
+			.orElse(null);
+	}
+
+	/**
+	 * Whether a job of any kind is already under way in the namespace - for work that can race against a job of any
+	 * kind there, not just another of its own: a label restructure must not start beside another job in the namespace,
+	 * including a move or merge left active from before the restructure took them over.
+	 */
+	public boolean hasActiveJob(final String namespace, final String municipalityId) {
+		return jobRepository.existsByNamespaceAndMunicipalityIdAndStatusIn(namespace, municipalityId, ACTIVE_STATUSES);
+	}
+
+	/**
+	 * Clears the way for a new run of one kind in one namespace, stealing a stale lease rather than leaving the
+	 * namespace blocked for as long as {@code staleAfter} - the active-job row doubles as that lease: {@code modified}
+	 * is its heartbeat, {@code staleAfter} the duration one may go quiet for, and the guard in
+	 * {@code V1_78__add_active_job_guard.sql} is what makes it exclusive.
+	 * <p>
+	 * Deliberately narrower than {@link #failStaleJobs(Duration)}: that sweep ends every kind of job in every namespace
+	 * that has gone quiet, on its own schedule; this steals the lease for exactly the one namespace and kind a caller is
+	 * about to start a new run against, on demand, so that a caller does not have to wait for the sweep's own cron to
+	 * get there first. A namespace with a genuinely active job is still refused - only one that has gone quiet longer
+	 * than {@code staleAfter} is failed and reclaimed.
+	 * <p>
+	 * Committed by the time this call returns (its own transaction, not the caller's): the row a stale lease is
+	 * reclaimed from must be failed - and that failure durable - before the caller's own {@link #launch} (via
+	 * {@link #createJob}) can succeed against the same unique constraint that refused it a moment ago.
+	 *
+	 * @param  namespace      the namespace to clear a lease in.
+	 * @param  municipalityId the id of the municipality the namespace belongs to.
+	 * @param  type           the kind of job to clear a lease for.
+	 * @param  staleAfter     how long a job may go without being written to before its lease is taken to be abandoned.
+	 * @return                {@code true} if a new run may proceed - no job was active, or a stale one was just failed
+	 *                        and reclaimed; {@code false} if a job is still genuinely active and the caller must wait.
+	 */
+	@Transactional
+	public boolean stealStaleLease(final String namespace, final String municipalityId, final JobType type, final Duration staleAfter) {
+		final var active = jobRepository.findFirstByNamespaceAndMunicipalityIdAndTypeAndStatusIn(namespace, municipalityId, type, ACTIVE_STATUSES);
+		if (active.isEmpty()) {
+			return true;
+		}
+
+		final var job = active.get();
+		final var quietSince = now(systemDefault()).minus(staleAfter);
+		final var lastWrite = ofNullable(job.getModified()).orElse(job.getCreated());
+		if (!lastWrite.isBefore(quietSince)) {
+			return false;
+		}
+
+		LOG.warn("Job {} of type {} in namespace {} for municipality {} was last written to at {} and is ended as failed to reclaim its lease for a new run",
+			job.getId(), job.getType(), sanitizeForLogging(job.getNamespace()), sanitizeForLogging(job.getMunicipalityId()), lastWrite);
+		job.setStatus(FAILED);
+		job.setMessage(toStoredMessage(NOT_REPORTED_ON.formatted(staleAfter)));
+		jobRepository.saveAndFlush(job);
+		return true;
+	}
+
+	/**
+	 * Ends the jobs that stopped being reported on.
+	 * <p>
+	 * An active job that has not been written to within {@code staleAfter} - or, never written to, was created longer ago
+	 * than that - is taken to have ended with the instance carrying it out, and is marked as failed with a message saying
+	 * so. A run still behind a job ended here stops itself at its next batch, as it reads the job to know whether it is
+	 * still wanted.
+	 *
+	 * @param  staleAfter how long a job may go without being written to before it is taken to have ended with its
+	 *                    instance.
+	 * @return            the jobs that were ended.
+	 */
+	@Transactional
+	public List<JobEntity> failStaleJobs(final Duration staleAfter) {
+		final var quietSince = now(systemDefault()).minus(staleAfter);
+
+		// Asked for in two parts rather than one: a job that was created by an instance which died before it ever
+		// reported has no modified of its own, and is reached through the moment it was created instead.
+		final var stale = new ArrayList<>(jobRepository.findByStatusInAndModifiedBefore(ACTIVE_STATUSES, quietSince));
+		stale.addAll(jobRepository.findByStatusInAndModifiedIsNullAndCreatedBefore(ACTIVE_STATUSES, quietSince));
+
+		stale.forEach(job -> {
+			LOG.warn("Job {} of type {} in namespace {} for municipality {} was last written to at {} and is ended as failed",
+				job.getId(), job.getType(), sanitizeForLogging(job.getNamespace()), sanitizeForLogging(job.getMunicipalityId()),
+				ofNullable(job.getModified()).orElse(job.getCreated()));
+
+			job.setStatus(FAILED);
+			job.setMessage(toStoredMessage(NOT_REPORTED_ON.formatted(staleAfter)));
+		});
+
+		return jobRepository.saveAll(stale);
+	}
+
+	private JobEntity findOrThrow(final String namespace, final String municipalityId, final String jobId) {
+		return jobRepository.findByIdAndNamespaceAndMunicipalityId(jobId, namespace, municipalityId)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, JOB_NOT_FOUND.formatted(jobId, namespace, municipalityId)));
+	}
+
+	private JobEntity findOrThrow(final String namespace, final String municipalityId, final String jobId, final JobType type) {
+		return jobRepository.findByIdAndNamespaceAndMunicipalityIdAndType(jobId, namespace, municipalityId, type)
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, JOB_NOT_FOUND.formatted(jobId, namespace, municipalityId)));
+	}
+
+	private static JobResponse toJobResponse(final JobEntity entity) {
+		return JobResponse.create()
+			.withJobId(entity.getId())
+			.withType(entity.getType())
+			.withStatus(entity.getStatus())
+			.withProgress(entity.getProgress())
+			.withTotal(entity.getTotal())
+			.withProcessed(entity.getProcessed())
+			.withMessage(entity.getMessage())
+			.withCreated(entity.getCreated())
+			.withModified(entity.getModified());
+	}
+}

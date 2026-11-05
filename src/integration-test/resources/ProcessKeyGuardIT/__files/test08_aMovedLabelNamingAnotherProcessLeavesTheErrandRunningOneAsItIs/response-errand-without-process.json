@@ -45,7 +45,6 @@
 	"stakeholders": [],
 	"suspension": {},
 	"created": "2026-01-01T10:00:00+01:00",
-	"modified": "${json-unit.any-string}",
 	"touched": "${json-unit.any-string}",
 	"version": 1
 }

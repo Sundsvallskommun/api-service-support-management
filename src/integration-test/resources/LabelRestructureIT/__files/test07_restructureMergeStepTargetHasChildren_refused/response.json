@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Step 0 (MERGE): destination label at path 'TEST_CATEGORY/TEST_TYPE' has children and cannot take part in a merge"
+}

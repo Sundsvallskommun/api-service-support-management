@@ -106,7 +106,7 @@ public class AddLabelAction extends AbstractAction {
 	 * the labels.
 	 * <p>
 	 * A refused change leaves the labels off and answers false, and the guard writes what happened on the errand.
-	 * Otherwise answers whether any label was added. The access labels of the errand are left as they are.
+	 * Otherwise answers whether any label was added. The access labels of the errand are settled from its labels.
 	 */
 	@Override
 	public boolean executeAction(ErrandEntity errand, ActionConfigEntity actionConfigEntity) {
@@ -133,6 +133,12 @@ public class AddLabelAction extends AbstractAction {
 			.toList();
 
 		errand.getLabels().addAll(added);
+
+		// Access labels must be settled from the full label set whenever it changes, not only on the update path
+		// (ErrandService#persistLabelUpdate) - otherwise a label an action adds here is invisible to accessLabels-driven
+		// reads (and to the label-move restow, which rebuilds an errand's labels from its accessLabels alone) even
+		// though it is present in labels.
+		errandLabelService.settleAccessLabels(errand);
 
 		errandsRepository.save(errand);
 

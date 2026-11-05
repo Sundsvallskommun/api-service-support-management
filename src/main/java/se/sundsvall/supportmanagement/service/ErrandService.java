@@ -6,6 +6,7 @@ import jakarta.persistence.LockModeType;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -543,119 +544,80 @@ public class ErrandService {
 	}
 
 	/**
-	 * Rebuilds the labels of a batch of errands from their access labels after a label was moved, each through
-	 * {@link #persistLabelUpdate(ErrandEntity, List, boolean)}, in a transaction of its own.
+	 * Restows one errand on its own, joining whatever transaction the caller is already running in rather than opening
+	 * one of its own - used by the label-restructure runner, which locks every affected errand with {@code SELECT ...
+	 * FOR UPDATE} and restows the whole run inside a single transaction (see {@code LabelRestructureRunner}'s own
+	 * doc): a concurrent {@code @Version} conflict is structurally impossible under that lock, so there is nothing
+	 * left to retry, and a transaction of its own here would commit (and release the lock on) each errand
+	 * independently, defeating the point of restowing the run atomically.
 	 * <p>
-	 * The errands are to have been read with their access labels in a transaction that has ended, and nothing else on them
-	 * is read. An errand with labels but no access labels is left as it is.
+	 * {@code labelSubstitutions} carries {@code sourceId -> targetId} for every label a MERGE step in this run folded
+	 * away - a leaf carrying one of those source ids is substituted for its target before the ancestor chain is
+	 * re-derived. Pass an empty map for a run with no MERGE steps (e.g. a plain move) - the substitution then has no
+	 * effect and this degenerates to a plain restow from the current {@code accessLabels}.
+	 * <p>
+	 * The labels are put on through {@link #persistLabelUpdate(ErrandEntity, List, boolean)}, so a change that would
+	 * take a label blocking processes off the errand, when the run was started by an ad account, or move the errand off
+	 * the process it runs, is refused there: the errand keeps the labels it has, and an error entry on it says why.
+	 * <p>
+	 * Public rather than package-private: {@code LabelRestructureRunner}, its only caller, lives in
+	 * {@code se.sundsvall.supportmanagement.service.job} - a different package from this one - the same reason
+	 * {@link #purgeErrand} is public for {@code ErrandPurgeRunner}.
 	 *
-	 * @param  batch              the errands to relabel.
-	 * @param  startedByAdAccount whether the job moving the label was started by an ad account.
-	 * @return                    how many errands of the batch kept the labels they had: refused by a guard, or left as
-	 *                            they are for having no access labels.
+	 * @param  errand             the errand to relabel, read and locked in the caller's transaction.
+	 * @param  labelSubstitutions {@code sourceId -> targetId} for every label merged away by the run.
+	 * @param  startedByAdAccount whether the run was started by an ad account.
+	 * @return                    true when the errand was given the rebuilt labels, false when it kept the labels it had:
+	 *                            refused by a guard, or left as it is for having no access labels.
 	 */
-	@Transactional(propagation = REQUIRES_NEW)
-	int persistLabelMigrationBatch(final List<ErrandEntity> batch, final boolean startedByAdAccount) {
-		final var idsWithLabels = idsWithNonEmptyLabels(batch);
-		var unchanged = 0;
-
-		for (final var errand : batch) {
-			if (!restowFromAccessLabels(errand, idsWithLabels, startedByAdAccount)) {
-				unchanged++;
-			}
-		}
-
-		return unchanged;
-	}
-
-	private boolean restowFromAccessLabels(final ErrandEntity errand, final Set<String> idsWithLabels, final boolean startedByAdAccount) {
-		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
-			return false;
-		}
-
-		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
-			.map(accessLabel -> ErrandLabelEmbeddable.create().withMetadataLabelId(accessLabel.getMetadataLabelId()))
-			.toList();
-
-		return persistLabelUpdate(errand, leafLabels, startedByAdAccount);
-	}
-
-	/**
-	 * Rebuilds the labels of a batch of errands after labels were merged, as
-	 * {@link #persistLabelMigrationBatch(List, boolean)} does, with every access label among {@code sourceLabelIds}
-	 * replaced by {@code targetLabelId} first.
-	 *
-	 * @param  batch              the errands to relabel.
-	 * @param  sourceLabelIds     the labels merged into the target.
-	 * @param  targetLabelId      the label the sources were merged into.
-	 * @param  startedByAdAccount whether the job merging the labels was started by an ad account.
-	 * @return                    how many errands of the batch kept the labels they had, as
-	 *                            {@link #persistLabelMigrationBatch(List, boolean)} counts them.
-	 */
-	@Transactional(propagation = REQUIRES_NEW)
-	int persistLabelMergeBatch(final List<ErrandEntity> batch, final Set<String> sourceLabelIds, final String targetLabelId, final boolean startedByAdAccount) {
-		final var idsWithLabels = idsWithNonEmptyLabels(batch);
-		var unchanged = 0;
-
-		for (final var errand : batch) {
-			if (!restowFromAccessLabelsWithSubstitution(errand, sourceLabelIds, targetLabelId, idsWithLabels, startedByAdAccount)) {
-				unchanged++;
-			}
-		}
-
-		return unchanged;
-	}
-
-	private boolean restowFromAccessLabelsWithSubstitution(final ErrandEntity errand, final Set<String> sourceLabelIds, final String targetLabelId, final Set<String> idsWithLabels,
-		final boolean startedByAdAccount) {
-
-		if (skipIfAccessLabelsMissing(errand, idsWithLabels)) {
-			return false;
-		}
-
+	@Transactional
+	public boolean persistLabelRestructureMigration(final ErrandEntity errand, final Map<String, String> labelSubstitutions, final boolean startedByAdAccount) {
 		final var leafLabels = ofNullable(errand.getAccessLabels()).orElse(emptyList()).stream()
 			.map(AccessLabelEmbeddable::getMetadataLabelId)
-			.map(leafId -> sourceLabelIds.contains(leafId) ? targetLabelId : leafId)
+			.map(leafId -> labelSubstitutions.getOrDefault(leafId, leafId))
 			.distinct()
 			.map(leafId -> ErrandLabelEmbeddable.create().withMetadataLabelId(leafId))
 			.toList();
 
-		return persistLabelUpdate(errand, leafLabels, startedByAdAccount);
-	}
-
-	/**
-	 * The ids of the errands in the batch whose labels are not empty, read in one query, as the labels of an errand read in
-	 * a transaction that has ended cannot be loaded.
-	 */
-	private Set<String> idsWithNonEmptyLabels(final List<ErrandEntity> batch) {
-		return repository.findIdsWithNonEmptyLabels(batch.stream().map(ErrandEntity::getId).toList());
-	}
-
-	/**
-	 * Whether the errand has labels but no access labels, which a rebuild from its access labels would wipe. Such an errand
-	 * is logged and left as it is.
-	 */
-	private boolean skipIfAccessLabelsMissing(final ErrandEntity errand, final Set<String> idsWithLabels) {
-		final var hasAccessLabels = !ofNullable(errand.getAccessLabels()).orElse(emptyList()).isEmpty();
-
-		if (idsWithLabels.contains(errand.getId()) && !hasAccessLabels) {
-			LOG.warn("Errand {} has labels but no access labels - skipping restow rather than clearing its label set", sanitizeForLogging(errand.getId()));
-			return true;
+		// An errand whose access labels have gone empty while its labels have not must not be restowed: settling access
+		// labels from an empty leaf set would wipe every errand_labels row along with it, silently taking away who can
+		// reach the errand. Left as it was instead - logged, not failed, since one such errand must not strand the rest
+		// of the run.
+		if (leafLabels.isEmpty() && !ofNullable(errand.getLabels()).orElse(emptyList()).isEmpty()) {
+			LOG.warn("Label migration skipped for errand {}: access labels are empty but labels are not", sanitizeForLogging(errand.getId()));
+			return false;
 		}
-		return false;
+
+		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
+		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
+		// now() regardless of what actually changed.
+		final var modified = errand.getModified();
+		final var touched = errand.getTouched();
+
+		// Detached before the guards are asked: the labels are put on the errand for them to judge, and a managed errand
+		// would have them flushed by the first query that follows, refused or not. Detached, a refused errand keeps the
+		// labels it has as stored, and persistLabelUpdate reads it as stored to compare against. The row stays locked by
+		// the caller's transaction.
+		entityManager.detach(errand);
+		if (!persistLabelUpdate(errand, leafLabels, startedByAdAccount)) {
+			return false;
+		}
+
+		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
+		return true;
 	}
 
 	/**
 	 * Puts labels rebuilt after labels were moved or merged on an errand, expanded to their ancestors, and settles its
 	 * access labels from them.
 	 * <p>
-	 * Runs in the transaction of the batch, on an errand read before it. An errand that has been changed or removed since
-	 * it was read is answered with {@link ObjectOptimisticLockingFailureException}, so that the batch is retried on a fresh
-	 * read. A change is refused when it would take a label blocking processes off the errand and the job was started by an
+	 * Runs in the transaction of the caller. An errand that has been changed or removed since it was read is answered
+	 * with {@link ObjectOptimisticLockingFailureException}. A change is refused when it would take a label blocking
+	 * processes off the errand and the job was started by an
 	 * ad account, and when it would move the errand off the process it runs: the errand keeps the labels it has, and an
 	 * error entry on it says why. A change made is recorded as a revision and an update event, without a notification.
 	 *
-	 * @param  errand             the errand to relabel, as read before the transaction.
+	 * @param  errand             the errand to relabel.
 	 * @param  labels             the labels it is to wear, without their ancestors.
 	 * @param  startedByAdAccount whether the job making the change was started by an ad account.
 	 * @return                    true when the errand was given the labels, false when the change was refused.
