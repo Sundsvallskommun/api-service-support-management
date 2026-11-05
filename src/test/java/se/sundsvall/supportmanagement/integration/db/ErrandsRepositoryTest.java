@@ -1,10 +1,13 @@
 package se.sundsvall.supportmanagement.integration.db;
 
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -12,6 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable
 import se.sundsvall.supportmanagement.integration.db.model.StakeholderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultDeleted;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDefaultLifecycle;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withDeletedBefore;
+import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
 
 /**
@@ -51,6 +58,9 @@ class ErrandsRepositoryTest {
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	@Autowired
 	private FilterSpecificationConverter filterSpecificationConverter;
@@ -201,15 +211,94 @@ class ErrandsRepositoryTest {
 	}
 
 	@Test
-	void findAllBySuspendedToBeforeAndDeletedIsNull() {
-		final var suspendedTo = OffsetDateTime.now().minusDays(1);
-		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("DELETED-3").withSuspendedTo(suspendedTo).withDeleted(OffsetDateTime.now()));
-		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT-3").withSuspendedTo(suspendedTo));
+	void deletedBefore() {
+		final var cutoff = OffsetDateTime.now().minusDays(30);
+		final var ids = List.of(
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-1").withDeleted(cutoff.minusDays(1))).getId(),
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-2").withDeleted(cutoff.minusDays(10))).getId(),
+			errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OLD-3").withDeleted(cutoff.minusMinutes(1))).getId())
+			.stream().sorted().toList();
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("RECENT").withDeleted(cutoff.plusDays(1)));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("KEPT"));
+		errandsRepository.save(ErrandEntity.create().withNamespace("OTHER-NAMESPACE").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("OTHER-NAMESPACE").withDeleted(cutoff.minusDays(1)));
+		errandsRepository.save(ErrandEntity.create().withNamespace("SOFT-DELETES").withMunicipalityId("2262").withErrandNumber("OTHER-MUNICIPALITY").withDeleted(cutoff.minusDays(1)));
 
-		assertThat(errandsRepository.findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime.now()))
-			.extracting(ErrandEntity::getErrandNumber)
-			.contains("KEPT-3")
-			.doesNotContain("DELETED-3");
+		final var deletedBefore = withNamespace("SOFT-DELETES").and(withMunicipalityId(MUNICIPALITY_ID)).and(withDeletedBefore(cutoff));
+
+		assertThat(errandsRepository.findAll(deletedBefore, Sort.by("id"))).extracting(ErrandEntity::getId).containsExactlyElementsOf(ids);
+	}
+
+	@Test
+	void findIdsAfter() {
+		final var ids = Stream.of("WALK-1", "WALK-2", "WALK-3", "WALK-4")
+			.map(errandNumber -> errandsRepository.save(ErrandEntity.create().withNamespace("KEYSET-WALK").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber(errandNumber)).getId())
+			.sorted()
+			.toList();
+		errandsRepository.save(ErrandEntity.create().withNamespace("OTHER-NAMESPACE").withMunicipalityId(MUNICIPALITY_ID).withErrandNumber("WALK-OTHER"));
+		final var reached = withNamespace("KEYSET-WALK").and(withMunicipalityId(MUNICIPALITY_ID));
+
+		// The first batch starts from the beginning, each following one after the id the previous one ended on, and the
+		// walk ends on an empty batch
+		assertThat(errandsRepository.findIdsAfter(reached, null, 3)).containsExactlyElementsOf(ids.subList(0, 3));
+		assertThat(errandsRepository.findIdsAfter(reached, ids.get(2), 3)).containsExactly(ids.get(3));
+		assertThat(errandsRepository.findIdsAfter(reached, ids.get(3), 3)).isEmpty();
+	}
+
+	@Test
+	void findIdsWithUnannouncedSuspensionEndAndDeletedIsNull() {
+		final var suspendedTo = OffsetDateTime.now().minusDays(1);
+		final var due = errandsRepository.save(suspended("DUE", "SUSPENDED", suspendedTo).withAssignedUserId("assignedUser"));
+		final var unassigned = errandsRepository.save(suspended("UNASSIGNED", "SUSPENDED", suspendedTo));
+		final var announcedEarlierSuspension = errandsRepository.save(suspended("ANNOUNCED-EARLIER", "SUSPENDED", suspendedTo));
+		final var announced = errandsRepository.save(suspended("ANNOUNCED", "SUSPENDED", suspendedTo));
+		final var softDeleted = errandsRepository.save(suspended("SOFT-DELETED", "SUSPENDED", suspendedTo).withDeleted(OffsetDateTime.now()));
+		final var otherStatus = errandsRepository.save(suspended("OTHER-STATUS", "OPEN", suspendedTo));
+		final var stillSuspended = errandsRepository.save(suspended("STILL-SUSPENDED", "SUSPENDED", OffsetDateTime.now().plusDays(1)));
+		errandsRepository.flush();
+
+		errandsRepository.markSuspensionEndNotified(announcedEarlierSuspension.getId(), suspendedTo.minusDays(7));
+		errandsRepository.markSuspensionEndNotified(announced.getId(), announced.getSuspendedTo());
+
+		assertThat(errandsRepository.findIdsWithUnannouncedSuspensionEndAndDeletedIsNull("SUSPENDED", OffsetDateTime.now()))
+			.contains(due.getId(), unassigned.getId(), announcedEarlierSuspension.getId())
+			.doesNotContain(announced.getId(), softDeleted.getId(), otherStatus.getId(), stillSuspended.getId());
+	}
+
+	@Test
+	void markSuspensionEndNotifiedLeavesTheErrandUntouchedAndSurvivesALaterSave() {
+		final var suspendedTo = OffsetDateTime.now().minusDays(1);
+		final var errand = errandsRepository.saveAndFlush(suspended("MARKED", "SUSPENDED", suspendedTo));
+		final var modified = errand.getModified();
+		final var version = errand.getVersion();
+
+		errandsRepository.markSuspensionEndNotified(errand.getId(), suspendedTo);
+		entityManager.clear();
+
+		final var marked = errandsRepository.findById(errand.getId()).orElseThrow();
+		assertThat(marked.getSuspensionEndNotifiedFor()).isCloseTo(suspendedTo, within(1, MILLIS));
+		assertThat(marked.getModified()).isEqualTo(modified);
+		assertThat(marked.getVersion()).isEqualTo(version);
+
+		// An errand read before the mark holds no value for it, and saving such an errand must not put that back
+		entityManager.clear();
+		final var readBeforeTheMark = errandsRepository.findById(errand.getId()).orElseThrow();
+		readBeforeTheMark.setSuspensionEndNotifiedFor(null);
+		readBeforeTheMark.setTitle("changed");
+		errandsRepository.saveAndFlush(readBeforeTheMark);
+		entityManager.clear();
+
+		final var saved = errandsRepository.findById(errand.getId()).orElseThrow();
+		assertThat(saved.getTitle()).isEqualTo("changed");
+		assertThat(saved.getSuspensionEndNotifiedFor()).isCloseTo(suspendedTo, within(1, MILLIS));
+	}
+
+	private static ErrandEntity suspended(final String errandNumber, final String status, final OffsetDateTime suspendedTo) {
+		return ErrandEntity.create()
+			.withNamespace("SUSPENSIONS")
+			.withMunicipalityId(MUNICIPALITY_ID)
+			.withErrandNumber(errandNumber)
+			.withStatus(status)
+			.withSuspendedTo(suspendedTo);
 	}
 
 	@ParameterizedTest
@@ -327,56 +416,6 @@ class ErrandsRepositoryTest {
 	// Label IDs from testdata-junit.sql (namespace-1 / 2281):
 	// 'a0bb7b61-8d55-4857-b619-547572eed26f' = parent/child/resource1
 	// '86d459cd-4810-4b4a-b365-97aa0c2c0ff5' = parent/child/resource2
-
-	@Test
-	void countByLabelsMetadataLabelId_noMatch() {
-		assertThat(errandsRepository.countByLabelsMetadataLabelId("non-existent-label-id")).isZero();
-	}
-
-	@Test
-	void countByLabelsMetadataLabelId_oneErrand() {
-		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
-		errandsRepository.save(errandWithLabel("errand-count-1", labelId));
-
-		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isOne();
-	}
-
-	@Test
-	void countByLabelsMetadataLabelId_multipleErrands() {
-		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
-		errandsRepository.save(errandWithLabel("errand-count-2", labelId));
-		errandsRepository.save(errandWithLabel("errand-count-3", labelId));
-
-		assertThat(errandsRepository.countByLabelsMetadataLabelId(labelId)).isEqualTo(2);
-	}
-
-	@Test
-	void findAllByLabelsMetadataLabelId_noMatch() {
-		assertThat(errandsRepository.findAllByLabelsMetadataLabelId("non-existent-label-id")).isEmpty();
-	}
-
-	@Test
-	void findAllByLabelsMetadataLabelId_oneErrand() {
-		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
-		final var saved = errandsRepository.save(errandWithLabel("errand-find-1", labelId));
-
-		assertThat(errandsRepository.findAllByLabelsMetadataLabelId(labelId))
-			.hasSize(1)
-			.extracting(ErrandEntity::getId)
-			.containsExactly(saved.getId());
-	}
-
-	@Test
-	void findAllByLabelsMetadataLabelId_multipleErrands() {
-		final var labelId = "a0bb7b61-8d55-4857-b619-547572eed26f";
-		final var saved1 = errandsRepository.save(errandWithLabel("errand-find-2", labelId));
-		final var saved2 = errandsRepository.save(errandWithLabel("errand-find-3", labelId));
-
-		assertThat(errandsRepository.findAllByLabelsMetadataLabelId(labelId))
-			.hasSize(2)
-			.extracting(ErrandEntity::getId)
-			.containsExactlyInAnyOrder(saved1.getId(), saved2.getId());
-	}
 
 	@Test
 	void findDistinctIdsByLabelsMetadataLabelIdIn_noMatch() {

@@ -1,25 +1,19 @@
 package se.sundsvall.supportmanagement.service.job;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import se.sundsvall.supportmanagement.config.ErrandPurgeProperties;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static org.springframework.data.domain.Sort.Direction.ASC;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withIdAfter;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withLastTouchedBefore;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;
@@ -43,8 +37,6 @@ import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.w
 public class ErrandPurgeRunner extends JobRunner<PurgeRun> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ErrandPurgeRunner.class);
-
-	private static final String ID_ATTRIBUTE = "id";
 
 	private static final String ABORTED_MESSAGE = "Purge aborted: %s";
 	private static final String DRY_RUN_SUMMARY = "Dry run over %d errands, none of which were removed";
@@ -130,7 +122,7 @@ public class ErrandPurgeRunner extends JobRunner<PurgeRun> {
 				return;
 			}
 
-			final var ids = nextBatch(run, cursor, (int) Math.min(batchSize, budget));
+			final var ids = errandsRepository.findIdsAfter(reachedBy(run.namespace(), run.municipalityId(), run.settings().olderThan()), cursor, (int) Math.min(batchSize, budget));
 
 			if (ids.isEmpty()) {
 				jobService.complete(run.jobId(), summaryOf(run, counters));
@@ -194,27 +186,6 @@ public class ErrandPurgeRunner extends JobRunner<PurgeRun> {
 				sanitizeForLogging(id), sanitizeForLogging(run.namespace()), sanitizeForLogging(run.municipalityId()),
 				isNull(e.getMessage()) ? e.getClass().getName() : sanitizeForLogging(e.getMessage()));
 		}
-	}
-
-	/**
-	 * The ids of the next batch, in ascending id order and starting after the id the previous batch ended on.
-	 * <p>
-	 * Only the ids are read.
-	 */
-	private List<String> nextBatch(final PurgeRun run, final String cursor, final int size) {
-		final var specification = ofNullable(cursor)
-			.map(id -> reachedBy(run.namespace(), run.municipalityId(), run.settings().olderThan()).and(withIdAfter(id)))
-			.orElseGet(() -> reachedBy(run.namespace(), run.municipalityId(), run.settings().olderThan()));
-
-		return errandsRepository.findBy(specification, query -> query
-			.project(ID_ATTRIBUTE)
-			.sortBy(Sort.by(ASC, ID_ATTRIBUTE))
-			.limit(size)
-			.as(IdProjection.class)
-			.all())
-			.stream()
-			.map(IdProjection::getId)
-			.toList();
 	}
 
 	/**

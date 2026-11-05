@@ -6,6 +6,11 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -13,6 +18,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+
+import static org.springframework.data.domain.Sort.Direction.ASC;
 
 @CircuitBreaker(name = "errandsRepository")
 public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
@@ -43,7 +51,20 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	boolean existsByIdAndDeletedIsNull(String id);
 
 	// A soft deleted errand is left suspended, and is woken up by the first run after it is restored
-	List<ErrandEntity> findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime now);
+	@Query("""
+		select e.id from ErrandEntity e
+		where e.status = :status
+		  and e.suspendedTo < :now
+		  and e.deleted is null
+		  and (e.suspensionEndNotifiedFor is null or e.suspensionEndNotifiedFor <> e.suspendedTo)
+		""")
+	List<String> findIdsWithUnannouncedSuspensionEndAndDeletedIsNull(@Param("status") String status, @Param("now") OffsetDateTime now);
+
+	// A query rather than a save, since this is bookkeeping and no change to the errand: modified, touched, the version
+	// and the search index are all left as they are.
+	@Modifying
+	@Query("update ErrandEntity e set e.suspensionEndNotifiedFor = :suspendedTo where e.id = :id")
+	void markSuspensionEndNotified(@Param("id") String id, @Param("suspendedTo") OffsetDateTime suspendedTo);
 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
@@ -56,22 +77,25 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	long countByLabelsMetadataLabelId(String metadataLabelId);
 
+	// Distinct: an errand tagged with more than one of the given ids (e.g. the moved label itself and one of its
+	// descendants, both stored per the ancestor-chain-expansion invariant) must still be counted once.
+	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
+
 	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
 
-	/**
-	 * The ids of every errand tagged with any of the given label ids - distinct, since an errand tagged with more than
-	 * one of them (e.g. the moved/merged label itself and one of its descendants, both stored per the
-	 * ancestor-chain-expansion invariant) must still count once.
-	 * <p>
-	 * The single source of truth for "which errands does this operation affect": a restructure dry run reads its
-	 * per-step {@code affectedErrandCount} from {@code size()} here, and the job this starts resolves the same union
-	 * once at the outset and carries it through {@code LabelRestructureRun} so the job's own {@code total} and the
-	 * walk that restows them read from the exact same set - see the review discussion on the former
-	 * {@code LabelMoveRunner#restowErrands} for what went wrong when the walk instead re-derived its own, narrower set
-	 * from a single label id.
-	 */
-	@Query("select distinct e.id from ErrandEntity e join e.labels l where l.metadataLabelId in :labelIds")
-	List<String> findDistinctIdsByLabelsMetadataLabelIdIn(@Param("labelIds") Collection<String> labelIds);
+	// accessLabels is lazy by default; the label-move worker reads it on an already-detached entity (the page fetch and
+	// the persist that follows it are each their own transaction), so it must come back populated with the page itself.
+	//
+	// Keyset paging (id > lastSeenId), not offset: an errand created, purged, or (un)labelled while the worker walks
+	// the set shifts what an offset-based page would return, and an errand landing on the boundary would be skipped.
+	// A UUID id sorts after "" so "" is the lower bound the first page is read with.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdAndIdGreaterThanOrderByIdAsc(String metadataLabelId, String id, Pageable pageable);
+
+	// Sibling of the single-id query above, for the label-merge worker walking several source labels at once - same
+	// keyset paging, same reason for it.
+	@EntityGraph(attributePaths = "accessLabels")
+	List<ErrandEntity> findByLabelsMetadataLabelIdInAndIdGreaterThanOrderByIdAsc(Collection<String> metadataLabelIds, String id, Pageable pageable);
 
 	/**
 	 * Locks every errand in {@code ids} with {@code SELECT ... FOR UPDATE}, ordered by id - used by the label-
@@ -90,16 +114,5 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	List<ErrandEntity> findAllByIdForUpdate(@Param("ids") Collection<String> ids);
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
-
-	/**
-	 * Puts {@code modified} and {@code touched} back to what they were before a label-restructure restow - a direct
-	 * write rather than another {@code save}, since going through the entity again would only have {@code @PreUpdate}
-	 * stamp both with {@code now()} a second time. A restow is driven by a label-tree change, not anything the
-	 * errand's own occupant did, and must not reset the purge clock ({@code touched}) or reorder "recently modified"
-	 * listings.
-	 */
-	@Modifying
-	@Query("update ErrandEntity e set e.modified = :modified, e.touched = :touched where e.id = :id")
-	void restoreModifiedAndTouched(@Param("id") String id, @Param("modified") OffsetDateTime modified, @Param("touched") OffsetDateTime touched);
 
 }

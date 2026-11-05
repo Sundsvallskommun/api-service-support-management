@@ -69,37 +69,14 @@ public class MessagingMapper {
 			.attachments(Stream.of(attachments, toAttachments(emailRequest.getAttachments()))
 				.flatMap(List::stream)
 				.toList())
-			.recipients(ofNullable(emailRequest.getRecipient()).map(List::of).orElse(null))
+			.recipients(emailRequest.allRecipients())
+			.cc(emailRequest.allCc())
 			.htmlMessage(addBase64Encoding(emailRequest.getHtmlMessage()))
 			.message(emailRequest.getMessage())
 			.party(toEmailRequestParty(errandEntity))
 			.sender(toEmailSender(emailRequest))
 			.headers(toEmailHeaders(emailRequest.getEmailHeaders()))
 			.subject(emailRequest.getSubject());
-	}
-
-	private static se.sundsvall.supportmanagement.api.model.communication.EmailRequest toEmailRequest(final String subject, final String message, String emailDestination, final MessagingSettings messagingSettings) {
-		return se.sundsvall.supportmanagement.api.model.communication.EmailRequest.create()
-			.withMessage(ofNullable(message).orElse(""))
-			.withRecipient(emailDestination)
-			.withSender(messagingSettings.contactInformationEmail())
-			.withSenderName(messagingSettings.contactInformationEmailName())
-			.withSubject(ofNullable(subject).orElse(""));
-	}
-
-	public static se.sundsvall.supportmanagement.api.model.communication.EmailRequest createReporterEmailRequest(final ErrandEntity errandEntity, final StakeholderEntity stakeholder, String emailDestination, final MessagingSettings messagingSettings) {
-		final var subject = SUBJECT_TEMPLATE.formatted(errandEntity.getErrandNumber());
-		final var message = ofNullable(messagingSettings.reporterSupportText())
-			// If present, supporttext is presumed to be something like "Hi [firstname], you have received a new message in errand
-			// [title], [errandnr]. Click [url prefix]/suffix/[errandId] to read."
-			.map(reporterSupportText -> reporterSupportText.formatted(
-				ofNullable(stakeholder).map(StakeholderEntity::getFirstName).orElse(""),
-				errandEntity.getErrandNumber(),
-				messagingSettings.katlaUrl(),
-				errandEntity.getErrandNumber()))
-			.orElse("");
-
-		return toEmailRequest(subject, message, emailDestination, messagingSettings);
 	}
 
 	public static Map<String, List<String>> toEmailHeaders(final Map<EmailHeader, List<String>> emailHeaders) {

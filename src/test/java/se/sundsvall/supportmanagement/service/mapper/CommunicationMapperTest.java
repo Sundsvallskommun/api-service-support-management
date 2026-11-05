@@ -144,6 +144,7 @@ class CommunicationMapperTest {
 			assertThat(communicationEntity.getSender()).isEqualTo(emailRequest.getSender());
 			assertThat(communicationEntity.getDirection()).isEqualTo(Direction.OUTBOUND);
 			assertThat(communicationEntity.getTarget()).isEqualTo(emailRequest.getRecipient());
+			assertThat(communicationEntity.getRecipients()).containsExactly(emailRequest.getRecipient());
 			assertThat(communicationEntity.getType()).isEqualTo(CommunicationType.EMAIL);
 			assertThat(communicationEntity.getSubject()).isEqualTo(emailRequest.getSubject());
 			assertThat(communicationEntity.getMessageBody()).isEqualTo(emailRequest.getMessage());
@@ -154,6 +155,39 @@ class CommunicationMapperTest {
 			assertThat(communicationEntity.isInternal()).isTrue();
 		}
 
+	}
+
+	@Test
+	void toCommunicationEntityFromEmailRequestWithRecipientsAndCc() {
+		final var emailRequest = new EmailRequest()
+			.withRecipients(List.of("first@example.com", "second@example.com"))
+			.withCc(List.of("cc1@example.com", "cc2@example.com"))
+			.withSender("sender")
+			.withSubject("subject")
+			.withMessage("message");
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
+
+		assertThat(communicationEntity.getTarget()).isEqualTo("first@example.com");
+		assertThat(communicationEntity.getRecipients()).containsExactly("first@example.com", "second@example.com");
+		assertThat(communicationEntity.getCcRecipients()).containsExactly("cc1@example.com", "cc2@example.com");
+	}
+
+	@Test
+	void toCommunicationEntityFromEmailRequestWithBlankAndDuplicateRecipientsAndCc() {
+		final var emailRequest = new EmailRequest()
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"))
+			.withCc(List.of("", "cc@example.com", "cc@example.com"))
+			.withSender("sender")
+			.withSubject("subject")
+			.withMessage("message");
+
+		final var communicationEntity = communicationMapper.toCommunicationEntity(NAMESPACE, MUNICIPALITY_ID, emailRequest);
+
+		assertThat(communicationEntity.getTarget()).isEqualTo("first@example.com");
+		assertThat(communicationEntity.getRecipients()).containsExactly("first@example.com");
+		assertThat(communicationEntity.getCcRecipients()).containsExactly("cc@example.com");
 	}
 
 	@Test

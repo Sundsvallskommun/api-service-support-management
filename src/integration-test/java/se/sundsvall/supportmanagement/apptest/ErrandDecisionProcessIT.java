@@ -16,9 +16,11 @@ import se.sundsvall.supportmanagement.Application;
 import se.sundsvall.supportmanagement.config.ProcessEngineProperties;
 import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
+import se.sundsvall.supportmanagement.service.ErrandService;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static java.time.OffsetDateTime.now;
 import static java.util.Objects.isNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.ETAG;
@@ -96,6 +98,9 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 
 	@Autowired
 	private ProcessEngineProperties processEngineProperties;
+
+	@Autowired
+	private ErrandService errandService;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -724,17 +729,86 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 	}
 
 	/**
-	 * An errand whose process has ended holds a decision that can no longer be changed, so the errand is kept, together
-	 * with the decision, and no row is written for its process.
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is deleted all the same,
+	 * together with the decision. Its process is told that the errand is gone.
 	 */
 	@Test
-	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not deleted, and the decision stays")
-	void test12_anErrandHoldingALockedDecisionCannotBeDeleted() {
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is deleted with its decision, and its process is told")
+	void test12_anErrandHoldingALockedDecisionIsDeleted() {
 		setupCall()
 			.withServicePath(errandPath(ENDED_ERRAND_ID))
 			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(CONFLICT)
-			.withExpectedResponse("response-locked.json")
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(decisionPath(ENDED_ERRAND_ID, ENDED_DECISION_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+
+		assertDeletionTold(ENDED_ERRAND_ID);
+	}
+
+	/**
+	 * A decision concluded on an errand whose process still runs is locked as well, and the errand is deleted all the
+	 * same, together with its decisions. Its process is told that the errand is gone.
+	 */
+	@Test
+	@DisplayName("Verification that an errand with a live process and a concluded decision is deleted with its decisions, and its process is told")
+	void test13_anErrandWithALiveProcessAndAConcludedDecisionIsDeleted() {
+		setupCall()
+			.withServicePath(errandPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(DELETE)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(decisionsPath(RUNNING_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequestAndVerifyResponse();
+
+		assertDeletionTold(RUNNING_ERRAND_ID);
+	}
+
+	/**
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is soft deleted all the same.
+	 * The decision is kept with it, so that a restore brings both back.
+	 */
+	@Test
+	@DisplayName("Verification that an errand holding a decision that can no longer be changed is soft deleted, and keeps its decision")
+	void test14_anErrandHoldingALockedDecisionIsSoftDeleted() {
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/soft-delete")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID))
+			.withHttpMethod(GET)
+			.withExpectedResponseStatus(NOT_FOUND)
+			.sendRequest();
+
+		setupCall()
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/restore")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequest();
 
 		setupCall()
@@ -743,32 +817,47 @@ class ErrandDecisionProcessIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response-ended-decision.json")
 			.sendRequestAndVerifyResponse();
-
-		assertThat(outboxRepository.findAll()).isEmpty();
 	}
 
 	/**
-	 * A decision concluded on an errand whose process still runs is locked as well, so the errand is kept, together with
-	 * its decisions, and no row is written for its process.
+	 * An errand whose process has ended holds a decision that can no longer be changed, and is deleted for good all the
+	 * same once it has been soft deleted for long enough, together with the decision. Its process is told that the errand
+	 * is gone.
 	 */
 	@Test
-	@DisplayName("Verification that an errand with a live process and a concluded decision is not deleted, and its decisions stay")
-	void test13_anErrandWithALiveProcessAndAConcludedDecisionCannotBeDeleted() {
+	@DisplayName("Verification that a soft deleted errand holding a decision that can no longer be changed is deleted for good, and its process is told")
+	void test15_aSoftDeletedErrandHoldingALockedDecisionIsDeletedForGood() {
 		setupCall()
-			.withServicePath(errandPath(RUNNING_ERRAND_ID))
-			.withHttpMethod(DELETE)
-			.withExpectedResponseStatus(CONFLICT)
-			.withExpectedResponse("response-locked.json")
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/soft-delete")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequest();
 
+		assertThat(errandService.deleteSoftDeletedErrand(ENDED_ERRAND_ID, now().plusMinutes(1))).isTrue();
+
+		// A soft deleted errand would be restored, so the restore failing shows the errand gone for good
 		setupCall()
-			.withServicePath(decisionsPath(RUNNING_ERRAND_ID))
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse(DECISIONS_RESPONSE_FILE)
+			.withServicePath(errandPath(ENDED_ERRAND_ID) + "/restore")
+			.withHttpMethod(POST)
+			.withHeader(SENT_BY_HEADER, HANDLER_IDENTITY)
+			.withExpectedResponseStatus(NOT_FOUND)
 			.sendRequestAndVerifyResponse();
 
-		assertThat(outboxRepository.findAll()).isEmpty();
+		assertDeletionTold(ENDED_ERRAND_ID);
+	}
+
+	private void assertDeletionTold(final String errandId) {
+		assertThat(outboxRepository.findAll())
+			.singleElement()
+			.satisfies(row -> {
+				assertThat(row.getErrandId()).isEqualTo(errandId);
+				assertThat(row.getProcessService()).isEqualTo(PROCESS_SERVICE);
+				assertThat(row.getProcessKey()).isEqualTo(PROCESS_KEY);
+				assertThat(row.getEventType()).isEqualTo("DELETE");
+				assertThat(row.getEventSubType()).isEqualTo("ERRAND");
+				assertThat(row.isStartAllowed()).isFalse();
+			});
 	}
 
 	/**

@@ -57,6 +57,16 @@ class AccessControlChokePointTest {
 		// It reaches errands without an access check by design, which is why ErrandPurgeService refuses to start a run
 		// at all in a namespace that has access control switched on.
 		se.sundsvall.supportmanagement.service.job.ErrandPurgeRunner.class,
+		se.sundsvall.supportmanagement.service.purge.ErrandPurgeWorker.class,
+
+		// The removal of soft deleted errands runs on how long an errand has been soft deleted rather than on behalf of a
+		// caller, so there is no user to authorize. It reads only ids, and every errand it reaches was held to RW when it
+		// was soft deleted.
+		se.sundsvall.supportmanagement.service.scheduler.softdeletederrands.SoftDeletedErrandWorker.class,
+
+		// LabelMoveWorker re-computes errand label sets after a label tree re-parenting. It is triggered by a system
+		// operation (move-label job), not a user request, so there is no caller to authorize.
+		se.sundsvall.supportmanagement.service.LabelMoveWorker.class,
 
 		// LabelRestructureRunner re-computes errand label sets after a label-tree mutation (move/merge/add/rename/
 		// delete, applied as one atomic run). It is triggered by a system operation (restructure-label-tree job), not

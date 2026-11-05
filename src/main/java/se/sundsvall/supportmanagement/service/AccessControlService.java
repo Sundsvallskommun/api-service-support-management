@@ -231,20 +231,6 @@ public class AccessControlService {
 	}
 
 	/**
-	 * The same answer as {@link #readableKeyPredicate}, for every keyed field of one errand at once. The grants are
-	 * resolved once, when this is called, and asking the returned resolver for a field queries nothing.
-	 *
-	 * @param  namespace      namespace
-	 * @param  municipalityId municipality id
-	 * @param  user           user
-	 * @param  errandEntity   errand the fields belong to
-	 * @return                resolver of the predicate accepting the keys the user may read, per field
-	 */
-	public Function<ErrandField, Predicate<String>> readableKeyResolver(String namespace, String municipalityId, Identifier user, ErrandEntity errandEntity) {
-		return fieldAccessResolver(namespace, municipalityId, user).apply(errandEntity)::readableKey;
-	}
-
-	/**
 	 * Throws 403 unless the user may reach sent in key of sent in field. A key the user cannot read is also a key they
 	 * cannot write. A key they may read is not necessarily one they may change, which {@link #verifyWritableKeys}
 	 * answers.

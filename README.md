@@ -1147,10 +1147,11 @@ a process adds:
   - once the process has run to its end (`COMPLETED`), no decision of the errand can be created, changed or deleted;
   - once a decision is `COMPLETED`, it can no longer be changed or deleted, nor can its terms or attachment links;
   - an attachment of the errand linked to a locked decision cannot be deleted, nor can an investigation a locked
-    decision rests on;
-  - the errand itself cannot be deleted with `DELETE /errands/{errandId}` while it holds a locked decision.
+    decision rests on.
 
-  Every one of these is answered with `409`. The retention purge is held to none of them. The JSON parameters of a decision are never locked, since legal force and
+  Every one of these is answered with `409`. The errand itself is not locked: `DELETE /errands/{errandId}` removes it
+  with its decisions, locked or not, as do the retention purge and the deletion of soft deleted errands, and a soft
+  delete keeps the decisions with the errand. The JSON parameters of a decision are never locked, since legal force and
   service of the decision are known only after it is made. An errand without a process is never locked. A decision
   that has to be corrected once it is locked is corrected in a new errand, referred from the first.
 

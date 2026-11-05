@@ -272,13 +272,6 @@ public final class ErrandMapper {
 			.withValue(tag.getValue());
 	}
 
-	public static List<Errand> toErrands(final List<ErrandEntity> entities) {
-		return ofNullable(entities).orElse(emptyList())
-			.stream()
-			.map(ErrandMapper::toErrand)
-			.toList();
-	}
-
 	/**
 	 * Maps a single field of an errand. Keyed fields limit themselves to sent in keys, an empty set meaning the whole
 	 * collection. The enrichment carries what a field cannot read off the errand row.
