@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
@@ -50,7 +51,20 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	boolean existsByIdAndDeletedIsNull(String id);
 
 	// A soft deleted errand is left suspended, and is woken up by the first run after it is restored
-	List<ErrandEntity> findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime now);
+	@Query("""
+		select e.id from ErrandEntity e
+		where e.status = :status
+		  and e.suspendedTo < :now
+		  and e.deleted is null
+		  and (e.suspensionEndNotifiedFor is null or e.suspensionEndNotifiedFor <> e.suspendedTo)
+		""")
+	List<String> findIdsWithUnannouncedSuspensionEndAndDeletedIsNull(@Param("status") String status, @Param("now") OffsetDateTime now);
+
+	// A query rather than a save, since this is bookkeeping and no change to the errand: modified, touched, the version
+	// and the search index are all left as they are.
+	@Modifying
+	@Query("update ErrandEntity e set e.suspensionEndNotifiedFor = :suspendedTo where e.id = :id")
+	void markSuspensionEndNotified(@Param("id") String id, @Param("suspendedTo") OffsetDateTime suspendedTo);
 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 

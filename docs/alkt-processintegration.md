@@ -133,7 +133,7 @@ Allt i det här avsnittet är efterkontrollerat i kodbasen, inte antaget. Resten
 | Schemalagda åtgärder    | `ActionWorker.logChange`                                                                                                                 |
 | E-postintag             | `EmailReaderWorker.processErrand`                                                                                                        |
 | Webbmeddelanden         | `WebMessageCollectorWorker.saveMessage`                                                                                                  |
-| Suspension              | `SuspensionWorker.processExpiredSuspensions`                                                                                             |
+| Suspension              | `SuspensionWorker.announceSuspensionEnd`                                                                                                 |
 
 Beslutet går inte den vägen utan genom `EventService.createDecisionEvent` (§7.5), och kommandona genom `EventService.createProcessCommandEvent` (§2.2). Båda publicerar på samma sätt.
 
@@ -375,7 +375,7 @@ eftersom en skrivning utan transaktion ska rapporteras och inte tilldelas en.
 Finns det ingen transaktion alls går det förstås inte att rulla tillbaka någonting — då är ärendet redan
 sparat. Det loggas som ERROR (§8.1). I dag har varje väg in en
 transaktion — tjänsterna bakom API:et och de schemalagda arbetarna (`EmailReaderWorker.processEmail`,
-`WebMessageCollectorWorker.processMessage`, `SuspensionWorker.processExpiredSuspensions`,
+`WebMessageCollectorWorker.processMessage`, `SuspensionWorker.announceSuspensionEnd`,
 `MessageExchangeWorker.processConversation`, `ActionWorker.processAction`) — så det ska aldrig hända.
 
 Att i stället plocka bort de yttre fångsterna löser inte problemet ensamt, och skulle dessutom göra ett

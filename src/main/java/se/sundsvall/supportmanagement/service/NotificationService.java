@@ -1,7 +1,6 @@
 package se.sundsvall.supportmanagement.service;
 
 import generated.se.sundsvall.employee.PortalPersonData;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.Strings;
@@ -97,16 +96,6 @@ public class NotificationService {
 		applyBusinessLogicForCreate(entity);
 
 		return notificationRepository.save(entity).getId();
-	}
-
-	public boolean doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(final String municipalityId, final String namespace, final String ownerId, final ErrandEntity errandEntity, final String description,
-		final OffsetDateTime created) {
-		return notificationRepository.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace,
-			municipalityId,
-			ownerId,
-			errandEntity,
-			description,
-			created);
 	}
 
 	@Transactional

@@ -320,6 +320,7 @@
         municipality_id varchar(8) not null,
         suspended_from datetime(6),
         suspended_to datetime(6),
+        suspension_end_notified_for datetime(6),
         touched datetime(6),
         version bigint default 0 not null,
         lifecycle varchar(16) default 'ACTIVE' not null check ((lifecycle in ('DRAFT','ACTIVE'))),
