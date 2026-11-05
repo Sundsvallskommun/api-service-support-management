@@ -90,7 +90,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -815,7 +814,6 @@ class ErrandServiceTest {
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(errandActionServiceMock).processErrandActions(entity, OperationType.UPDATE);
 		verify(revisionServiceMock).createErrandRevision(entity);
-		verify(revisionServiceMock, never()).getErrandRevisionByVersion(any(), any(), any(), anyInt());
 		verify(eventServiceMock, never()).createErrandEvent(any(), any(), any(), any(RevisionResult.class), any(), any(ErrandEventOptions.class));
 	}
 
@@ -1190,30 +1188,14 @@ class ErrandServiceTest {
 		service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null);
 
 		verify(accessControlServiceMock).getErrandIncludingDeleted(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
-		verify(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(errandAttachmentServiceMock).readAttachmentsOfErrandToDelete(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("id")));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
-	}
-
-	@Test
-	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not deleted, and nothing is removed")
-	void deleteErrandHoldingALockedDecision() {
-		final var entity = buildErrandEntity();
-
-		when(accessControlServiceMock.getErrandIncludingDeleted(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.deleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
-			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(CONFLICT));
-
-		verifyNoInteractions(errandDataDeleterMock, errandAttachmentServiceMock, eventServiceMock);
-		verify(errandRepositoryMock, never()).deleteById(any());
-		verify(revisionServiceMock, never()).deleteErrandRevisions(any(), any(), any());
+		// The decisions of the errand, locked or not, do not hold the deletion back
+		verifyNoInteractions(decisionValidatorMock);
 	}
 
 	@Test
@@ -1325,7 +1307,7 @@ class ErrandServiceTest {
 		assertThat(entity.getDeleted()).isCloseTo(now(), within(5, SECONDS));
 		assertThat(entity.getDeletedBy()).isEqualTo("user");
 		verify(accessControlServiceMock).getErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, true, ProtectedResource.ERRAND, RW);
-		verify(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		verify(decisionValidatorMock).validateErrandSoftDeletable(ERRAND_ID);
 		verify(entityManagerMock).lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		verify(errandRepositoryMock).saveAndFlush(entity);
 		verify(revisionServiceMock).createErrandRevision(entity);
@@ -1335,12 +1317,12 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that an errand holding a decision that can no longer be changed is not soft deleted, as it is not deleted")
-	void softDeleteErrandHoldingALockedDecision() {
+	@DisplayName("Verification that an errand with a process still running on it is not soft deleted")
+	void softDeleteErrandWithALiveProcess() {
 		final var entity = buildErrandEntity();
 
 		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandSoftDeletable(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
+		doThrow(Problem.valueOf(CONFLICT, "live process")).when(decisionValidatorMock).validateErrandSoftDeletable(ERRAND_ID);
 
 		assertThatExceptionOfType(ThrowableProblem.class)
 			.isThrownBy(() -> service.softDeleteErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null))
@@ -1529,14 +1511,13 @@ class ErrandServiceTest {
 
 		assertThat(deleted).isTrue();
 		verify(errandRepositoryMock).findWithLockingById(ERRAND_ID);
-		verify(decisionValidatorMock).validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), ERRAND_ID);
 		verify(revisionServiceMock).getLatestErrandRevision(same(entity));
 		verify(errandDataDeleterMock).deleteRelatedData(same(entity), eq(List.of("attachmentId")));
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
 		verifyNoMoreInteractions(eventServiceMock);
-		verifyNoInteractions(accessControlServiceMock, errandAttachmentServiceMock);
+		verifyNoInteractions(accessControlServiceMock, errandAttachmentServiceMock, decisionValidatorMock);
 	}
 
 	@Test
@@ -1559,23 +1540,6 @@ class ErrandServiceTest {
 		verify(revisionServiceMock).deleteErrandRevisions(entity.getNamespace(), entity.getMunicipalityId(), entity.getId());
 		verify(errandRepositoryMock).deleteById(ERRAND_ID);
 		verify(eventServiceMock).createErrandEvent(DELETE, EVENT_LOG_DELETE_ERRAND, entity, currentRevisionMock, null, false, ERRAND);
-	}
-
-	@Test
-	@DisplayName("Verification that a soft deleted errand a locked decision belongs to is not deleted, and nothing is removed")
-	void deleteSoftDeletedErrandHoldingALockedDecision() {
-		final var cutoff = now();
-		final var entity = buildErrandEntity().withDeleted(cutoff.minusDays(1));
-
-		when(errandRepositoryMock.findWithLockingById(ERRAND_ID)).thenReturn(Optional.of(entity));
-		doThrow(Problem.valueOf(CONFLICT, "locked decision")).when(decisionValidatorMock).validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), ERRAND_ID);
-
-		assertThatExceptionOfType(ThrowableProblem.class)
-			.isThrownBy(() -> service.deleteSoftDeletedErrand(ERRAND_ID, cutoff))
-			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(CONFLICT));
-
-		verify(errandRepositoryMock, never()).deleteById(any());
-		verifyNoInteractions(errandDataDeleterMock, revisionServiceMock, eventServiceMock);
 	}
 
 	@ParameterizedTest

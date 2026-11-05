@@ -196,20 +196,6 @@ public class RevisionService {
 	}
 
 	/**
-	 * Returns requested revision of the errand
-	 *
-	 * @param  errandId id of the errand to fetch revision for.
-	 * @param  version  the revision version to fetch.
-	 * @return          requested revision for the errand or null if errand or revision does not exist.
-	 */
-	@Transactional(readOnly = true)
-	public Revision getErrandRevisionByVersion(final String namespace, final String municipalityId, final String errandId, final int version) {
-		return revisionRepository.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(namespace, municipalityId, errandId, version)
-			.map(RevisionMapper::toRevision)
-			.orElse(null);
-	}
-
-	/**
 	 * Compares two revision versions of an errand.
 	 *
 	 * @param  namespace      namespace of the errand owning the note to compare.

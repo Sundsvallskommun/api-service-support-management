@@ -300,11 +300,6 @@ public class MetadataLabelEntity {
 		child.setParent(this);
 	}
 
-	public void removeChild(MetadataLabelEntity child) {
-		this.metadataLabels.remove(child);
-		child.setParent(null);
-	}
-
 	@PrePersist
 	void onCreate() {
 		updateResourcePath();

@@ -342,10 +342,9 @@ public class ErrandService {
 	 * is restored by {@link #restoreErrand(String, String, String, String)} or deleted for good by
 	 * {@link #deleteErrand(String, String, String, String)}.
 	 * <p>
-	 * Held to what deleting the errand for good is held to: the access it takes, the version the caller believes it is at
-	 * and no decision of it that can no longer be changed. Nor is an errand with a process still running on it soft
-	 * deleted, since the process would be left calling an errand that answers as gone. The deletion is recorded as a
-	 * revision and told of as an update.
+	 * Held to what deleting the errand for good is held to: the access it takes and the version the caller believes it is
+	 * at. Nor is an errand with a process still running on it soft deleted, since the process would be left calling an
+	 * errand that answers as gone. The deletion is recorded as a revision and told of as an update.
 	 *
 	 * @param namespace      namespace of the errand.
 	 * @param municipalityId id of the municipality of the errand.
@@ -357,7 +356,7 @@ public class ErrandService {
 		final var entity = accessControlService.getErrand(namespace, municipalityId, id, true, ProtectedResource.ERRAND, RW);
 
 		validateIfMatch(ifMatch, entity.getVersion());
-		decisionValidator.validateErrandSoftDeletable(namespace, municipalityId, id);
+		decisionValidator.validateErrandSoftDeletable(id);
 
 		entityManager.lock(entity, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 		entity.setDeleted(now(systemDefault()).truncatedTo(MILLIS));
@@ -405,7 +404,6 @@ public class ErrandService {
 			LOG.debug("DELETE /errands/{} received without If-Match header (namespace={}, municipalityId={})", sanitizeForLogging(id), sanitizeForLogging(namespace), sanitizeForLogging(municipalityId));
 		}
 		validateIfMatch(ifMatch, entity.getVersion());
-		decisionValidator.validateErrandRemovable(namespace, municipalityId, id);
 
 		// Attachments are read through the attachment service rather than off the entity, so that the access check
 		// guarding them applies to a caller deleting them along with the errand.
@@ -418,8 +416,8 @@ public class ErrandService {
 	 * Deletes an errand for good once it has been soft deleted for long enough, the way
 	 * {@link #deleteErrand(String, String, String, String)} does.
 	 * <p>
-	 * No access check is made. The errand is held to the same locked decision rule as a delete, the deletion is
-	 * written to the event log and the process consumer is told that the errand is gone.
+	 * No access check is made. The deletion is written to the event log and the process consumer is told that the
+	 * errand is gone.
 	 * <p>
 	 * An errand that is gone, has been restored or was soft deleted at or after the given point in time is left as
 	 * it is, and answered with false. A restore made at the same time either takes effect first, and the errand is
@@ -427,11 +425,9 @@ public class ErrandService {
 	 * <p>
 	 * Runs in a transaction of its own, independent of any transaction of the caller.
 	 *
-	 * @param  id                                             id of the errand to remove.
-	 * @param  deletedBefore                                  the errand is removed only when it was soft deleted before
-	 *                                                        this.
-	 * @return                                                true if the errand was removed, false if it was left as it is.
-	 * @throws org.springframework.web.ErrorResponseException 409 when a locked decision belongs to the errand.
+	 * @param  id            id of the errand to remove.
+	 * @param  deletedBefore the errand is removed only when it was soft deleted before this.
+	 * @return               true if the errand was removed, false if it was left as it is.
 	 */
 	@Transactional(propagation = REQUIRES_NEW)
 	public boolean deleteSoftDeletedErrand(final String id, final OffsetDateTime deletedBefore) {
@@ -442,8 +438,6 @@ public class ErrandService {
 		if (isNull(entity)) {
 			return false;
 		}
-
-		decisionValidator.validateErrandRemovable(entity.getNamespace(), entity.getMunicipalityId(), id);
 
 		// Taken straight off the entity, since there is no caller to authorize.
 		removeAndLogDeletion(entity, ofNullable(entity.getAttachments()).orElse(emptyList()).stream()
@@ -489,11 +483,11 @@ public class ErrandService {
 	/**
 	 * Removes an errand that has passed its retention period, along with everything belonging to it.
 	 * <p>
-	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made, no
-	 * locked decision holds the removal back and no event is written. In a namespace with a process consumer the process
-	 * consumer is told that the errand is gone, whether the errand had a process or not, unless a label of the errand
-	 * blocks processes. The deletion carries the key of the process of the errand when it has one, and no key when it has
-	 * none. What is removed is the same in both cases, and is held in {@link #removeErrand(ErrandEntity, List)}.
+	 * Called by the purge. Unlike {@link #deleteErrand(String, String, String, String)} no access check is made and no
+	 * event is written. In a namespace with a process consumer the process consumer is told that the errand is gone,
+	 * whether the errand had a process or not, unless a label of the errand blocks processes. The deletion carries the key
+	 * of the process of the errand when it has one, and no key when it has none. What is removed is the same in both cases,
+	 * and is held in {@link #removeErrand(ErrandEntity, List)}.
 	 * <p>
 	 * Runs in a transaction of its own, so that an errand that cannot be removed neither rolls back the errands already
 	 * removed nor stops the run. An errand that is already gone is not an error, and is answered with false.

@@ -23,7 +23,6 @@ import se.sundsvall.supportmanagement.integration.db.model.StakeholderParameterE
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.UUID.fromString;
 import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.Strings.CI;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -49,15 +48,6 @@ public class ServiceUtil {
 	private static final ThreadLocal<Boolean> NOTIFY = new ThreadLocal<>();
 
 	private ServiceUtil() {}
-
-	public static boolean isValidUuid(String uuid) {
-		try {
-			fromString(uuid);
-			return true;
-		} catch (final Exception _) {
-			return false;
-		}
-	}
 
 	public static String detectMimeType(String filename, byte[] byteArray) {
 		try (InputStream stream = new ByteArrayInputStream(byteArray)) {

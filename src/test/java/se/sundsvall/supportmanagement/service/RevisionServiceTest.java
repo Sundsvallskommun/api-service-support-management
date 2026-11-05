@@ -418,35 +418,6 @@ class RevisionServiceTest {
 	}
 
 	@Test
-	void getErrandRevisionByVersion() {
-		// Setup
-		final var version = 123;
-
-		// Mock
-		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version)).thenReturn(Optional.of(createRevisionEntity()));
-
-		// Call
-		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-
-		// Assertions and verifications
-		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-		assertThat(result).isNotNull();
-	}
-
-	@Test
-	void getErrandRevisionByVersionNonExistingErrand() {
-		// Setup
-		final var version = 123;
-
-		// Call
-		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-
-		// Assertions and verifications
-		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-		assertThat(result).isNull();
-	}
-
-	@Test
 	void compareErrandRevisionVersionsNonExistingSourceVersion() {
 		// Setup
 		final var sourceVersion = 5;
