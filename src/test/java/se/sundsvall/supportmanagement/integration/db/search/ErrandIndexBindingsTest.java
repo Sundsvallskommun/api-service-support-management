@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.search;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 

@@ -29,7 +29,4 @@ public interface WebMessageCollectorClient {
 	@GetMapping("/{municipalityId}/messages/attachments/{attachmentId}")
 	byte[] getAttachment(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "attachmentId") int attachmentId);
 
-	@DeleteMapping("/{municipalityId}/messages/attachments/{attachmentId}")
-	void deleteAttachment(@PathVariable(name = "municipalityId") String municipalityId, @PathVariable(name = "attachmentId") int attachmentId);
-
 }

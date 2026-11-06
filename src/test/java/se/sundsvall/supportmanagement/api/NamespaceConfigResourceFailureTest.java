@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
@@ -217,6 +219,33 @@ class NamespaceConfigResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactly(tuple("baseUrl", "must be a valid http or https url"));
+
+		verifyNoInteractions(serviceMock);
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = {
+		-1, 0
+	})
+	void createWithSoftDeletedRetentionInDaysBelowOne(final int softDeletedRetentionInDays) {
+		final var namespaceConfig = NamespaceConfig.create().withDisplayName(DISPLAY_NAME).withShortCode(SHORT_CODE).withSoftDeletedRetentionInDays(softDeletedRetentionInDays);
+
+		final var response = webTestClient.post()
+			.uri(uriBuilder -> uriBuilder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(namespaceConfig)
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("softDeletedRetentionInDays", "must be greater than or equal to 1"));
 
 		verifyNoInteractions(serviceMock);
 	}

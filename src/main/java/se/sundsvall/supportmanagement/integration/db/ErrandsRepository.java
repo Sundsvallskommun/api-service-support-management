@@ -8,13 +8,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.IdProjection;
+
+import static org.springframework.data.domain.Sort.Direction.ASC;
 
 @CircuitBreaker(name = "errandsRepository")
 public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, JpaSpecificationExecutor<ErrandEntity> {
@@ -45,7 +51,20 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	boolean existsByIdAndDeletedIsNull(String id);
 
 	// A soft deleted errand is left suspended, and is woken up by the first run after it is restored
-	List<ErrandEntity> findAllBySuspendedToBeforeAndDeletedIsNull(OffsetDateTime now);
+	@Query("""
+		select e.id from ErrandEntity e
+		where e.status = :status
+		  and e.suspendedTo < :now
+		  and e.deleted is null
+		  and (e.suspensionEndNotifiedFor is null or e.suspensionEndNotifiedFor <> e.suspendedTo)
+		""")
+	List<String> findIdsWithUnannouncedSuspensionEndAndDeletedIsNull(@Param("status") String status, @Param("now") OffsetDateTime now);
+
+	// A query rather than a save, since this is bookkeeping and no change to the errand: modified, touched, the version
+	// and the search index are all left as they are.
+	@Modifying
+	@Query("update ErrandEntity e set e.suspensionEndNotifiedFor = :suspendedTo where e.id = :id")
+	void markSuspensionEndNotified(@Param("id") String id, @Param("suspendedTo") OffsetDateTime suspendedTo);
 
 	boolean existsByLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
@@ -56,13 +75,9 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 	// accessLabels holds only an errand's own leaf-level tags, which is exactly that question.
 	boolean existsByAccessLabelsMetadataLabelIdIn(Collection<String> labelIds);
 
-	long countByLabelsMetadataLabelId(String metadataLabelId);
-
 	// Distinct: an errand tagged with more than one of the given ids (e.g. the moved label itself and one of its
 	// descendants, both stored per the ancestor-chain-expansion invariant) must still be counted once.
 	long countDistinctByLabelsMetadataLabelIdIn(Collection<String> metadataLabelIds);
-
-	List<ErrandEntity> findAllByLabelsMetadataLabelId(String metadataLabelId);
 
 	// accessLabels is lazy by default; the label-move worker reads it on an already-detached entity (the page fetch and
 	// the persist that follows it are each their own transaction), so it must come back populated with the page itself.
@@ -90,4 +105,30 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
+	/**
+	 * The ids of the next batch of a keyset walk over the errands the specification reaches: in ascending id order,
+	 * starting after the id the previous batch ended on, and no more than the limit. Only the ids are read.
+	 * <p>
+	 *
+	 * @param  specification the errands the walk reaches
+	 * @param  cursor        the id the previous batch ended on, or null for the first batch
+	 * @param  limit         the most ids to return
+	 * @return               the ids of the next batch, empty when the walk has reached its end
+	 */
+	default List<String> findIdsAfter(final Specification<ErrandEntity> specification, final String cursor, final int limit) {
+		final var idAttribute = "id";
+		final var reached = Optional.ofNullable(cursor)
+			.map(id -> specification.and((root, _, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get(idAttribute), id)))
+			.orElse(specification);
+
+		return findBy(reached, query -> query
+			.project(idAttribute)
+			.sortBy(Sort.by(ASC, idAttribute))
+			.limit(limit)
+			.as(IdProjection.class)
+			.all())
+			.stream()
+			.map(IdProjection::getId)
+			.toList();
+	}
 }

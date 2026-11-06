@@ -13,9 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.ErrandIndexBindings;
 import se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 

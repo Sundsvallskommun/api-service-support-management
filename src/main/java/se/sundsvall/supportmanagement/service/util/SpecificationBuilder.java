@@ -1,23 +1,18 @@
 package se.sundsvall.supportmanagement.service.util;
 
 import com.turkraft.springfilter.converter.FilterSpecification;
-import com.turkraft.springfilter.parser.node.FieldNode;
 import com.turkraft.springfilter.parser.node.FilterNode;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
 import org.apache.commons.lang3.Strings;
 import org.springframework.data.jpa.domain.Specification;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class SpecificationBuilder<T> {
 
 	private static final SpecificationBuilder<ErrandEntity> ERRAND_ENTITY_BUILDER = new SpecificationBuilder<>();
-	private static final String ID_ATTRIBUTE = "id";
 	private static final String LIFECYCLE_ATTRIBUTE = "lifecycle";
 	private static final String DELETED_ATTRIBUTE = "deleted";
 	private static final String DELETED_BY_ATTRIBUTE = "deletedBy";
@@ -92,14 +87,13 @@ public class SpecificationBuilder<T> {
 	}
 
 	/**
-	 * Matches errands whose id sorts after the sent in one, which lets a walk over a namespace carry on from where the
-	 * previous batch ended.
+	 * Matches errands soft deleted before the sent in point in time. An errand that is not soft deleted is left out.
 	 *
-	 * @param  id the id the previous batch ended on
-	 * @return    specification matching errands that come after the sent in id
+	 * @param  cutoff the point in time an errand must have been soft deleted before
+	 * @return        specification matching errands soft deleted before the sent in point in time
 	 */
-	public static Specification<ErrandEntity> withIdAfter(String id) {
-		return (root, _, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get(ID_ATTRIBUTE), id);
+	public static Specification<ErrandEntity> withDeletedBefore(OffsetDateTime cutoff) {
+		return (root, _, criteriaBuilder) -> criteriaBuilder.lessThan(root.get(DELETED_ATTRIBUTE), cutoff);
 	}
 
 	/**
@@ -118,15 +112,7 @@ public class SpecificationBuilder<T> {
 	 * Whether the parsed filter names the sent in field, or a path beneath it, anywhere in its tree.
 	 */
 	private static boolean namesField(FilterNode node, String field) {
-		if (isNull(node)) {
-			return false;
-		}
-
-		if (node instanceof final FieldNode fieldNode && (field.equals(fieldNode.getName()) || Strings.CS.startsWith(fieldNode.getName(), field + "."))) {
-			return true;
-		}
-
-		return Optional.ofNullable(node.getChildren()).orElse(List.of()).stream()
-			.anyMatch(child -> namesField(child, field));
+		return FilterFields.fieldsOf(node)
+			.anyMatch(name -> field.equals(name) || Strings.CS.startsWith(name, field + "."));
 	}
 }

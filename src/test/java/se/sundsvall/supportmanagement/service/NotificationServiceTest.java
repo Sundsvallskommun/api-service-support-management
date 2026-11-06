@@ -43,7 +43,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.unsorted;
 import static se.sundsvall.dept44.support.Identifier.Type.AD_ACCOUNT;
-import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createNotificationEntity;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
@@ -395,49 +394,6 @@ class NotificationServiceTest {
 		// Assert
 		verify(accessControlServiceMock).verifyExistingErrandAndAuthorization(namespace, municipalityId, errandId, ProtectedResource.NOTIFICATION, RW);
 		verify(notificationRepositoryMock).deleteById(notificationId);
-	}
-
-	@Test
-	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrand() {
-
-		// Arrange
-		final var municipalityId = "2281";
-		final var namespace = "namespace";
-		final var ownerId = randomUUID().toString();
-		final var errandEntity = buildErrandEntity();
-		final var description = "description";
-		final var created = now();
-
-		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace, municipalityId, ownerId, errandEntity, description, created)).thenReturn(true);
-
-		// Act
-		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, ownerId, errandEntity, description, created);
-
-		// Assert
-		assertThat(result).isTrue();
-
-		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace, municipalityId, ownerId, errandEntity, description, created);
-	}
-
-	@Test
-	void doesNotificationWithSpecificDescriptionExistForOwnerAndErrandNotFound() {
-		// Arrange
-		final var municipalityId = "2281";
-		final var namespace = "namespace";
-		final var ownerId = randomUUID().toString();
-		final var errandEntity = buildErrandEntity();
-		final var description = "description";
-		final var created = now();
-
-		when(notificationRepositoryMock.existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace, municipalityId, ownerId, errandEntity, description, created)).thenReturn(false);
-
-		// Act
-		final var result = notificationService.doesNotificationWithSpecificDescriptionExistForOwnerAndErrandAndNotificationIsCreatedAfter(municipalityId, namespace, ownerId, errandEntity, description, created);
-
-		// Assert
-		assertThat(result).isFalse();
-
-		verify(notificationRepositoryMock).existsByNamespaceAndMunicipalityIdAndOwnerIdAndErrandEntityAndDescriptionAndCreatedIsAfter(namespace, municipalityId, ownerId, errandEntity, description, created);
 	}
 
 	@Test

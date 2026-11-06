@@ -1,10 +1,7 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import com.turkraft.springfilter.parser.node.FieldNode;
 import com.turkraft.springfilter.parser.node.FilterNode;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -38,6 +35,9 @@ import se.sundsvall.supportmanagement.integration.db.model.communication.Communi
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
+import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
+import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 
 import static java.util.Map.entry;
 import static java.util.Objects.isNull;
@@ -71,6 +71,11 @@ import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getCallerI
  * </ul>
  * Each with the entities belonging to it, so that a reference straight to one of those is held as well. The filter is
  * looked into as parsed, which holds every filter parameter of a request, since spring-filter joins them into one tree.
+ * The filter is looked into as parsed, which holds every filter parameter of a request, since spring-filter joins
+ * them into one tree. The ordering reaches the associations by another door. They are properties of the entity, so
+ * Spring
+ * Data resolves a sort on one of them into a join of the collection, which both multiplies the errands of a page
+ * against the count query beside it and orders the listing by data belonging to a resource of its own.
  */
 public final class ErrandFilters {
 
@@ -95,6 +100,9 @@ public final class ErrandFilters {
 		entry(MeasureJsonParameterEntity.class, MEASURE),
 		entry(TimeMeasurementEntity.class, TIME_MEASURE),
 		entry(NotificationEntity.class, NOTIFICATION));
+
+	// The entities behind the index-only associations, guarded on resources of their own
+	private static final Set<Class<?>> GUARDED_ENTITIES = Set.of(DecisionEntity.class, StatementEntity.class, InvestigationEntity.class, CommunicationEntity.class);
 
 	private ErrandFilters() {}
 
@@ -123,57 +131,37 @@ public final class ErrandFilters {
 		if (isNull(pageable)) {
 			return;
 		}
-		// A property Spring Data cannot resolve is refused by Spring Data itself, before anything is read
-		pageable.getSort().forEach(order -> resolve(order.getProperty())
-			.ifPresent(segments -> verify(segments, reached, NOT_SORTABLE, NOT_SORTABLE_BY_USER)));
-	}
-
-	private static void verify(final List<Segment> segments, final Predicate<ProtectedResource> reached, final String notSupported, final String notByUser) {
-		for (final var segment : segments) {
-			if (INDEX_ONLY.contains(segment.type())) {
-				throw Problem.valueOf(BAD_REQUEST, notSupported.formatted(segment.path()));
-			}
-			final var resource = GUARDED.get(segment.type());
-			if (nonNull(resource) && !reached.test(resource)) {
-				throw Problem.valueOf(FORBIDDEN, notByUser.formatted(resource.getPath(), getCallerIdentity()));
-			}
+		for (final var order : pageable.getSort()) {
+			indexOnlyAssociationIn(order.getProperty()).ifPresent(association -> {
+				throw Problem.valueOf(BAD_REQUEST, NOT_SORTABLE.formatted(association));
+			});
 		}
 	}
 
-	/**
-	 * A segment of a path: the path up to and including it, and the type it reaches, which for a collection is its
-	 * element and for a map its value.
-	 */
-	private record Segment(String path, Class<?> type) {}
-
-	/**
-	 * Resolves the path from the errand the way Spring Data resolves an ordering, which reads a property such as
-	 * communicationsSubject as communications.subject as well.
-	 */
-	private static Optional<List<Segment>> resolve(final String path) {
-		final PropertyPath resolved;
-		try {
-			resolved = PropertyPath.from(path, ErrandEntity.class);
-		} catch (final PropertyReferenceException _) {
+	// A field anywhere in the tree, values being nodes of their own. spring-filter asks whether a collection is empty and
+	// how large it is with a field naming the association alone, so a field of it need not follow
+	private static Optional<String> indexOnlyAssociationIn(final FilterNode node) {
+		if (isNull(node)) {
 			return Optional.empty();
 		}
-
-		final var segments = new ArrayList<Segment>();
-		var walked = "";
-		for (var current = resolved; nonNull(current); current = current.hasNext() ? current.next() : null) {
-			walked = walked.isEmpty() ? current.getSegment() : walked + "." + current.getSegment();
-			segments.add(new Segment(walked, current.getType()));
+		if (node instanceof final FieldNode fieldNode) {
+			final var association = indexOnlyAssociationIn(fieldNode.getName());
+			if (association.isPresent()) {
+				return association;
+			}
 		}
-		return Optional.of(segments);
+		return ofNullable(node.getChildren()).orElse(List.of()).stream()
+			.map(ErrandFilters::indexOnlyAssociationIn)
+			.flatMap(Optional::stream)
+			.findFirst();
 	}
 
-	// Every field anywhere in the tree, values being nodes of their own. spring-filter asks whether a collection is empty
-	// and how large it is with a field naming the association alone, so a field of it need not follow
-	private static Stream<String> pathsOf(final FilterNode node) {
-		if (isNull(node)) {
-			return Stream.empty();
-		}
-		final var own = node instanceof final FieldNode fieldNode ? Stream.of(fieldNode.getName()) : Stream.<String>empty();
-		return Stream.concat(own, ofNullable(node.getChildren()).orElse(List.of()).stream().flatMap(ErrandFilters::pathsOf));
+	// Any segment of the path, not only the first: every child of an errand carries a reference back to it, so
+	// stakeholders.errandEntity.communications reaches by a detour what communications names outright. A whole segment
+	// only, which is what keeps a property merely starting with the same word, such as decisionsCount, usable
+	private static Optional<String> indexOnlyAssociationIn(final String path) {
+		return Stream.of(path.split("\\."))
+			.filter(ErrandEntity.INDEX_ONLY_ASSOCIATIONS::contains)
+			.findFirst();
 	}
 }

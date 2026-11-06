@@ -54,6 +54,7 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SHORT_CODE;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SINGLE_DECISION_PER_ERRAND;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SMS_NOTIFICATIONS_ENABLED;
+import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
@@ -132,8 +133,10 @@ public class NamespaceConfigMapper {
 		ofNullable(config.getProcessTriggers()).orElse(emptyList())
 			.forEach(trigger -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_PROCESS_TRIGGER, trigger.name(), STRING)));
 
-		// A stored value may not be null, so an absent url, reporter profile or list of channels is left out rather than stored
-		// empty
+		// A stored value may not be null, so an absent url, reporter profile, list of channels or retention of soft deleted
+		// errands is left out rather than stored empty
+		ofNullable(config.getSoftDeletedRetentionInDays())
+			.ifPresent(days -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS, String.valueOf(days), INTEGER)));
 		ofNullable(config.getTeliaAceWorkItemBaseUrl())
 			.ifPresent(baseUrl -> entity.withValue(toNamespaceConfigPropertyEmbeddable(PROPERTY_TELIA_ACE_WORK_ITEM_BASE_URL, baseUrl, STRING)));
 		ofNullable(config.getBaseUrl())
@@ -178,6 +181,7 @@ public class NamespaceConfigMapper {
 			.withReporterProfileId(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_REPORTER_PROFILE_ID))
 			.withNewSubscriberChannels(toChannels(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_NEW_SUBSCRIBER_CHANNELS)))
 			.withNotificationTTLInDays(getValue(entity, PROPERTY_NOTIFICATION_TTL_IN_DAYS))
+			.withSoftDeletedRetentionInDays(ConfigPropertyExtractor.getNullableValue(entity, PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS))
 			.withProcessConsumer(getNullableValue(entity, PROPERTY_PROCESS_CONSUMER))
 			.withProcessTriggers(toProcessTriggers(entity))
 			.withTeliaAceWorkItemEnabled(readOptionalToggle(entity, PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED))

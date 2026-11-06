@@ -120,6 +120,7 @@ class ErrandEntityTest {
 			.withModified(now)
 			.withSuspendedFrom(now)
 			.withSuspendedTo(now)
+			.withSuspensionEndNotifiedFor(now)
 			.withPreviousStatus(previousStatus)
 			.withTimeMeasures(timeMeasure)
 			.withMeasures(measures)
@@ -158,7 +159,7 @@ class ErrandEntityTest {
 		assertThat(errandEntity.getContactReason()).isEqualTo(contactReason);
 		assertThat(errandEntity.getContactReasonDescription()).isEqualTo(contactReasonDescription);
 		assertThat(errandEntity).extracting(ErrandEntity::getModified,
-			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo,
+			ErrandEntity::getTouched, ErrandEntity::getSuspendedFrom, ErrandEntity::getSuspendedTo, ErrandEntity::getSuspensionEndNotifiedFor,
 			ErrandEntity::getCreated, ErrandEntity::getDeleted).allSatisfy(date -> assertThat(date).isEqualTo(now));
 		assertThat(errandEntity.getDeletedBy()).isEqualTo(deletedBy);
 		assertThat(errandEntity.getPreviousStatus()).isEqualTo(previousStatus);

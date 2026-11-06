@@ -33,6 +33,8 @@ class EmailRequestTest {
 		final var htmlMessage = "htmlMessage";
 		final var message = "message";
 		final var recipient = "recipient";
+		final var recipients = List.of("recipient1", "recipient2");
+		final var cc = List.of("cc1", "cc2");
 		final var sender = "sender";
 		final var senderName = "senderName";
 		final var subject = "subject";
@@ -45,6 +47,8 @@ class EmailRequestTest {
 			.withHtmlMessage(htmlMessage)
 			.withMessage(message)
 			.withRecipient(recipient)
+			.withRecipients(recipients)
+			.withCc(cc)
 			.withSender(sender)
 			.withSenderName(senderName)
 			.withSubject(subject)
@@ -57,6 +61,8 @@ class EmailRequestTest {
 		assertThat(bean.getHtmlMessage()).isEqualTo(htmlMessage);
 		assertThat(bean.getMessage()).isEqualTo(message);
 		assertThat(bean.getRecipient()).isEqualTo(recipient);
+		assertThat(bean.getRecipients()).isEqualTo(recipients);
+		assertThat(bean.getCc()).isEqualTo(cc);
 		assertThat(bean.getSender()).isEqualTo(sender);
 		assertThat(bean.getSenderName()).isEqualTo(senderName);
 		assertThat(bean.getSubject()).isEqualTo(subject);
@@ -69,5 +75,39 @@ class EmailRequestTest {
 	void testNoDirtOnCreatedBean() {
 		assertThat(EmailRequest.create()).hasAllNullFieldsOrPropertiesExcept("internal");
 		assertThat(new EmailRequest()).hasAllNullFieldsOrPropertiesExcept("internal");
+	}
+
+	@Test
+	void allRecipientsCombinesRecipientAndRecipientsWithoutBlanksAndDuplicates() {
+		final var emailRequest = EmailRequest.create()
+			.withRecipient("first@example.com")
+			.withRecipients(List.of("", "second@example.com", " ", "first@example.com"));
+
+		assertThat(emailRequest.allRecipients()).containsExactly("first@example.com", "second@example.com");
+	}
+
+	@Test
+	void allRecipientsLeavesOutBlankRecipient() {
+		final var emailRequest = EmailRequest.create()
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"));
+
+		assertThat(emailRequest.allRecipients()).containsExactly("first@example.com");
+	}
+
+	@Test
+	void allCcWithoutBlanksAndDuplicates() {
+		final var emailRequest = EmailRequest.create()
+			.withCc(List.of("", "cc@example.com", "cc@example.com"));
+
+		assertThat(emailRequest.allCc()).containsExactly("cc@example.com");
+	}
+
+	@Test
+	void allRecipientsAndAllCcWhenNoneAreSet() {
+		final var emailRequest = EmailRequest.create();
+
+		assertThat(emailRequest.allRecipients()).isEmpty();
+		assertThat(emailRequest.allCc()).isEmpty();
 	}
 }

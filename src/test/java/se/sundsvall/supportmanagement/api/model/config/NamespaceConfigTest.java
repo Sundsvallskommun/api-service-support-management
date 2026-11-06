@@ -45,6 +45,7 @@ class NamespaceConfigTest {
 		final var displayName = "displayName";
 		final var shortCode = "shortCode";
 		final var notificationTTLInDays = 40;
+		final var softDeletedRetentionInDays = 90;
 		final var created = OffsetDateTime.now();
 		final var modified = OffsetDateTime.now().plusDays(1);
 		final var accessControl = true;
@@ -69,6 +70,7 @@ class NamespaceConfigTest {
 			.withDisplayName(displayName)
 			.withShortCode(shortCode)
 			.withNotificationTTLInDays(notificationTTLInDays)
+			.withSoftDeletedRetentionInDays(softDeletedRetentionInDays)
 			.withAccessControl(accessControl)
 			.withNotifyReporter(notifyReporter)
 			.withRoleBasedMapping(roleBasedMapping)
@@ -93,6 +95,7 @@ class NamespaceConfigTest {
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getShortCode()).isEqualTo(shortCode);
 		assertThat(bean.getNotificationTTLInDays()).isEqualTo(notificationTTLInDays);
+		assertThat(bean.getSoftDeletedRetentionInDays()).isEqualTo(softDeletedRetentionInDays);
 		assertThat(bean.isAccessControl()).isEqualTo(accessControl);
 		assertThat(bean.isNotifyReporter()).isEqualTo(notifyReporter);
 		assertThat(bean.isRoleBasedMapping()).isEqualTo(roleBasedMapping);

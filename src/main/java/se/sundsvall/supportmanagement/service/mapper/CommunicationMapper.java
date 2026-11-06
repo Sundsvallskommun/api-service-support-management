@@ -109,6 +109,8 @@ public class CommunicationMapper {
 	}
 
 	public CommunicationEntity toCommunicationEntity(final String namespace, final String municipalityId, final EmailRequest request) {
+		final var recipients = request.allRecipients();
+
 		return CommunicationEntity.create()
 			.withNamespace(namespace)
 			.withMunicipalityId(municipalityId)
@@ -120,8 +122,9 @@ public class CommunicationMapper {
 			.withSent(OffsetDateTime.now(ZoneId.systemDefault()))
 			.withSubject(request.getSubject())
 			.withType(CommunicationType.EMAIL)
-			.withTarget(request.getRecipient())
-			.withRecipients(List.of(request.getRecipient()))
+			.withTarget(recipients.stream().findFirst().orElse(null))
+			.withRecipients(recipients)
+			.withCcRecipients(request.allCc())
 			.withInternal(request.getInternal())
 			.withAttachments(toMessageAttachments(namespace, municipalityId, request.getAttachments()))
 			.withViewed(false);

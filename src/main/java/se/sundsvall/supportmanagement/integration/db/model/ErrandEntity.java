@@ -41,10 +41,10 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.TypeBindin
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 import se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.NoOpenFieldBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 
 import static jakarta.persistence.CascadeType.ALL;
@@ -78,7 +78,10 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 		@Index(name = "idx_errand_municipality_id_namespace_touched", columnList = "municipality_id,namespace,touched"),
 		// Carries the retention purge, which walks a namespace in id order a batch at a time and would otherwise have to
 		// work through the whole namespace to find where the previous batch ended.
-		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id")
+		@Index(name = "idx_errand_municipality_id_namespace_id", columnList = "municipality_id,namespace,id"),
+		// Carries the removal of soft deleted errands, which asks a namespace for the errands soft deleted before a point
+		// in time and would otherwise have to work through the whole namespace to find the few that are.
+		@Index(name = "idx_errand_municipality_id_namespace_deleted", columnList = "municipality_id,namespace,deleted")
 	},
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uq_errand_number", columnNames = {
@@ -237,6 +240,14 @@ public class ErrandEntity {
 	@TimeZoneStorage(NORMALIZE)
 	@NonStandardField(name = ErrandIndex.SUSPENDED_FROM, valueBinder = @ValueBinderRef(type = OffsetDateTimeBinder.class))
 	private OffsetDateTime suspendedFrom;
+
+	// The suspendedTo the end of a suspension was last announced for. Written only by
+	// ErrandsRepository#markSuspensionEndNotified, which is why it is not updatable: saving an errand read before that
+	// would
+	// otherwise put the old value back, and the end would be announced again.
+	@Column(name = "suspension_end_notified_for", updatable = false)
+	@TimeZoneStorage(NORMALIZE)
+	private OffsetDateTime suspensionEndNotifiedFor;
 
 	@ElementCollection
 	@CollectionTable(name = "errand_labels",
@@ -850,6 +861,19 @@ public class ErrandEntity {
 		return this;
 	}
 
+	public OffsetDateTime getSuspensionEndNotifiedFor() {
+		return suspensionEndNotifiedFor;
+	}
+
+	public void setSuspensionEndNotifiedFor(final OffsetDateTime suspensionEndNotifiedFor) {
+		this.suspensionEndNotifiedFor = suspensionEndNotifiedFor;
+	}
+
+	public ErrandEntity withSuspensionEndNotifiedFor(final OffsetDateTime suspensionEndNotifiedFor) {
+		this.suspensionEndNotifiedFor = suspensionEndNotifiedFor;
+		return this;
+	}
+
 	public String getTempPreviousStatus() {
 		return tempPreviousStatus;
 	}
@@ -950,17 +974,19 @@ public class ErrandEntity {
 			&& Objects.equals(priority, that.priority) && Objects.equals(reporterUserId, that.reporterUserId) && Objects.equals(assignedUserId, that.assignedUserId) && Objects.equals(assignedGroupId, that.assignedGroupId) && Objects.equals(escalationEmail,
 				that.escalationEmail) && Objects.equals(parameters, that.parameters) && Objects.equals(jsonParameters, that.jsonParameters) && Objects.equals(attachments, that.attachments) && Objects.equals(notifications, that.notifications) && Objects
 					.equals(actions, that.actions) && Objects.equals(phases, that.phases) && Objects.equals(suspendedTo, that.suspendedTo) && Objects.equals(
-						suspendedFrom, that.suspendedFrom) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created, that.created) && Objects.equals(modified, that.modified) && Objects.equals(
-							touched, that.touched) && Objects.equals(deleted, that.deleted) && Objects.equals(deletedBy, that.deletedBy) && Objects.equals(errandNumber,
-								that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(
-									timeMeasures,
-									that.timeMeasures) && Objects.equals(measures, that.measures);
+						suspendedFrom, that.suspendedFrom) && Objects.equals(suspensionEndNotifiedFor, that.suspensionEndNotifiedFor) && Objects.equals(labels, that.labels) && Objects.equals(accessLabels, that.accessLabels) && Objects.equals(created,
+							that.created) && Objects.equals(modified, that.modified) && Objects.equals(
+								touched, that.touched) && Objects.equals(deleted, that.deleted) && Objects.equals(deletedBy, that.deletedBy) && Objects.equals(errandNumber,
+									that.errandNumber) && Objects.equals(tempPreviousStatus, that.tempPreviousStatus) && Objects.equals(previousStatus, that.previousStatus) && Objects.equals(
+										timeMeasures,
+										that.timeMeasures) && Objects.equals(measures, that.measures);
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, externalTags, stakeholders, contactReasonEntity, contactReasonDescription, businessRelated, municipalityId, namespace, title, category, type, status, lifecycle, resolution, description, channel, priority, reporterUserId,
-			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, labels, accessLabels, created, modified, touched, deleted, deletedBy, errandNumber,
+			assignedUserId, assignedGroupId, escalationEmail, parameters, jsonParameters, attachments, notifications, actions, phases, suspendedTo, suspendedFrom, suspensionEndNotifiedFor, labels, accessLabels, created, modified, touched, deleted,
+			deletedBy, errandNumber,
 			tempPreviousStatus,
 			previousStatus,
 			timeMeasures, measures);
@@ -999,6 +1025,7 @@ public class ErrandEntity {
 			", phases=" + phases +
 			", suspendedTo=" + suspendedTo +
 			", suspendedFrom=" + suspendedFrom +
+			", suspensionEndNotifiedFor=" + suspensionEndNotifiedFor +
 			", labels=" + labels +
 			", accessLabels=" + accessLabels +
 			", created=" + created +

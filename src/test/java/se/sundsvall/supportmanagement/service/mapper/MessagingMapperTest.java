@@ -33,10 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.MimeTypeUtils.IMAGE_PNG_VALUE;
@@ -92,6 +88,7 @@ class MessagingMapperTest {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(true, HTML_MESSAGE_IN_BASE64), List.of());
 
 		assertThat(result.getRecipients()).containsExactly(RECIPIENT);
+		assertThat(result.getCc()).isEmpty();
 		assertThat(new String(BASE64_DECODER.decode(result.getHtmlMessage()), StandardCharsets.UTF_8)).isEqualTo(HTML_MESSAGE);
 		assertThat(result.getMessage()).isEqualTo(MESSAGE);
 		assertThat(result.getSubject()).isEqualTo(SUBJECT);
@@ -113,6 +110,33 @@ class MessagingMapperTest {
 	}
 
 	@Test
+	void toEmailRequestWithRecipientsAndCc() {
+		final var emailRequest = createEmailRequest(true, HTML_MESSAGE)
+			.withRecipient(null)
+			.withRecipients(List.of("first@example.com", "second@example.com"))
+			.withCc(List.of("cc@example.com"));
+
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), emailRequest, List.of());
+
+		assertThat(result.getRecipients()).containsExactly("first@example.com", "second@example.com");
+		assertThat(result.getCc()).containsExactly("cc@example.com");
+		assertThat(result.getEmailAddress()).isNull();
+	}
+
+	@Test
+	void toEmailRequestWithBlankAndDuplicateRecipientsAndCc() {
+		final var emailRequest = createEmailRequest(true, HTML_MESSAGE)
+			.withRecipient("")
+			.withRecipients(List.of("first@example.com"))
+			.withCc(List.of("", "cc@example.com", "cc@example.com"));
+
+		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), emailRequest, List.of());
+
+		assertThat(result.getRecipients()).containsExactly("first@example.com");
+		assertThat(result.getCc()).containsExactly("cc@example.com");
+	}
+
+	@Test
 	void toEmailRequestWithoutSenderName() {
 		final var result = MessagingMapper.toEmailRequest(createErrandEntity(), createEmailRequest(false, HTML_MESSAGE), List.of());
 
@@ -130,46 +154,6 @@ class MessagingMapperTest {
 			generated.se.sundsvall.messaging.EmailAttachment::getContent,
 			generated.se.sundsvall.messaging.EmailAttachment::getContentType,
 			generated.se.sundsvall.messaging.EmailAttachment::getName).containsExactly(tuple(FILE_CONTENT, IMAGE_PNG_VALUE, FILE_NAME));
-	}
-
-	@Test
-	void createReporterEmailRequest() {
-		final var errandNumber = "errandNumber";
-		final var title = "title";
-		final var firstName = "firstName";
-		final var reporterSupportText = "Hi %s, you have received a new message in errand %s. Click %s/suffix/%s to read.";
-		final var katlaUrl = "katlaUrl";
-
-		final var errandEntityMock = mock(ErrandEntity.class);
-		final var stakeholderMock = mock(StakeholderEntity.class);
-		final var messagingsettingsMock = mock(MessagingSettings.class);
-
-		when(errandEntityMock.getId()).thenReturn(ERRAND_ID);
-		when(errandEntityMock.getErrandNumber()).thenReturn(errandNumber);
-		when(errandEntityMock.getTitle()).thenReturn(title);
-		when(stakeholderMock.getFirstName()).thenReturn(firstName);
-		when(messagingsettingsMock.reporterSupportText()).thenReturn(reporterSupportText);
-		when(messagingsettingsMock.katlaUrl()).thenReturn(katlaUrl);
-		when(messagingsettingsMock.contactInformationEmail()).thenReturn(SENDER_EMAIL);
-		when(messagingsettingsMock.contactInformationEmailName()).thenReturn(SENDER_NAME);
-
-		final var result = MessagingMapper.createReporterEmailRequest(errandEntityMock, stakeholderMock, RECIPIENT, messagingsettingsMock);
-
-		verify(errandEntityMock, never()).getId();
-		verify(errandEntityMock, times(3)).getErrandNumber();
-		verify(errandEntityMock, never()).getTitle();
-		verify(stakeholderMock).getFirstName();
-		verify(messagingsettingsMock).reporterSupportText();
-		verify(messagingsettingsMock).katlaUrl();
-		verify(messagingsettingsMock).contactInformationEmail();
-		verify(messagingsettingsMock).contactInformationEmailName();
-		verifyNoMoreInteractions(errandEntityMock, stakeholderMock, messagingsettingsMock);
-
-		assertThat(result.getMessage()).isEqualTo(reporterSupportText.formatted(firstName, errandNumber, katlaUrl, errandNumber));
-		assertThat(result.getSubject()).isEqualTo("Nytt meddelande kopplat till ärendet %s".formatted(errandNumber));
-		assertThat(result.getRecipient()).isEqualTo(RECIPIENT);
-		assertThat(result.getSender()).isEqualTo(SENDER_EMAIL);
-		assertThat(result.getSenderName()).isEqualTo(SENDER_NAME);
 	}
 
 	@Test

@@ -228,6 +228,22 @@ class RevisionServiceTest {
 	}
 
 	@Test
+	@DisplayName("Verification that the suspension job having announced the end of a suspension is not read as a change to the errand")
+	void shouldNotCreateErrandRevisionWhenOnlyTheSuspensionEndHasBeenAnnounced() {
+		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID)
+			.withSuspensionEndNotifiedFor(OffsetDateTime.now());
+		final var earlierSnapshot = """
+			{"id":"%s","namespace":"%s","municipalityId":"%s"}""".formatted(ERRAND_ID, NAMESPACE, MUNICIPALITY_ID);
+
+		when(revisionRepositoryMock.findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID))
+			.thenReturn(Optional.of(RevisionEntity.create().withVersion(3).withSerializedSnapshot(earlierSnapshot)));
+
+		assertThat(service.createErrandRevision(entity)).isNull();
+
+		verify(revisionRepositoryMock, never()).save(any());
+	}
+
+	@Test
 	@DisplayName("Verification that a snapshot written before errands had a life cycle reads as an active errand, so that it is not taken for a change")
 	void shouldNotCreateErrandRevisionWhenTheLastSnapshotHasNoLifecycleAndTheErrandIsActive() {
 		final var entity = ErrandEntity.create().withNamespace(NAMESPACE).withMunicipalityId(MUNICIPALITY_ID).withId(ERRAND_ID).withLifecycle(ErrandLifecycle.ACTIVE);
@@ -414,35 +430,6 @@ class RevisionServiceTest {
 
 		// Assertions and verifications
 		verify(revisionRepositoryMock).findFirstByNamespaceAndMunicipalityIdAndEntityIdOrderByVersionDesc(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID);
-		assertThat(result).isNull();
-	}
-
-	@Test
-	void getErrandRevisionByVersion() {
-		// Setup
-		final var version = 123;
-
-		// Mock
-		when(revisionRepositoryMock.findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version)).thenReturn(Optional.of(createRevisionEntity()));
-
-		// Call
-		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-
-		// Assertions and verifications
-		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-		assertThat(result).isNotNull();
-	}
-
-	@Test
-	void getErrandRevisionByVersionNonExistingErrand() {
-		// Setup
-		final var version = 123;
-
-		// Call
-		final var result = service.getErrandRevisionByVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
-
-		// Assertions and verifications
-		verify(revisionRepositoryMock).findByNamespaceAndMunicipalityIdAndEntityIdAndVersion(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, version);
 		assertThat(result).isNull();
 	}
 
