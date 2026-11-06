@@ -99,32 +99,10 @@ class ErrandFiltersTest {
 		measures.decisionEntity.investigationEntity.description:'x'             | measures.decisionEntity
 		not (status:'NEW' or (title:'x' and communications.subject~'%x%'))      | communications
 		(title:'x') and (communications.subject~'%secret%')                     | communications
+		title ~ ['%', communications.subject]                                   | communications
+		title ~~ ['%', decisions.description]                                   | decisions
 		""")
 	void filtersReachingAnIndexOnlyEntityAreRefused(final String filter, final String reaching) {
-	@ValueSource(strings = {
-		"communications.messageBody~'%x%'",
-		"status:'NEW' and decisions.justification~'%x%'",
-		"statements.responseText:'x'",
-		"investigations.summary:'x'",
-		// Named without a field of their own, which tells whether the rows are there at all
-		"communications is not empty",
-		"communications is empty",
-		"size(communications) > 0",
-		"status:'NEW' and size(decisions) > 2",
-		// Reached through the reference a child carries back to the errand, which is a path like any other to spring-filter
-		"stakeholders.errandEntity.communications.messageBody~'%secret%'",
-		"parameters.errandEntity.decisions.justification~'%x%'",
-		"attachments.errandEntity.statements.responseText:'x'",
-		"stakeholders.errandEntity.communications is not empty",
-		// Further in, behind another operator
-		"not (status:'NEW' or (title:'x' and communications.subject~'%x%'))",
-		// Two filter parameters, as spring-filter joins them
-		"(title:'x') and (communications.subject~'%secret%')",
-		// Among the patterns of a like against a list, which spring-filter resolves as fields like any other
-		"title ~ ['%', communications.subject]",
-		"title ~~ ['%', decisions.justification]"
-	})
-	void filtersReachingAnIndexOnlyAssociationAreRefused(final String filter) {
 		final var filterNode = filterParser.parse(filter);
 
 		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifyFilterable(filterNode, EVERY_RESOURCE));
@@ -179,7 +157,7 @@ class ErrandFiltersTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"created", "touched", "status", "errandNumber", "stakeholders.firstName", "parameters.values", "decisionsCount"
+		"created", "touched", "status", "errandNumber", "stakeholders.firstName", "parameters.values", "measures.goal"
 	})
 	void orderingsThatReachNothingClosedPass(final String property) {
 		assertThatCode(() -> ErrandFilters.verifySortable(PageRequest.of(0, 20, Sort.by(property)), EVERY_RESOURCE)).doesNotThrowAnyException();
@@ -191,10 +169,11 @@ class ErrandFiltersTest {
 		assertThatCode(() -> ErrandFilters.verifySortable(PageRequest.of(0, 20), EVERY_RESOURCE)).doesNotThrowAnyException();
 	}
 
-	/** Refused by Spring Data itself, before anything is read. */
 	@Test
-	void anOrderingThatCannotBeResolvedIsLeftToSpringData() {
-		assertThatCode(() -> ErrandFilters.verifySortable(PageRequest.of(0, 20, Sort.by("noSuchProperty")), EVERY_RESOURCE)).doesNotThrowAnyException();
+	void orderingOnAPropertyTheErrandDoesNotHaveIsRefused() {
+		final var pageable = PageRequest.of(0, 20, Sort.by("decisionsCount"));
+
+		assertThrows(PropertyReferenceException.class, () -> ErrandFilters.verifySortable(pageable, EVERY_RESOURCE));
 	}
 
 	/**
@@ -212,22 +191,12 @@ class ErrandFiltersTest {
 		communications                                      | communications
 		stakeholders.errandEntity.communications.messageBody | stakeholders.errandEntity.communications
 		measures.decisionEntity.description                 | measures.decisionEntity
+		measures.statementEntity                            | measures.statementEntity
+		Communications.subject                              | communications
+		communications_subject                              | communications
 		communicationsSubject                               | communications
 		""")
 	void orderingsReachingAnIndexOnlyEntityAreRefused(final String property, final String reaching) {
-	@ValueSource(strings = {
-		"communications.messageBody",
-		"decisions.justification",
-		"statements.responseText",
-		"investigations.summary",
-		"communications",
-		"stakeholders.errandEntity.communications.messageBody",
-		// Spelled as the repository resolves it rather than as it is named
-		"Communications.subject",
-		"communications_subject",
-		"communicationsSubject"
-	})
-	void orderingsReachingAnIndexOnlyAssociationAreRefused(final String property) {
 		final var pageable = PageRequest.of(0, 20, Sort.by(property).descending());
 
 		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifySortable(pageable, EVERY_RESOURCE));
@@ -244,27 +213,6 @@ class ErrandFiltersTest {
 
 		assertThat(e.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(e.getDetail()).isEqualTo("Resource 'errand/measure' not sortable by user '%s'".formatted(USER));
-	}
-
-	/** The entities are guarded on whichever association reaches them, not only on the associations of the errand. */
-	@ParameterizedTest
-	@ValueSource(strings = {
-		"measures.decisionEntity.justification", "measures.statementEntity"
-	})
-	void orderingsReachingAGuardedEntityThroughAnotherAssociationAreRefused(final String property) {
-		final var pageable = PageRequest.of(0, 20, Sort.by(property));
-
-		final var e = assertThrows(ThrowableProblem.class, () -> ErrandFilters.verifySortable(pageable));
-
-		assertThat(e.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(e.getDetail()).matches("Sorting on '(decisionEntity|statementEntity)' is not supported");
-	}
-
-	@Test
-	void orderingOnAPropertyTheErrandDoesNotHaveIsRefused() {
-		final var pageable = PageRequest.of(0, 20, Sort.by("decisionsCount"));
-
-		assertThrows(PropertyReferenceException.class, () -> ErrandFilters.verifySortable(pageable));
 	}
 
 	/** Every order of the sort is asked, not only the first. */
