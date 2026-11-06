@@ -67,6 +67,7 @@ import se.sundsvall.supportmanagement.model.enums.ErrandLifecycle;
 import se.sundsvall.supportmanagement.model.enums.OperationType;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.access.ErrandKeyAccess;
+import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.action.Action;
 import se.sundsvall.supportmanagement.service.action.DueAction;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
@@ -107,6 +108,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrand;
@@ -391,6 +393,46 @@ class ErrandServiceTest {
 			});
 
 		verifyNoInteractions(errandRepositoryMock, accessControlServiceMock);
+	}
+
+	@Test
+	void findErrandsRefusesAFilterOnAResourceTheUserDoesNotReachOnEveryErrand() {
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var filter = new FieldNode("measures.goal");
+		final var pageable = PageRequest.of(0, 20);
+		final var labels = Set.of(MetadataLabelEntity.create().withId("label-id"));
+		// The labels reach measures, the errands the user reported do not
+		final var grant = new NamespaceGrant(true, new NamespaceGrant.LabelRoute(labels, null, Set.of(ProtectedResource.MEASURE)), null,
+			new NamespaceGrant.ReporterRoute("user", null, Set.of()));
+		when(accessControlServiceMock.namespaceGrant(NAMESPACE, MUNICIPALITY_ID, user, LR)).thenReturn(grant);
+
+		assertThatThrownBy(() -> service.findErrands(NAMESPACE, MUNICIPALITY_ID, filter, pageable))
+			.isInstanceOfSatisfying(ThrowableProblem.class, problem -> {
+				assertThat(problem.getStatus()).isEqualTo(FORBIDDEN);
+				assertThat(problem.getDetail()).isEqualTo("Resource 'errand/measure' not filterable by user 'user'");
+			});
+
+		verify(accessControlServiceMock).namespaceGrant(NAMESPACE, MUNICIPALITY_ID, user, LR);
+		verifyNoMoreInteractions(accessControlServiceMock);
+		verifyNoInteractions(errandRepositoryMock);
+	}
+
+	@Test
+	void countErrandsFiltersOnAResourceTheUserReachesOnEveryErrand() {
+		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
+		Identifier.set(user);
+		final var filter = new FieldNode("measures.goal");
+		final Specification<ErrandEntity> specification = (_, _, criteriaBuilder) -> criteriaBuilder.conjunction();
+		final var labels = Set.of(MetadataLabelEntity.create().withId("label-id"));
+		final var grant = new NamespaceGrant(true, new NamespaceGrant.LabelRoute(labels, null, Set.of(ProtectedResource.MEASURE)), null, null);
+		when(accessControlServiceMock.namespaceGrant(NAMESPACE, MUNICIPALITY_ID, user, LR)).thenReturn(grant);
+		when(accessControlServiceMock.withAccessControl(any(), any(), any(), any(), any())).thenReturn(specification);
+		when(errandRepositoryMock.count(ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(1L);
+
+		assertThat(service.countErrands(NAMESPACE, MUNICIPALITY_ID, filter)).isEqualTo(1L);
+
+		verify(accessControlServiceMock).namespaceGrant(NAMESPACE, MUNICIPALITY_ID, user, LR);
 	}
 
 	@Test

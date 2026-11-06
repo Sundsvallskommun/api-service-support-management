@@ -253,7 +253,7 @@ class ErrandsResourceTest {
 			.expectStatus().isOk();
 
 		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), filterCaptor.capture(), eq(pageable));
-		assertThatThrownBy(() -> ErrandFilters.verifyFilterable(filterCaptor.getValue()))
+		assertThatThrownBy(() -> ErrandFilters.verifyFilterable(filterCaptor.getValue(), _ -> true))
 			.hasMessageContaining("Filtering on 'communications' is not supported");
 	}
 
