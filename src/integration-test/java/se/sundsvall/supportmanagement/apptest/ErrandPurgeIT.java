@@ -21,7 +21,7 @@ import se.sundsvall.supportmanagement.integration.db.ProcessEventOutboxRepositor
 import se.sundsvall.supportmanagement.integration.db.RevisionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.scheduler.job.JobScheduler;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;

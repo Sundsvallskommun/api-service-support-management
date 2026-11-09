@@ -29,7 +29,7 @@ class JobSchedulerTest {
 
 	@BeforeEach
 	void setUp() {
-		scheduler = new JobScheduler(jobWorkerMock, healthUtilityMock, JOB_NAME);
+		scheduler = new JobScheduler(staleJobWorkerMock, healthUtilityMock, JOB_NAME);
 	}
 
 	@Test

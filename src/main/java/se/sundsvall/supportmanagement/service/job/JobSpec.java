@@ -1,6 +1,6 @@
 package se.sundsvall.supportmanagement.service.job;
 
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 /**
  * What a job being launched is, before any run is dispatched against it - everything {@link JobService#launch} needs

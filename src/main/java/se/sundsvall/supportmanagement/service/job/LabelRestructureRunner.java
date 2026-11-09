@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.service.MetadataService;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
 
 /**
  * Carries out label-tree restructures accepted by {@link MetadataService#startLabelTreeRestructure} - the single

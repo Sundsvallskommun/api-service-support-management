@@ -43,8 +43,8 @@ import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructure
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MERGE;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MOVE;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.RENAME;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 
 /**
  * The orchestration itself is what these tests pin down: which {@code MetadataService} mutation primitive each step
