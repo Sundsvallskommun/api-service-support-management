@@ -13,7 +13,7 @@ import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.util.Objects.isNull;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withLastTouchedBefore;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withMunicipalityId;
 import static se.sundsvall.supportmanagement.service.util.SpecificationBuilder.withNamespace;

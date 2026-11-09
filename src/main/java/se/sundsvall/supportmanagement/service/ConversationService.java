@@ -21,9 +21,9 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.ConversationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.messageexchange.MessageExchangeClient;
 import se.sundsvall.supportmanagement.integration.relation.RelationClient;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.scheduler.messageexchange.MessageExchangeScheduler;
 
@@ -62,8 +62,7 @@ public class ConversationService {
 	private final NamespaceConfigService namespaceConfigService;
 	private final ErrandAttachmentService errandAttachmentService;
 
-	@Value("${integration.messageexchange.namespace:draken}")
-	private String messageExchangeNamespace;
+	private final String messageExchangeNamespace;
 
 	public ConversationService(
 		final MessageExchangeClient messageExchangeClient,
@@ -73,7 +72,8 @@ public class ConversationService {
 		final RelationClient relationClient,
 		final AccessControlService accessControlService,
 		final NamespaceConfigService namespaceConfigService,
-		final ErrandAttachmentService errandAttachmentService) {
+		final ErrandAttachmentService errandAttachmentService,
+		@Value("${integration.messageexchange.namespace}") final String messageExchangeNamespace) {
 
 		this.messageExchangeClient = messageExchangeClient;
 		this.conversationRepository = conversationRepository;
@@ -83,6 +83,7 @@ public class ConversationService {
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
 		this.errandAttachmentService = errandAttachmentService;
+		this.messageExchangeNamespace = messageExchangeNamespace;
 	}
 
 	public Conversation createConversation(final String municipalityId, final String namespace, final String errandId, final ConversationRequest conversationRequest) {

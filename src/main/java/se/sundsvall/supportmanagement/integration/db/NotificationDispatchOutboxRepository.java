@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 
 @CircuitBreaker(name = "notificationDispatchOutboxRepository")
 public interface NotificationDispatchOutboxRepository extends JpaRepository<NotificationDispatchOutboxEntity, String> {

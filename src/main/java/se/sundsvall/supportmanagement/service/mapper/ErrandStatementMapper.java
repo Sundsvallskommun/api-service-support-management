@@ -4,7 +4,7 @@ import java.util.List;
 import se.sundsvall.supportmanagement.api.model.errand.Statement;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;

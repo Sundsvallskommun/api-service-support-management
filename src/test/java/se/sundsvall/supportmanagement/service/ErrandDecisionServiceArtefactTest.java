@@ -22,7 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.InvestigationRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionJsonParameterEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.ErrandJsonParameterService.UpsertResult;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;

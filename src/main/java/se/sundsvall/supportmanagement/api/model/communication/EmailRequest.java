@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import se.sundsvall.supportmanagement.api.validation.ValidEmailRecipients;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIRED;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;

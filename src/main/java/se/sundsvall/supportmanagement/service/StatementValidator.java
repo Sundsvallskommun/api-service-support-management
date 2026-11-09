@@ -8,8 +8,8 @@ import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntit
 
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.ACTIVE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ItemStatus.ACTIVE;
+import static se.sundsvall.supportmanagement.model.enums.ItemStatus.COMPLETED;
 
 /**
  * Upholds what the life cycle of a statement means.

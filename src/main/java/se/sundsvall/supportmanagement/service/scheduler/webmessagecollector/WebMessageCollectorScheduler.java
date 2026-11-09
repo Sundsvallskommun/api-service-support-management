@@ -19,17 +19,18 @@ public class WebMessageCollectorScheduler {
 	private final Dept44HealthUtility healthUtility;
 	private final Consumer<String> setUnHealthyConsumer;
 
-	@Value("${scheduler.web-message-collector.name}")
-	private String jobName;
+	private final String jobName;
 
 	public WebMessageCollectorScheduler(final WebMessageCollectorWorker worker,
 		final WebMessageCollectRepository repository,
-		final Dept44HealthUtility healthUtility) {
+		final Dept44HealthUtility healthUtility,
+		@Value("${scheduler.web-message-collector.name}") final String jobName) {
 
 		this.worker = worker;
 		this.repository = repository;
 		this.healthUtility = healthUtility;
 		this.setUnHealthyConsumer = msg -> healthUtility.setHealthIndicatorUnhealthy(jobName, msg);
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

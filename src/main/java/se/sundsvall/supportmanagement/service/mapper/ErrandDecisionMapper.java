@@ -9,8 +9,8 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionParameterEnti
 import se.sundsvall.supportmanagement.integration.db.model.DecisionTermEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.InvestigationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.DecisionMethod;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;

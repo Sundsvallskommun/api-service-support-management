@@ -29,9 +29,9 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericFie
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyBinding;
-import se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.enums.DecisionMethod;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.EnumType.STRING;

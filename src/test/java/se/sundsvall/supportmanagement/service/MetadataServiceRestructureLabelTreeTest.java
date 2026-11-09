@@ -26,7 +26,7 @@ import se.sundsvall.supportmanagement.integration.db.ActionConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
 import se.sundsvall.supportmanagement.service.job.JobService;
 import se.sundsvall.supportmanagement.service.job.LabelRestructureRun;
 import se.sundsvall.supportmanagement.service.job.LabelRestructureRunner;
@@ -47,7 +47,7 @@ import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructure
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.DELETE;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MERGE;
 import static se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType.MOVE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.RESTRUCTURE_LABEL_TREE;
+import static se.sundsvall.supportmanagement.model.enums.JobType.RESTRUCTURE_LABEL_TREE;
 
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceRestructureLabelTreeTest {

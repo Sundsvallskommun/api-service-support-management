@@ -15,6 +15,7 @@ import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
+import static se.sundsvall.supportmanagement.Constants.PROCESS_KEY_LENGTH;
 
 /**
  * One errand change on its way to a process engine, written in the same transaction as the change itself.
@@ -37,7 +38,6 @@ public class ProcessEventOutboxEntity {
 	 * identity header of the caller. Used by the column annotations below, and by the writer to hold a value against the
 	 * column it is headed for.
 	 */
-	public static final int PROCESS_KEY_LENGTH = 128;
 	public static final int SIGNAL_NAME_LENGTH = 128;
 	public static final int EXECUTED_BY_LENGTH = 255;
 

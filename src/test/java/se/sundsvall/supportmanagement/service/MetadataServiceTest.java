@@ -62,7 +62,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EntityType.CATEGORY;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.CATEGORY;
 
 @ExtendWith(MockitoExtension.class)
 class MetadataServiceTest {

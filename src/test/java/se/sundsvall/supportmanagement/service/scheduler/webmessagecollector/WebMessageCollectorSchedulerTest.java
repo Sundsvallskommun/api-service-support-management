@@ -7,10 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.WebMessageCollectRepository;
 import se.sundsvall.supportmanagement.integration.db.model.WebMessageCollectEntity;
@@ -41,7 +39,6 @@ class WebMessageCollectorSchedulerTest {
 	@Mock
 	private Dept44HealthUtility healthIndicatorMock;
 
-	@InjectMocks
 	private WebMessageCollectorScheduler scheduler;
 
 	@Captor
@@ -52,7 +49,7 @@ class WebMessageCollectorSchedulerTest {
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(scheduler, "jobName", "web-message-collector");
+		scheduler = new WebMessageCollectorScheduler(webMessageCollectorWorkerMock, webMessageCollectRepositoryMock, healthIndicatorMock, "web-message-collector");
 	}
 
 	@Test

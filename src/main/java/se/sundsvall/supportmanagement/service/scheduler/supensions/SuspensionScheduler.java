@@ -15,12 +15,12 @@ public class SuspensionScheduler {
 	private final SuspensionWorker suspensionWorker;
 	private final Dept44HealthUtility healthUtility;
 
-	@Value("${scheduler.suspension.name}")
-	private String jobName;
+	private final String jobName;
 
-	public SuspensionScheduler(final SuspensionWorker suspensionWorker, final Dept44HealthUtility healthUtility) {
+	public SuspensionScheduler(final SuspensionWorker suspensionWorker, final Dept44HealthUtility healthUtility, @Value("${scheduler.suspension.name}") final String jobName) {
 		this.suspensionWorker = suspensionWorker;
 		this.healthUtility = healthUtility;
+		this.jobName = jobName;
 	}
 
 	@Dept44Scheduled(

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.MESSAGE_CONVERSATION_EXTERNAL;
 
 /**
  * A publication that cannot write its row has to take the errand change down with it: the transaction is marked

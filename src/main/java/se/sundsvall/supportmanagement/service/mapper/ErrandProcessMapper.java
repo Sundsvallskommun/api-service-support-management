@@ -13,14 +13,14 @@ import se.sundsvall.supportmanagement.api.model.process.ProcessStartable;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ActivitySeverity;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.INFO;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.INFO;
 
 public final class ErrandProcessMapper {
 

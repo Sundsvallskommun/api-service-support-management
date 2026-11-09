@@ -43,8 +43,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriberSmsServiceTest {

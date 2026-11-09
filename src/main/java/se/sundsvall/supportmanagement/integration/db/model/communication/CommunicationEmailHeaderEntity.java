@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.annotations.UuidGenerator;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 @Entity
 @Table(name = "communication_email_header")

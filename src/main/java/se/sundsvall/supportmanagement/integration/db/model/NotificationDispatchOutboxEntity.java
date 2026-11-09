@@ -20,8 +20,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;

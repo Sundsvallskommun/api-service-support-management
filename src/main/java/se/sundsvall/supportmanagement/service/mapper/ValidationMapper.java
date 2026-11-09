@@ -6,7 +6,7 @@ import java.util.function.Function;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.api.model.config.Validation;
 import se.sundsvall.supportmanagement.integration.db.model.ValidationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;

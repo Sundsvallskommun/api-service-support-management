@@ -64,7 +64,7 @@ public final class SubscriptionProfileMapper {
 			.orElse(List.of());
 	}
 
-	static List<se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType> toChannelTypeEntities(final List<NotificationChannelType> types) {
+	static List<se.sundsvall.supportmanagement.model.enums.NotificationChannelType> toChannelTypeEntities(final List<NotificationChannelType> types) {
 		return Optional.ofNullable(types)
 			.map(list -> list.stream()
 				.map(SubscriberMapper::toDbChannelType)
@@ -72,7 +72,7 @@ public final class SubscriptionProfileMapper {
 			.orElse(null);
 	}
 
-	static List<NotificationChannelType> toChannelTypes(final List<se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType> types) {
+	static List<NotificationChannelType> toChannelTypes(final List<se.sundsvall.supportmanagement.model.enums.NotificationChannelType> types) {
 		return Optional.ofNullable(types)
 			.map(list -> list.stream()
 				.map(SubscriberMapper::toApiChannelType)

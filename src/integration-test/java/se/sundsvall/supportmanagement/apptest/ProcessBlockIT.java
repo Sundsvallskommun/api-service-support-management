@@ -36,9 +36,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.STOPPED;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.TRIGGER_PROCESS_HEADER;
 
 /**

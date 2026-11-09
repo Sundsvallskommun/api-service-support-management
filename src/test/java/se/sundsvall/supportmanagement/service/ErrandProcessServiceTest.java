@@ -46,8 +46,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessActivityEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 
@@ -73,14 +73,14 @@ import static se.sundsvall.supportmanagement.api.model.process.ProcessStartabili
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.NO_PROCESS_ENGINE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_BLOCKED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.WARN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RETRYING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource.PROCESS_ACTIVITY;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.WARN;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RETRYING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.ProtectedResource.PROCESS;
+import static se.sundsvall.supportmanagement.model.enums.ProtectedResource.PROCESS_ACTIVITY;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandProcessServiceTest {

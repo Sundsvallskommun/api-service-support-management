@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static java.util.Optional.ofNullable;

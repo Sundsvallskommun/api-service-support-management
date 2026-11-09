@@ -20,7 +20,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
-import se.sundsvall.supportmanagement.integration.db.model.enums.SectionAssessment;
+import se.sundsvall.supportmanagement.model.enums.SectionAssessment;
 
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.EnumType.STRING;

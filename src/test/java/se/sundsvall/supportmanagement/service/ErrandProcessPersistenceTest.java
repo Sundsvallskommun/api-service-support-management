@@ -40,8 +40,8 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessSignalEn
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static java.time.OffsetDateTime.now;
@@ -52,11 +52,11 @@ import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessError.create;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.LIVE_INSTANCE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
 
 /**
  * The process resource against the schema the entities generate, where the unique keys are real.

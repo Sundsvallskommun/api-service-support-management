@@ -1,0 +1,19 @@
+package se.sundsvall.supportmanagement.model.enums;
+
+/**
+ * Assessment of an investigation section, neutral to the line of business.
+ */
+public enum SectionAssessment {
+
+	/** Not assessed yet. */
+	PENDING,
+
+	/** Nothing to remark on. */
+	APPROVED,
+
+	/** A deficiency was established. */
+	DEFICIENCY,
+
+	/** The section does not concern this errand. */
+	NOT_APPLICABLE
+}

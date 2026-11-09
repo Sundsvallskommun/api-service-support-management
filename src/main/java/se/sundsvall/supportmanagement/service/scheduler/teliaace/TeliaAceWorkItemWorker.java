@@ -54,19 +54,20 @@ public class TeliaAceWorkItemWorker {
 	// ProblemErrorDecoder's bypass list so ClientProblem.getStatus() carries them instead of a normalized BAD_GATEWAY).
 	private static final Set<HttpStatus> PROPAGATED_STATUSES = EnumSet.of(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN, HttpStatus.TOO_MANY_REQUESTS);
 
-	@Value("${scheduler.telia-ace-work-item.max-age:P3D}")
-	private Duration maxAge = Duration.ofDays(3);
+	private final Duration maxAge;
 
 	private final TeliaAceWorkItemRepository workItemRepository;
 	private final TeliaAceContactRepository contactRepository;
 	private final ErrandsRepository errandsRepository;
 	private final TeliaAceClient teliaAceClient;
 
-	public TeliaAceWorkItemWorker(final TeliaAceWorkItemRepository workItemRepository, final TeliaAceContactRepository contactRepository, final ErrandsRepository errandsRepository, final TeliaAceClient teliaAceClient) {
+	public TeliaAceWorkItemWorker(final TeliaAceWorkItemRepository workItemRepository, final TeliaAceContactRepository contactRepository, final ErrandsRepository errandsRepository, final TeliaAceClient teliaAceClient,
+		@Value("${scheduler.telia-ace-work-item.max-age:P3D}") final Duration maxAge) {
 		this.workItemRepository = workItemRepository;
 		this.contactRepository = contactRepository;
 		this.errandsRepository = errandsRepository;
 		this.teliaAceClient = teliaAceClient;
+		this.maxAge = maxAge;
 	}
 
 	@Transactional(readOnly = true)

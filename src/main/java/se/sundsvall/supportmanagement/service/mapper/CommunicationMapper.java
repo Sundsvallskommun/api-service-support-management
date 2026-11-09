@@ -23,9 +23,9 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationAttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEmailHeaderEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.CommunicationType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Direction;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader;
+import se.sundsvall.supportmanagement.model.enums.CommunicationType;
+import se.sundsvall.supportmanagement.model.enums.Direction;
+import se.sundsvall.supportmanagement.model.enums.EmailHeader;
 
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.detectMimeType;

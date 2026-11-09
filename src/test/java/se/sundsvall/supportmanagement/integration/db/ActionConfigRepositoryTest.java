@@ -12,7 +12,7 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigConditionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ActionConfigParameterEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;

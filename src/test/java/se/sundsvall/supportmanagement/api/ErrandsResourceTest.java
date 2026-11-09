@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.turkraft.springfilter.parser.node.FilterNode;
 import java.io.Serial;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,6 +13,9 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,7 +24,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.CountResponse;
@@ -35,18 +38,18 @@ import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
-import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.service.ErrandService;
 import se.sundsvall.supportmanagement.service.MetadataService;
+import se.sundsvall.supportmanagement.service.util.ErrandFilters;
 import tools.jackson.databind.JsonNode;
 
 import static com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -230,19 +233,28 @@ class ErrandsResourceTest {
 	}
 
 	/**
-	 * An ordering naming an association the errand holds for the search index alone is refused before it reaches Spring
-	 * Data, which would resolve it into a join of the collection and multiply the errands of the page.
+	 * spring-filter joins every filter parameter of a request into the one tree the service is handed, which is where the
+	 * index-only associations are guarded, so a second filter parameter cannot slip one past the guard.
 	 */
-	@Test
-	void findErrandsOrderedByAnIndexOnlyAssociation() {
-		webTestClient.get()
-			.uri(builder -> builder.path(PATH).queryParam("sort", "communications.messageBody,asc").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
-			.exchange()
-			.expectStatus().isBadRequest()
-			.expectBody()
-			.jsonPath("$.detail").isEqualTo("Sorting on 'communications' is not supported");
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"title:'x'", ""
+	})
+	void findErrandsHandsTheServiceEveryFilterParameter(final String firstFilter) {
+		final var pageable = PageRequest.of(0, 20);
+		final var filterCaptor = ArgumentCaptor.forClass(FilterNode.class);
+		when(errandServiceMock.findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(), any())).thenReturn(new RestResponsePage<>(List.of(), pageable, 0));
 
-		verifyNoInteractions(errandServiceMock);
+		webTestClient.get()
+			.uri(builder -> builder.path(PATH)
+				.queryParam("filter", firstFilter, "communications.subject~'secret'")
+				.build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk();
+
+		verify(errandServiceMock).findErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), filterCaptor.capture(), eq(pageable));
+		assertThatThrownBy(() -> ErrandFilters.verifyFilterable(filterCaptor.getValue()))
+			.hasMessageContaining("Filtering on 'communications' is not supported");
 	}
 
 	@Test
@@ -474,7 +486,7 @@ class ErrandsResourceTest {
 		final var countResponse = new CountResponse(count);
 
 		// Mock
-		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any())).thenReturn(count);
+		when(errandServiceMock.countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<FilterNode>any())).thenReturn(count);
 
 		// Call
 		webTestClient.get()
@@ -486,7 +498,7 @@ class ErrandsResourceTest {
 			.isEqualTo(countResponse);
 
 		// Verification
-		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<Specification<ErrandEntity>>any());
+		verify(errandServiceMock).countErrands(eq(NAMESPACE), eq(MUNICIPALITY_ID), ArgumentMatchers.<FilterNode>any());
 	}
 
 	// Helper implementation of Page

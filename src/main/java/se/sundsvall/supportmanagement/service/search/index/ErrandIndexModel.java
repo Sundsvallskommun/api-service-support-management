@@ -13,10 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
+import se.sundsvall.supportmanagement.integration.db.search.ErrandIndexBindings;
 import se.sundsvall.supportmanagement.integration.db.search.SearchAnalysisConfigurer;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static java.util.stream.Collectors.joining;
 
@@ -101,7 +102,7 @@ public class ErrandIndexModel {
 	 */
 	public static Optional<String> sortField(final String property) {
 		return Stream.of(ErrandField.values())
-			.map(field -> field.getSortField(property))
+			.map(field -> ErrandIndexBindings.sortField(field, property))
 			.flatMap(Optional::stream)
 			.findFirst();
 	}
@@ -109,7 +110,7 @@ public class ErrandIndexModel {
 	/** The properties an ordering may name, sorted. */
 	public static List<String> sortableProperties() {
 		return Stream.of(ErrandField.values())
-			.flatMap(field -> field.getSortableProperties().stream())
+			.flatMap(field -> ErrandIndexBindings.sortableProperties(field).stream())
 			.sorted()
 			.toList();
 	}
@@ -120,7 +121,7 @@ public class ErrandIndexModel {
 	 */
 	public static Optional<String> groupField(final String property) {
 		return Stream.of(ErrandField.values())
-			.map(field -> field.getGroupField(property))
+			.map(field -> ErrandIndexBindings.groupField(field, property))
 			.flatMap(Optional::stream)
 			.findFirst();
 	}
@@ -128,7 +129,7 @@ public class ErrandIndexModel {
 	/** The properties a count may group by, sorted. */
 	public static List<String> groupableProperties() {
 		return Stream.of(ErrandField.values())
-			.flatMap(field -> field.getGroupableProperties().stream())
+			.flatMap(field -> ErrandIndexBindings.groupableProperties(field).stream())
 			.sorted()
 			.toList();
 	}
@@ -136,7 +137,7 @@ public class ErrandIndexModel {
 	/** The field of the errand sent in groupable property belongs to, which is what a route's grant is asked about. */
 	public static Optional<ErrandField> groupedField(final String property) {
 		return Stream.of(ErrandField.values())
-			.filter(field -> field.getGroupField(property).isPresent())
+			.filter(field -> ErrandIndexBindings.groupField(field, property).isPresent())
 			.findFirst();
 	}
 
@@ -148,12 +149,12 @@ public class ErrandIndexModel {
 
 		for (final var field : ErrandField.values()) {
 			final var declaredOn = "field " + field;
-			field.getSearchFields().forEach(name -> verifyExists(descriptor, name, declaredOn, problems));
-			field.getIndex().sorts().values().forEach(name -> verifySortable(descriptor, name, declaredOn, problems));
-			field.getIndex().groups().values().forEach(name -> verifyAggregatable(descriptor, name, declaredOn, problems));
+			ErrandIndexBindings.searchFields(field).forEach(name -> verifyExists(descriptor, name, declaredOn, problems));
+			ErrandIndexBindings.of(field).sorts().values().forEach(name -> verifySortable(descriptor, name, declaredOn, problems));
+			ErrandIndexBindings.of(field).groups().values().forEach(name -> verifyAggregatable(descriptor, name, declaredOn, problems));
 		}
 		for (final var resource : ProtectedResource.values()) {
-			resource.getSearchFields().forEach(name -> verifyExists(descriptor, name, "resource " + resource, problems));
+			ErrandIndexBindings.searchFields(resource).forEach(name -> verifyExists(descriptor, name, "resource " + resource, problems));
 		}
 		ErrandIndex.IDENTIFIER_FIELDS.forEach(name -> verifyExists(descriptor, name, "identifier fields", problems));
 		verifyEverythingIsBound(descriptor, problems);
@@ -175,12 +176,12 @@ public class ErrandIndexModel {
 	private static void verifyEverythingIsBound(final IndexDescriptor descriptor, final List<String> problems) {
 		final var bound = new HashSet<String>();
 		for (final var field : ErrandField.values()) {
-			bound.addAll(field.getSearchFields());
-			bound.addAll(field.getIndex().sorts().values());
-			bound.addAll(field.getIndex().groups().values());
+			bound.addAll(ErrandIndexBindings.searchFields(field));
+			bound.addAll(ErrandIndexBindings.of(field).sorts().values());
+			bound.addAll(ErrandIndexBindings.of(field).groups().values());
 		}
 		for (final var resource : ProtectedResource.values()) {
-			bound.addAll(resource.getSearchFields());
+			bound.addAll(ErrandIndexBindings.searchFields(resource));
 		}
 		bound.addAll(ErrandIndex.IDENTIFIER_FIELDS);
 		bound.addAll(NOT_OF_AN_ERRAND);

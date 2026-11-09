@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 
 /**
  * What a caller may do with the keyed fields of one errand they are patching.

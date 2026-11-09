@@ -3,7 +3,7 @@ package se.sundsvall.supportmanagement.service.access;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 
 import static java.util.Objects.isNull;
 

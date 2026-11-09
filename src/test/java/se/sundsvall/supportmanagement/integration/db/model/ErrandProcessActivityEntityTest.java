@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
+import se.sundsvall.supportmanagement.model.enums.ActivitySeverity;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity.ERROR;
+import static se.sundsvall.supportmanagement.model.enums.ActivitySeverity.ERROR;
 
 class ErrandProcessActivityEntityTest {
 

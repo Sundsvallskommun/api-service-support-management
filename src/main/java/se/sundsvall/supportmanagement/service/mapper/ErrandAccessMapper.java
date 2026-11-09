@@ -8,7 +8,7 @@ import se.sundsvall.supportmanagement.api.model.access.ErrandFieldAccess;
 import se.sundsvall.supportmanagement.api.model.access.ErrandFieldKeyAccess;
 import se.sundsvall.supportmanagement.api.model.access.ErrandResourceAccess;
 import se.sundsvall.supportmanagement.api.model.config.AccessLevel;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.service.access.ErrandAccessResolution;
 import se.sundsvall.supportmanagement.service.access.FieldGrant;
 
@@ -45,14 +45,11 @@ public final class ErrandAccessMapper {
 			.withField(field.getPropertyName())
 			.withLevel(toAccessLevel(grant.level()))
 			.withAllKeys(grant.allKeys())
-			.withKeys(toKeys(grant.keys()));
+			// Left out of a field holding no keyed collection, rather than reported empty, which says every key is reached
+			.withKeys(isNull(grant.keys()) ? null : toKeys(grant.keys()));
 	}
 
 	private static List<ErrandFieldKeyAccess> toKeys(final Map<String, Access.AccessLevelEnum> keys) {
-		if (isNull(keys)) {
-			return null;
-		}
-
 		return keys.entrySet().stream()
 			.map(entry -> ErrandFieldKeyAccess.create()
 				.withKey(entry.getKey())

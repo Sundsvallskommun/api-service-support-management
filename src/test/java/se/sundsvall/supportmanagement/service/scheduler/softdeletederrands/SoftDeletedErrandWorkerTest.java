@@ -3,14 +3,13 @@ package se.sundsvall.supportmanagement.service.scheduler.softdeletederrands;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.integration.db.ErrandsRepository;
 import se.sundsvall.supportmanagement.integration.db.NamespaceConfigRepository;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
@@ -30,15 +29,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_NOTIFICATION_TTL_IN_DAYS;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_SOFT_DELETED_RETENTION_IN_DAYS;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
 import static se.sundsvall.supportmanagement.service.scheduler.softdeletederrands.SoftDeletedErrandWorker.BATCH_SIZE;
 
 @ExtendWith(MockitoExtension.class)
 class SoftDeletedErrandWorkerTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
+	// The default the worker is configured with
+	private static final int MAX_ERRANDS_PER_NAMESPACE = 500;
 
 	@Mock
 	private ErrandsRepository errandsRepositoryMock;
@@ -52,8 +53,16 @@ class SoftDeletedErrandWorkerTest {
 	@Captor
 	private ArgumentCaptor<OffsetDateTime> deletedBeforeCaptor;
 
-	@InjectMocks
 	private SoftDeletedErrandWorker worker;
+
+	@BeforeEach
+	void setUp() {
+		worker = workerWith(MAX_ERRANDS_PER_NAMESPACE);
+	}
+
+	private SoftDeletedErrandWorker workerWith(final int maxErrandsPerNamespace) {
+		return new SoftDeletedErrandWorker(errandsRepositoryMock, namespaceConfigRepositoryMock, errandServiceMock, maxErrandsPerNamespace);
+	}
 
 	@Test
 	void deleteSoftDeletedErrands() {
@@ -108,7 +117,7 @@ class SoftDeletedErrandWorkerTest {
 
 	@Test
 	void deleteSoftDeletedErrandsUpToTheCapOfEachNamespace() {
-		ReflectionTestUtils.setField(worker, "maxErrandsPerNamespace", 2);
+		worker = workerWith(2);
 		when(namespaceConfigRepositoryMock.findAll()).thenReturn(List.of(config("BACKLOG", 30), config("NAMESPACE", 30)));
 		when(errandsRepositoryMock.findIdsAfter(any(), any(), anyInt()))
 			.thenReturn(List.of("id-a", "id-failing", "id-c", "id-d"), List.of("id-e"), emptyList());

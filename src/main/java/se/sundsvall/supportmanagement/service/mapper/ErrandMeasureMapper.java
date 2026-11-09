@@ -7,9 +7,9 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.Accept;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.MeasureResult;
+import se.sundsvall.supportmanagement.model.enums.Accept;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.MeasureResult;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -18,7 +18,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus.ACTIVE;
+import static se.sundsvall.supportmanagement.model.enums.ItemStatus.ACTIVE;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 
 public final class ErrandMeasureMapper {

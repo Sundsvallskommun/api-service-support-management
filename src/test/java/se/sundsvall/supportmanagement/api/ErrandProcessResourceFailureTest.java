@@ -36,7 +36,7 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
 
 @ResourceTest
 class ErrandProcessResourceFailureTest {

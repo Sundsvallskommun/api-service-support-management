@@ -20,8 +20,8 @@ import se.sundsvall.supportmanagement.service.EventService;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
 
 import static generated.se.sundsvall.eventlog.EventType.UPDATE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.integration.db.specification.ErrandSpecification.hasMatchingTags;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.MESSAGE_WEB_MESSAGE_EXTERNAL;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.getExecutingUser;
 import static se.sundsvall.supportmanagement.service.util.ServiceUtil.inNewRequestGroup;
 

@@ -12,7 +12,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EmailHeader.IN_REPLY_TO;
+import static se.sundsvall.supportmanagement.model.enums.EmailHeader.IN_REPLY_TO;
 
 class CommunicationEmailHeaderEntityTest {
 

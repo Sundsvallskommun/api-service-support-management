@@ -36,8 +36,8 @@ import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentPurposeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.util.AttachmentSequenceNumberGenerator;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper;
 import se.sundsvall.supportmanagement.service.model.RevisionResult;
 
@@ -69,7 +69,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildAttachmentEntity;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.buildErrandEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ATTACHMENT;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ATTACHMENT;
 
 @ExtendWith(MockitoExtension.class)
 class ErrandAttachmentServiceTest {

@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import se.sundsvall.supportmanagement.api.model.metadata.AffectedAction;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 @Schema(description = "Job response")
 public class JobResponse {

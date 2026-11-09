@@ -19,8 +19,8 @@ import se.sundsvall.supportmanagement.integration.db.DecisionOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.DecisionRepository;
 import se.sundsvall.supportmanagement.integration.db.ErrandProcessRepository;
 import se.sundsvall.supportmanagement.integration.db.model.DecisionEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ItemStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ItemStatus;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,12 +35,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.DecisionMethod.MANUAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.RUNNING;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.DecisionMethod.AUTOMATIC;
+import static se.sundsvall.supportmanagement.model.enums.DecisionMethod.MANUAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.RUNNING;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
 
 @ExtendWith(MockitoExtension.class)
 class DecisionValidatorTest {

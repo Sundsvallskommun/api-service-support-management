@@ -134,6 +134,8 @@ integration:
   messageexchange:
     connectTimeout: 5
     readTimeout: 30
+    # The namespace in message-exchange the conversations of every namespace here are kept in
+    namespace: draken
   messaging-settings:
     connect-timeout: 5
     read-timeout: 30

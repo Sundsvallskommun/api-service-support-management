@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.UuidGenerator;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ActivitySeverity;
+import se.sundsvall.supportmanagement.model.enums.ActivitySeverity;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;

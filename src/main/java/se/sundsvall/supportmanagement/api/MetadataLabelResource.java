@@ -30,7 +30,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureDryRunR
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureRequest;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.validation.ValidLabelSiblings;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 import se.sundsvall.supportmanagement.service.MetadataService;
 

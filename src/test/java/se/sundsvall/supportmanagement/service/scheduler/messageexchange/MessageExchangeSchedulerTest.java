@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -49,13 +48,12 @@ class MessageExchangeSchedulerTest {
 	@Captor
 	private ArgumentCaptor<Pageable> pageableArgumentCaptor;
 
-	@InjectMocks
 	private MessageExchangeScheduler messageExchangeScheduler;
 
 	@BeforeEach
 	void setUp() {
+		messageExchangeScheduler = new MessageExchangeScheduler(messageExchangeWorkerMock, asyncTaskExecutorMock, null, true);
 		ReflectionTestUtils.setField(messageExchangeScheduler, "self", messageExchangeScheduler);
-		ReflectionTestUtils.setField(messageExchangeScheduler, "isSchedulerEnabled", true);
 	}
 
 	@Test

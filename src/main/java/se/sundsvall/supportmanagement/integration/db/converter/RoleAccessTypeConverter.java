@@ -2,7 +2,7 @@ package se.sundsvall.supportmanagement.integration.db.converter;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType;
+import se.sundsvall.supportmanagement.model.enums.RoleAccessType;
 
 import static java.util.Optional.ofNullable;
 

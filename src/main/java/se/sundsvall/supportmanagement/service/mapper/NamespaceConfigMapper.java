@@ -27,25 +27,18 @@ import se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelTy
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigAccessGrantEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NamespaceConfigValueEmbeddable;
-import se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ErrandField;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
 import se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor;
+import se.sundsvall.supportmanagement.model.enums.AccessGrantScope;
+import se.sundsvall.supportmanagement.model.enums.ErrandField;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.model.enums.ValueType;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.LIMITED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.AccessGrantScope.REPORTER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.FIELD;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.RoleAccessType.RESOURCE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.BOOLEAN;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.INTEGER;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ValueType.STRING;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_ACCESS_CONTROL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_BASE_URL;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_DISPLAY_NAME;
@@ -66,6 +59,13 @@ import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyE
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.PROPERTY_TELIA_ACE_WORK_ITEM_ENABLED;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getNullableValue;
 import static se.sundsvall.supportmanagement.integration.db.util.ConfigPropertyExtractor.getValue;
+import static se.sundsvall.supportmanagement.model.enums.AccessGrantScope.LIMITED;
+import static se.sundsvall.supportmanagement.model.enums.AccessGrantScope.REPORTER;
+import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.FIELD;
+import static se.sundsvall.supportmanagement.model.enums.RoleAccessType.RESOURCE;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.BOOLEAN;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.INTEGER;
+import static se.sundsvall.supportmanagement.model.enums.ValueType.STRING;
 
 @Component
 public class NamespaceConfigMapper {

@@ -6,7 +6,7 @@ import org.springframework.data.domain.Sort;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EntityType;
+import se.sundsvall.supportmanagement.model.enums.EntityType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static java.util.Collections.emptyList;

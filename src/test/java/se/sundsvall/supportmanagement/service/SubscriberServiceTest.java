@@ -18,8 +18,6 @@ import se.sundsvall.supportmanagement.api.model.identifier.Identifier;
 import se.sundsvall.supportmanagement.api.model.subscriber.Subscriber;
 import se.sundsvall.supportmanagement.integration.db.SubscriberRepository;
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.DbSubscriptionTargetType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.IdentifierEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
@@ -27,6 +25,8 @@ import se.sundsvall.supportmanagement.integration.db.model.subscriber.Subscriber
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberSubscriptionCount;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.config.NamespaceConfigService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.RW;

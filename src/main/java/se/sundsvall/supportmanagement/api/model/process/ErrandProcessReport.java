@@ -12,7 +12,7 @@ import java.util.Objects;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import se.sundsvall.supportmanagement.api.validation.ValidEnumValue;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 
 import static java.util.Optional.ofNullable;
 

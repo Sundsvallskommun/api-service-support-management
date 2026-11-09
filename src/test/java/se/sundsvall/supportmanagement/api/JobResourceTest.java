@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import se.sundsvall.supportmanagement.api.model.job.JobResponse;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.job.JobService;
 
 import static org.assertj.core.api.Assertions.assertThat;

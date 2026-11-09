@@ -9,8 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
 import se.sundsvall.supportmanagement.service.SubscriberNotificationService;
 import se.sundsvall.supportmanagement.service.scheduler.emaildispatch.SubscriberEmailService;
 import se.sundsvall.supportmanagement.service.scheduler.smsdispatch.SubscriberSmsService;
@@ -21,9 +21,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationChannelDispatcherTest {

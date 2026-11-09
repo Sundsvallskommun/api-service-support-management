@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.EMAIL;
 import static se.sundsvall.supportmanagement.api.model.subscriber.NotificationChannelType.INTERNAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.ERRAND;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.ERRAND;
 
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)

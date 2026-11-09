@@ -22,7 +22,7 @@ import static java.lang.Boolean.TRUE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.JobType.ERRAND_PURGE;
+import static se.sundsvall.supportmanagement.model.enums.JobType.ERRAND_PURGE;
 
 /**
  * Entry point for purging errands that have passed their retention period.

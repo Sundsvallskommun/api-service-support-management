@@ -37,7 +37,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.supportmanagement.api.model.identifier.IdentifierTypeValues.AD_ACCOUNT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.SMS;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.SMS;
 
 @Service
 public class SubscriberSmsService {

@@ -18,8 +18,8 @@ import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.ValueBinderRef
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.NonStandardField;
-import se.sundsvall.supportmanagement.integration.db.search.ErrandIndex;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
+import se.sundsvall.supportmanagement.model.ErrandIndex;
 
 import static org.hibernate.annotations.TimeZoneStorageType.NORMALIZE;
 

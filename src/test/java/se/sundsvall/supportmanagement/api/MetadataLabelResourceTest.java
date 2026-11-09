@@ -14,8 +14,8 @@ import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStep;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepResult;
 import se.sundsvall.supportmanagement.api.model.metadata.LabelRestructureStepType;
 import se.sundsvall.supportmanagement.api.model.metadata.Labels;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus;
-import se.sundsvall.supportmanagement.integration.db.model.enums.JobType;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.MetadataService;
 
 import static org.assertj.core.api.Assertions.assertThat;

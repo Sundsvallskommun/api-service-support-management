@@ -13,13 +13,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandProcessEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStatus;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 import se.sundsvall.supportmanagement.service.model.ProcessStartOptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static se.sundsvall.supportmanagement.Constants.PROCESS_KEY_LENGTH;
 import static se.sundsvall.supportmanagement.TestObjectsBuilder.createErrandProcessEntity;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.AVAILABLE;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.ERRAND_DRAFT;
@@ -29,14 +30,13 @@ import static se.sundsvall.supportmanagement.api.model.process.ProcessStartabili
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_BLOCKED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.PROCESS_COMPLETED;
 import static se.sundsvall.supportmanagement.api.model.process.ProcessStartability.START_PENDING;
-import static se.sundsvall.supportmanagement.integration.db.model.ProcessEventOutboxEntity.PROCESS_KEY_LENGTH;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.ACTIVE;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ErrandLifecycle.DRAFT;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.COMPLETED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.FAILED;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStatus.WAITING;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.ACTIVE;
+import static se.sundsvall.supportmanagement.model.enums.ErrandLifecycle.DRAFT;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.AUTOMATIC;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.MANUAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.FAILED;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStatus.WAITING;
 
 class ProcessRulesTest {
 

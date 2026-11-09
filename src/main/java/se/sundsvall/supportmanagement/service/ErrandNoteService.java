@@ -14,8 +14,8 @@ import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesRequest;
 import se.sundsvall.supportmanagement.api.model.note.FindErrandNotesResponse;
 import se.sundsvall.supportmanagement.api.model.note.UpdateErrandNoteRequest;
 import se.sundsvall.supportmanagement.api.model.revision.Revision;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.notes.NotesClient;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.model.RevisionType;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;

@@ -50,7 +50,7 @@ class SubscriptionProfileMapperTest {
 					.withName("Mejl")
 					.withDescription("Mejl om nya ärenden")
 					.withEventFilters(List.of(EventFilterEmbeddable.create().withType("CREATE").withSubtype("ERRAND")))
-					.withChannels(List.of(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL))),
+					.withChannels(List.of(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL))),
 			Arguments.of(
 				SubscriptionProfile.create().withName("Tom"),
 				SubscriptionProfileEntity.create()
@@ -82,7 +82,7 @@ class SubscriptionProfileMapperTest {
 					.withName("Notis")
 					.withDescription("Notis om meddelanden")
 					.withEventFilters(List.of(EventFilterEmbeddable.create().withType("UPDATE").withSubtype("MESSAGE_CONVERSATION_EXTERNAL")))
-					.withChannels(List.of(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL))
+					.withChannels(List.of(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL))
 					.withCreated(CREATED)
 					.withModified(MODIFIED),
 				SubscriptionProfile.create()
@@ -119,7 +119,7 @@ class SubscriptionProfileMapperTest {
 			.withName("Gammalt namn")
 			.withDescription("Gammal beskrivning")
 			.withEventFilters(List.of(EventFilterEmbeddable.create().withType("CREATE")))
-			.withChannels(List.of(se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL));
+			.withChannels(List.of(se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL));
 
 		SubscriptionProfileMapper.updateEntity(entity, SubscriptionProfile.create()
 			.withName("Nytt namn")
@@ -129,8 +129,8 @@ class SubscriptionProfileMapperTest {
 		assertThat(entity.getDescription()).isEqualTo("Gammal beskrivning");
 		assertThat(entity.getEventFilters()).containsExactly(EventFilterEmbeddable.create().withType("CREATE"));
 		assertThat(entity.getChannels()).containsExactly(
-			se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL,
-			se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL);
+			se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL,
+			se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL);
 	}
 
 	@Test

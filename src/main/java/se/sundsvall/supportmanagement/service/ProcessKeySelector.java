@@ -15,7 +15,7 @@ import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.LabelAttributeEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode;
+import se.sundsvall.supportmanagement.model.enums.ProcessStartMode;
 import se.sundsvall.supportmanagement.service.model.ProcessKeySelection;
 import se.sundsvall.supportmanagement.service.model.ProcessLabels;
 
@@ -26,8 +26,8 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.AUTOMATIC;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.ProcessStartMode.MANUAL;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.AUTOMATIC;
+import static se.sundsvall.supportmanagement.model.enums.ProcessStartMode.MANUAL;
 
 /**
  * Which process an errand belongs to, and whether processes are blocked for it, according to its own labels.

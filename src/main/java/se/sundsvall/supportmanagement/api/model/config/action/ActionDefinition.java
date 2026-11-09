@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import se.sundsvall.supportmanagement.integration.db.model.enums.OperationType;
+import se.sundsvall.supportmanagement.model.enums.OperationType;
 
 @Schema(description = "Action definition model describing an available action and its conditions/parameters")
 public class ActionDefinition {

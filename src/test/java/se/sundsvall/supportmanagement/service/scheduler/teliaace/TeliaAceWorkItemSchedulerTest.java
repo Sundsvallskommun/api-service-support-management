@@ -4,10 +4,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 import se.sundsvall.supportmanagement.integration.db.model.TeliaAceWorkItemEntity;
 
@@ -29,12 +27,11 @@ class TeliaAceWorkItemSchedulerTest {
 	@Mock
 	private Dept44HealthUtility healthUtilityMock;
 
-	@InjectMocks
 	private TeliaAceWorkItemScheduler scheduler;
 
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(scheduler, "jobName", JOB_NAME);
+		scheduler = new TeliaAceWorkItemScheduler(workerMock, healthUtilityMock, JOB_NAME);
 	}
 
 	@Test

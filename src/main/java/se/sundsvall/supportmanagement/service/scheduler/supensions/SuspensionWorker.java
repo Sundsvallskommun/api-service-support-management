@@ -13,7 +13,7 @@ import static java.time.OffsetDateTime.now;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType.SUSPENSION;
+import static se.sundsvall.supportmanagement.model.enums.EventSubType.SUSPENSION;
 
 /**
  * Announces that the suspension of an errand has ended, once for every suspension. The status of the errand is left for

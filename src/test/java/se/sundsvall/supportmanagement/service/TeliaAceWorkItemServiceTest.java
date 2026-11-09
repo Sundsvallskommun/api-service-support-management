@@ -8,10 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import se.sundsvall.supportmanagement.api.model.config.NamespaceConfig;
@@ -57,7 +55,6 @@ class TeliaAceWorkItemServiceTest {
 	@Mock
 	private PlatformTransactionManager transactionManagerMock;
 
-	@InjectMocks
 	private TeliaAceWorkItemService service;
 
 	@Captor
@@ -83,7 +80,7 @@ class TeliaAceWorkItemServiceTest {
 	// behaviour behind it, so it is switched on here rather than repeated in each test.
 	@BeforeEach
 	void setUp() {
-		ReflectionTestUtils.setField(service, "enabled", true);
+		service = new TeliaAceWorkItemService(workItemRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, transactionManagerMock, true);
 	}
 
 	private void mockNamespaceConfig(final NamespaceConfig config) {
@@ -151,7 +148,7 @@ class TeliaAceWorkItemServiceTest {
 
 	@Test
 	void notify_whenGloballyDisabledByDefault_doesNothingRegardlessOfNamespaceConfig() {
-		ReflectionTestUtils.setField(service, "enabled", false);
+		service = new TeliaAceWorkItemService(workItemRepositoryMock, namespaceConfigRepositoryMock, namespaceConfigMapperMock, transactionManagerMock, false);
 
 		service.notify(errand(), email());
 

@@ -18,14 +18,14 @@ import se.sundsvall.supportmanagement.integration.db.NotificationDispatchReposit
 import se.sundsvall.supportmanagement.integration.db.SubscriptionRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
 import se.sundsvall.supportmanagement.integration.db.model.NotificationDispatchEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.EventFilterEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.NotificationChannelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriberEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionEntity;
 import se.sundsvall.supportmanagement.integration.db.model.subscriber.SubscriptionProfileEntity;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.NotificationChannelType;
+import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 import se.sundsvall.supportmanagement.service.AccessControlService;
 
 import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.LR;
@@ -48,15 +48,13 @@ public class NotificationDispatchWorker {
 	/**
 	 * How long a request group must be quiet before it is considered complete and eligible for dispatch.
 	 */
-	@Value("${scheduler.notification-dispatch.transaction-buffer:PT10S}")
-	private Duration transactionBuffer = Duration.ofSeconds(10);
+	private final Duration transactionBuffer;
 
 	/**
 	 * How old an entry may get before it is considered too stale to notify about. A failed dispatch is retried until its
 	 * entries are older than this, and they are then dropped undelivered.
 	 */
-	@Value("${scheduler.notification-dispatch.max-age:P30D}")
-	private Duration maxAge = Duration.ofDays(30);
+	private final Duration maxAge;
 
 	private final NotificationDispatchRepository dispatchRepository;
 	private final SubscriptionRepository subscriptionRepository;
@@ -69,12 +67,16 @@ public class NotificationDispatchWorker {
 		final SubscriptionRepository subscriptionRepository,
 		final ErrandsRepository errandsRepository,
 		final NotificationChannelDispatcher channelDispatcher,
-		final AccessControlService accessControlService) {
+		final AccessControlService accessControlService,
+		@Value("${scheduler.notification-dispatch.transaction-buffer:PT10S}") final Duration transactionBuffer,
+		@Value("${scheduler.notification-dispatch.max-age:P30D}") final Duration maxAge) {
 		this.dispatchRepository = dispatchRepository;
 		this.subscriptionRepository = subscriptionRepository;
 		this.errandsRepository = errandsRepository;
 		this.channelDispatcher = channelDispatcher;
 		this.accessControlService = accessControlService;
+		this.transactionBuffer = transactionBuffer;
+		this.maxAge = maxAge;
 	}
 
 	@Transactional(readOnly = true)

@@ -18,7 +18,7 @@ import se.sundsvall.supportmanagement.api.model.communication.conversation.Messa
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentDataEntity;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
 import se.sundsvall.supportmanagement.integration.db.model.communication.ConversationEntity;
-import se.sundsvall.supportmanagement.integration.db.model.enums.EventSubType;
+import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.service.util.BlobMultipartFile;
 
 import static java.time.OffsetDateTime.now;

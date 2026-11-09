@@ -4,7 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
-import se.sundsvall.supportmanagement.integration.db.model.enums.ValueType;
+import se.sundsvall.supportmanagement.model.enums.ValueType;
 
 import static java.sql.Types.LONGVARCHAR;
 

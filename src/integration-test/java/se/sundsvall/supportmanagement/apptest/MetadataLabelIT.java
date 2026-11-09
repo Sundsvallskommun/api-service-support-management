@@ -6,6 +6,11 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.JobRepository;
+import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -18,6 +23,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.COMPLETED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.FAILED;
+import static se.sundsvall.supportmanagement.integration.db.model.enums.JobStatus.STOPPED;
 
 /**
  * Label Metadata IT tests.

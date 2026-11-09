@@ -38,8 +38,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.EMAIL;
-import static se.sundsvall.supportmanagement.integration.db.model.enums.NotificationChannelType.INTERNAL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.EMAIL;
+import static se.sundsvall.supportmanagement.model.enums.NotificationChannelType.INTERNAL;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriberEmailServiceTest {
