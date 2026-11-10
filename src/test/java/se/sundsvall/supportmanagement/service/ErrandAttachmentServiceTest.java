@@ -51,6 +51,7 @@ import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -389,6 +390,29 @@ class ErrandAttachmentServiceTest {
 		verify(revisionServiceMock).createErrandRevision(errandMock);
 		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 		verifyNoInteractions(errandsRepositoryMock);
+	}
+
+	@Test
+	void createAttachmentWhenHashComputationFails() throws SQLException, IOException {
+		final var inputStreamMock = mock(InputStream.class);
+
+		// Mock
+		when(attachmentSequenceNumberGeneratorMock.nextSequenceNumber(errandMock)).thenReturn(SEQUENCE_NUMBER);
+		when(revisionServiceMock.createErrandRevision(errandMock)).thenReturn(new RevisionResult(previousRevisionMock, currentRevisionMock));
+		when(attachmentMock.getAttachmentData()).thenReturn(attachmentDataEntityMock);
+		when(attachmentDataEntityMock.getFile()).thenReturn(blobMock);
+		when(blobMock.getBinaryStream()).thenReturn(inputStreamMock);
+		when(inputStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenThrow(new IOException("Test IOException"));
+
+		// Call
+		service.createErrandAttachment(attachmentMock, errandMock);
+
+		// Assertions and verifications
+		verify(attachmentRepositoryMock).saveAndFlush(attachmentMock);
+		verify(entityManagerMock).refresh(attachmentMock);
+		verify(attachmentMock, never()).setHash(any());
+		verify(revisionServiceMock).createErrandRevision(errandMock);
+		verify(eventServiceMock).createErrandEvent(UPDATE, EVENT_LOG_ADD_ATTACHMENT, errandMock, currentRevisionMock, previousRevisionMock, ATTACHMENT);
 	}
 
 	@Test

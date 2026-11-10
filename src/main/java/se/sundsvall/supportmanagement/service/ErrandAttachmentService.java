@@ -42,12 +42,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INSUFFICIENT_STORAGE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.dept44.util.HashUtils.sha256Hex;
 import static se.sundsvall.supportmanagement.model.enums.EventSubType.ATTACHMENT;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toAttachmentEntity;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachment;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.toErrandAttachments;
 import static se.sundsvall.supportmanagement.service.mapper.ErrandAttachmentMapper.updateAttachmentEntity;
-import static se.sundsvall.supportmanagement.service.util.ServiceUtil.computeSha256Hex;
 
 @Service
 public class ErrandAttachmentService {
@@ -322,9 +322,9 @@ public class ErrandAttachmentService {
 		try {
 			// Refresh to get a database-backed blob (the in-memory BlobProxy is not re-readable after flush)
 			entityManager.refresh(attachmentEntity);
-			final var hash = computeSha256Hex(attachmentEntity.getAttachmentData().getFile().getBinaryStream());
+			final var hash = sha256Hex(attachmentEntity.getAttachmentData().getFile().getBinaryStream());
 			attachmentEntity.setHash(hash);
-		} catch (final SQLException e) {
+		} catch (final SQLException | IOException e) {
 			LOG.warn("Failed to compute hash for attachment {}: {}", attachmentEntity.getId(), e.getMessage());
 		}
 	}
