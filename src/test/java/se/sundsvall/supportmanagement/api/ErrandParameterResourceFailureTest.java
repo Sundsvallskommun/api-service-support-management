@@ -89,8 +89,8 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandParametersWithNullParameterOrBlankValue() {
-		final var requestBody = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, " ")));
+	void updateErrandParametersWithNullParameterOrValue() {
+		final var requestBody = Arrays.asList(null, Parameter.create().withKey("key").withValues(Arrays.asList("value", null, "", " ")));
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID)))
@@ -108,8 +108,7 @@ class ErrandParameterResourceFailureTest {
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
 				tuple("updateErrandParameters.errandParameters[0].<list element>", "must not be null"),
-				tuple("updateErrandParameters.errandParameters[1].values[1].<list element>", "must not be blank"),
-				tuple("updateErrandParameters.errandParameters[1].values[2].<list element>", "must not be blank"));
+				tuple("updateErrandParameters.errandParameters[1].values[1].<list element>", "must not be null"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
@@ -315,9 +314,9 @@ class ErrandParameterResourceFailureTest {
 	}
 
 	@Test
-	void updateErrandParameterWithBlankValue() {
+	void updateErrandParameterWithNullValue() {
 
-		final var requestBody = Arrays.asList("value", null, " ");
+		final var requestBody = Arrays.asList("value", null, "", " ");
 
 		final var response = webTestClient.patch()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
@@ -335,8 +334,7 @@ class ErrandParameterResourceFailureTest {
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
 			.containsExactlyInAnyOrder(
-				tuple("updateErrandParameter.parameterValues[1].<list element>", "must not be blank"),
-				tuple("updateErrandParameter.parameterValues[2].<list element>", "must not be blank"));
+				tuple("updateErrandParameter.parameterValues[1].<list element>", "must not be null"));
 
 		verifyNoInteractions(errandParameterServiceMock);
 	}
