@@ -514,7 +514,7 @@ class ErrandInvestigationsResourceTest {
 
 	/**
 	 * Parameters breaking one rule each: a blank key, a missing key, a value too long, a key, display name and group too
-	 * long, a parameter that is null, and values that are null or blank.
+	 * long, a parameter that is null, and a value that is null beside an empty and a blank one, which are let through.
 	 */
 	private static List<Parameter> invalidParameters() {
 		return Arrays.asList(
@@ -523,7 +523,7 @@ class ErrandInvestigationsResourceTest {
 			Parameter.create().withKey("key").withValues(List.of("x".repeat(3001))),
 			Parameter.create().withKey("x".repeat(256)).withDisplayName("x".repeat(256)).withGroup("x".repeat(256)),
 			null,
-			Parameter.create().withKey("other").withValues(Arrays.asList("value", null, " ")));
+			Parameter.create().withKey("other").withValues(Arrays.asList("value", null, "", " ")));
 	}
 
 	/**
@@ -548,8 +548,7 @@ class ErrandInvestigationsResourceTest {
 				tuple("parameters[3].displayName", "size must be between 0 and 255"),
 				tuple("parameters[3].group", "size must be between 0 and 255"),
 				tuple("parameters[4]", "must not be null"),
-				tuple("parameters[5].values[1]", "must not be blank"),
-				tuple("parameters[5].values[2]", "must not be blank"));
+				tuple("parameters[5].values[1]", "must not be null"));
 		verifyNoInteractions(serviceMock);
 	}
 }

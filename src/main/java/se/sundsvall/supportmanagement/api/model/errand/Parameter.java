@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.errand;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.groups.Default;
@@ -43,9 +44,9 @@ public class Parameter {
 	})
 	private String group;
 
-	@ArraySchema(schema = @Schema(minLength = 1, maxLength = 3000),
-		arraySchema = @Schema(description = "Parameter values. Each value must not be blank, and can have a maximum length of 3000 characters"))
-	private List<@NotBlank(groups = {
+	@ArraySchema(schema = @Schema(maxLength = 3000),
+		arraySchema = @Schema(description = "Parameter values. Each value must not be null, may be empty, and can have a maximum length of 3000 characters"))
+	private List<@NotNull(groups = {
 		Default.class, OnCreate.class, OnUpdate.class
 	}) @Size(max = 3000, groups = {
 		Default.class, OnCreate.class, OnUpdate.class
