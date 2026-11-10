@@ -40,6 +40,7 @@
 		}
 	],
 	"measures": [],
+	"modified": "${json-unit.any-string}",
 	"parameters": [],
 	"phases": [],
 	"stakeholders": [],

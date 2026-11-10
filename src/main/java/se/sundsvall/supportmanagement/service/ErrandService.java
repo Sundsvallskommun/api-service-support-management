@@ -607,23 +607,12 @@ public class ErrandService {
 			return false;
 		}
 
-		// Held from before the write, so they can be put back afterward - a restow must leave no trace on either, but
-		// persistLabelUpdate's saveAndFlush runs through the same @PreUpdate as any other save and stamps both with
-		// now() regardless of what actually changed.
-		final var modified = errand.getModified();
-		final var touched = errand.getTouched();
-
 		// Detached before the guards are asked: the labels are put on the errand for them to judge, and a managed errand
 		// would have them flushed by the first query that follows, refused or not. Detached, a refused errand keeps the
 		// labels it has as stored, and persistLabelUpdate reads it as stored to compare against. The row stays locked by
 		// the caller's transaction.
 		entityManager.detach(errand);
-		if (!persistLabelUpdate(errand, leafLabels, startedByAdAccount)) {
-			return false;
-		}
-
-		repository.restoreModifiedAndTouched(errand.getId(), modified, touched);
-		return true;
+		return persistLabelUpdate(errand, leafLabels, startedByAdAccount);
 	}
 
 	/**

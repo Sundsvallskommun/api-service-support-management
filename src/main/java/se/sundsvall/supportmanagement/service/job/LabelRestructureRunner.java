@@ -199,15 +199,7 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 			final var mergedAwaySourceIds = new HashSet<String>();
 			final var auditEntries = new ArrayList<AuditEntry>();
 
-			final var steps = run.steps();
-			for (var index = 0; index < steps.size(); index++) {
-				final var step = steps.get(index);
-				try {
-					applyStep(run.namespace(), run.municipalityId(), step, labelSubstitutions, mergedAwaySourceIds, auditEntries);
-				} catch (final RuntimeException e) {
-					throw new IllegalStateException(STEP_FAILED_REASON.formatted(index, step.getType(), e.getMessage()), e);
-				}
-			}
+			applySteps(run, labelSubstitutions, mergedAwaySourceIds, auditEntries);
 
 			var ids = run.errandIds().stream().sorted().toList();
 			var lastReport = System.nanoTime();
@@ -239,21 +231,40 @@ public class LabelRestructureRunner extends JobRunner<LabelRestructureRun> {
 				throw new StoppedException();
 			}
 
-			// Only reached once every affected errand has already been restowed off whichever source labels this run
-			// merged away. An errand that kept its labels may still wear a source label, which must then not be deleted.
-			if (!mergedAwaySourceIds.isEmpty()) {
-				final var keptLabelIds = labelsStillWorn(mergedAwaySourceIds);
-				if (!keptLabelIds.isEmpty()) {
-					throw new IllegalStateException(MERGE_KEPT_SOURCES.formatted(keptLabelIds));
-				}
-				metadataService.deleteMergedLabels(mergedAwaySourceIds);
-			}
+			deleteMergedAwaySources(mergedAwaySourceIds);
 
 			return new RestructureOutcome(processed - unchanged, unchanged, auditEntries);
 		} catch (final RuntimeException e) {
 			jobService.updateProgress(run.jobId(), processed);
 			throw new LabelRestructureAbortedException(ROLLED_BACK_MESSAGE.formatted(processed, total, reasonFor(e)), e);
 		}
+	}
+
+	private void applySteps(final LabelRestructureRun run, final Map<String, String> labelSubstitutions, final Set<String> mergedAwaySourceIds,
+		final List<AuditEntry> auditEntries) {
+
+		final var steps = run.steps();
+		for (var index = 0; index < steps.size(); index++) {
+			final var step = steps.get(index);
+			try {
+				applyStep(run.namespace(), run.municipalityId(), step, labelSubstitutions, mergedAwaySourceIds, auditEntries);
+			} catch (final RuntimeException e) {
+				throw new IllegalStateException(STEP_FAILED_REASON.formatted(index, step.getType(), e.getMessage()), e);
+			}
+		}
+	}
+
+	// Only reached once every affected errand has already been restowed off whichever source labels this run merged
+	// away. An errand that kept its labels may still wear a source label, which must then not be deleted.
+	private void deleteMergedAwaySources(final Set<String> mergedAwaySourceIds) {
+		if (mergedAwaySourceIds.isEmpty()) {
+			return;
+		}
+		final var keptLabelIds = labelsStillWorn(mergedAwaySourceIds);
+		if (!keptLabelIds.isEmpty()) {
+			throw new IllegalStateException(MERGE_KEPT_SOURCES.formatted(keptLabelIds));
+		}
+		metadataService.deleteMergedLabels(mergedAwaySourceIds);
 	}
 
 	private void applyStep(final String namespace, final String municipalityId, final LabelRestructureStep step,

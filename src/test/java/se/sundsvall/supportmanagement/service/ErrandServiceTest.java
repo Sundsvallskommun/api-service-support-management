@@ -1584,19 +1584,15 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a restructure migration restows an errand's labels from its access labels, settles them through ErrandLabelService, asks the guards, records a revision, and puts modified/touched back so the restow leaves no trace on either")
+	@DisplayName("Verification that a restructure migration restows an errand's labels from its access labels, settles them through ErrandLabelService, asks the guards, and records a revision")
 	void persistLabelRestructureMigration_rebuildsErrandsLabelsFromItsAccessLabels() {
 		var leafId = "leaf-id";
 		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id");
-		var originalModified = java.time.OffsetDateTime.parse("2026-01-01T00:00:00Z");
-		var originalTouched = java.time.OffsetDateTime.parse("2026-01-02T00:00:00Z");
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
 			.withVersion(3L)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
-			.withModified(originalModified)
-			.withTouched(originalTouched)
 			// A stale chain from before the move - restowing must replace it, not merge into it
 			.withLabels(List.of(stale))
 			.withAccessLabels(List.of(AccessLabelEmbeddable.create().withMetadataLabelId(leafId)));
@@ -1617,26 +1613,21 @@ class ErrandServiceTest {
 		verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), anyString());
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verify(revisionServiceMock).createErrandRevision(errand);
-		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);
 		verify(entityManagerMock).detach(errand);
 		verifyNoInteractions(errandActionServiceMock, eventServiceMock);
 	}
 
 	@Test
-	@DisplayName("Verification that a restructure migration substitutes any source label id for its target, dedupes, settles the result through ErrandLabelService, and still puts modified/touched back - a MERGE step's substitution is restowed the same way a plain MOVE's is")
+	@DisplayName("Verification that a restructure migration substitutes any source label id for its target, dedupes, settles the result through ErrandLabelService - a MERGE step's substitution is restowed the same way a plain MOVE's is")
 	void persistLabelRestructureMigration_substitutesSourceIdsForTargetAndDedupes() {
 		var targetId = "target-id";
 		var otherLeafId = "other-leaf-id";
 		var stale = ErrandLabelEmbeddable.create().withMetadataLabelId("stale-id");
-		var originalModified = java.time.OffsetDateTime.parse("2026-01-01T00:00:00Z");
-		var originalTouched = java.time.OffsetDateTime.parse("2026-01-02T00:00:00Z");
 		var errand = ErrandEntity.create()
 			.withId(ERRAND_ID)
 			.withVersion(3L)
 			.withNamespace(NAMESPACE)
 			.withMunicipalityId(MUNICIPALITY_ID)
-			.withModified(originalModified)
-			.withTouched(originalTouched)
 			// A stale chain from before the merge - restowing must replace it, not merge into it
 			.withLabels(List.of(stale))
 			.withAccessLabels(List.of(
@@ -1660,7 +1651,6 @@ class ErrandServiceTest {
 		verify(processKeyGuardMock).refusesLabelChange(eq(ERRAND_ID), eq(List.of(stale)), eq(errand.getLabels()), anyString());
 		verify(errandRepositoryMock).saveAndFlush(errand);
 		verify(revisionServiceMock).createErrandRevision(errand);
-		verify(errandRepositoryMock).restoreModifiedAndTouched(ERRAND_ID, originalModified, originalTouched);
 		verify(entityManagerMock).detach(errand);
 		verifyNoInteractions(errandActionServiceMock, eventServiceMock);
 	}
@@ -1689,7 +1679,6 @@ class ErrandServiceTest {
 		verify(entityManagerMock).detach(errand);
 		assertThat(stored.getLabels()).containsExactly(stale);
 		verify(errandRepositoryMock, never()).saveAndFlush(any());
-		verify(errandRepositoryMock, never()).restoreModifiedAndTouched(any(), any(), any());
 		verifyNoInteractions(revisionServiceMock, eventServiceMock);
 	}
 
@@ -1710,7 +1699,6 @@ class ErrandServiceTest {
 			.containsExactly("stale-id");
 		verifyNoInteractions(errandLabelServiceMock, processBlockGuardMock, processKeyGuardMock, errandActionServiceMock, revisionServiceMock, eventServiceMock, entityManagerMock);
 		verify(errandRepositoryMock, never()).saveAndFlush(any());
-		verify(errandRepositoryMock, never()).restoreModifiedAndTouched(any(), any(), any());
 	}
 
 	@Test
