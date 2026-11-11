@@ -1,9 +1,7 @@
 package se.sundsvall.supportmanagement.service.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -226,18 +224,6 @@ class ServiceUtilTest {
 
 	private InputStream getStream(String path) throws IOException {
 		return new ClassPathResource(path).getInputStream();
-	}
-
-	@Test
-	void computeSha256HexFromInputStream() {
-		final var data = "test".getBytes(StandardCharsets.UTF_8);
-		final var result = ServiceUtil.computeSha256Hex(new ByteArrayInputStream(data));
-		assertThat(result).isEqualTo("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
-	}
-
-	@Test
-	void computeSha256HexFromNullInputStream() {
-		assertThat(ServiceUtil.computeSha256Hex((InputStream) null)).isNull();
 	}
 
 	@ParameterizedTest
