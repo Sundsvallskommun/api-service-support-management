@@ -2,7 +2,10 @@ package se.sundsvall.supportmanagement.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -36,9 +39,10 @@ class ErrandParameterResourceTest {
 	@Autowired
 	private ErrandParameterService errandParameterServiceMock;
 
-	@Test
-	void updateErrandParameters() {
-		final var requestBody = List.of(Parameter.create().withKey("key").withValues(List.of("value")));
+	@ParameterizedTest
+	@MethodSource("acceptedValues")
+	void updateErrandParameters(final List<String> values) {
+		final var requestBody = List.of(Parameter.create().withKey("key").withValues(values));
 
 		when(errandParameterServiceMock.updateErrandParameters(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, requestBody)).thenReturn(requestBody);
 
@@ -106,12 +110,11 @@ class ErrandParameterResourceTest {
 		verifyNoMoreInteractions(errandParameterServiceMock);
 	}
 
-	@Test
-	void updateErrandParameter() {
+	@ParameterizedTest
+	@MethodSource("acceptedValues")
+	void updateErrandParameter(final List<String> requestBody) {
 
-		final var requestBody = List.of("value");
-
-		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null, requestBody)).thenReturn(Parameter.create().withKey("key").withValues(List.of("value")));
+		when(errandParameterServiceMock.updateErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null, requestBody)).thenReturn(Parameter.create().withKey("key").withValues(requestBody));
 
 		webTestClient.patch()
 			.uri(builder -> builder.path(PATH.concat("/{parameterKey}")).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID, "errandId", ERRAND_ID, "parameterKey", PARAMETER_KEY)))
@@ -138,5 +141,12 @@ class ErrandParameterResourceTest {
 
 		// Verification
 		verify(errandParameterServiceMock).deleteErrandParameter(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, PARAMETER_KEY, null);
+	}
+
+	/**
+	 * Values that are let through: a regular one, and an empty and a blank one.
+	 */
+	private static Stream<List<String>> acceptedValues() {
+		return Stream.of(List.of("value"), List.of("", " "));
 	}
 }

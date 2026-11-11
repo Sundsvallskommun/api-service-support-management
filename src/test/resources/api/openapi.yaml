@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.4"
+  version: "18.5"
 servers:
 - url: http://localhost:55502
   description: Generated server url
@@ -26782,12 +26782,11 @@ components:
           maxLength: 255
         values:
           type: array
-          description: "Parameter values. Each value must not be blank, and can have\
-            \ a maximum length of 3000 characters"
+          description: "Parameter values. Each value must not be null, may be empty,\
+            \ and can have a maximum length of 3000 characters"
           items:
             type: string
             maxLength: 3000
-            minLength: 1
         version:
           type: integer
           format: int64
