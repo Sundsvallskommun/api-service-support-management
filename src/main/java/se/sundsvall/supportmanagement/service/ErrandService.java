@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -20,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.function.SingletonSupplier;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Relation;
@@ -40,6 +43,7 @@ import se.sundsvall.supportmanagement.integration.relation.RelationClient;
 import se.sundsvall.supportmanagement.model.enums.EventSubType;
 import se.sundsvall.supportmanagement.model.enums.OperationType;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
+import se.sundsvall.supportmanagement.service.access.NamespaceGrant;
 import se.sundsvall.supportmanagement.service.mapper.ErrandMapper;
 import se.sundsvall.supportmanagement.service.model.ErrandEnrichment;
 import se.sundsvall.supportmanagement.service.model.ErrandEventOptions;
@@ -224,8 +228,9 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Page<Errand> findErrands(final String namespace, final String municipalityId, final FilterNode filterNode, final Pageable pageable) {
-		verifyFilterable(filterNode);
-		verifySortable(pageable);
+		final var reached = reachedOnEveryErrand(namespace, municipalityId);
+		verifyFilterable(filterNode, reached);
+		verifySortable(pageable, reached);
 		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
@@ -239,6 +244,17 @@ public class ErrandService {
 			.toList();
 
 		return new PageImpl<>(errands, pageable, matches.getTotalElements());
+	}
+
+	/**
+	 * Whether the user reaches a resource on every errand the listing may answer with, which is what filtering or ordering
+	 * the listing by it is held to. The grant is resolved the first time it is asked, and only then: a filter reaching
+	 * nothing guarded never asks.
+	 */
+	private Predicate<ProtectedResource> reachedOnEveryErrand(final String namespace, final String municipalityId) {
+		final Supplier<NamespaceGrant> resolve = () -> accessControlService.namespaceGrant(namespace, municipalityId, Identifier.get(), LR);
+		final var grant = SingletonSupplier.of(resolve);
+		return resource -> grant.obtain().reachesOnEveryRoute(resource);
 	}
 
 	@Transactional(readOnly = true)
@@ -546,7 +562,7 @@ public class ErrandService {
 
 	@Transactional(readOnly = true)
 	public Long countErrands(final String namespace, final String municipalityId, final FilterNode filterNode) {
-		verifyFilterable(filterNode);
+		verifyFilterable(filterNode, reachedOnEveryErrand(namespace, municipalityId));
 		final var filter = toSpecification(filterNode);
 		final var baseFilter = withNamespace(namespace).and(withMunicipalityId(municipalityId)).and(withDefaultLifecycle(filter)).and(withDefaultDeleted(filter))
 			.and(accessControlService.withAccessControl(namespace, municipalityId, Identifier.get(), ProtectedResource.ERRAND, LR));
