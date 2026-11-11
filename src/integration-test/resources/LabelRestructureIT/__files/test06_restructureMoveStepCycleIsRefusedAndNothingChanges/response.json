@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "Step 0 (MOVE): moving 'TEST_CATEGORY/TEST_TYPE' under 'TEST_CATEGORY/TEST_TYPE/TEST_SUBTYPE_OLD' would create a cycle"
+}

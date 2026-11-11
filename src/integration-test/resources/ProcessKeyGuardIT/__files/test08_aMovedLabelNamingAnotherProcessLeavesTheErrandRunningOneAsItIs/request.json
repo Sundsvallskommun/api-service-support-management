@@ -1,4 +1,15 @@
 {
-	"newParentId": "bb000000-0000-0000-0000-0000000000b2",
-	"dryRun": false
+	"dryRun": false,
+	"steps": [
+		{
+			"type": "MOVE",
+			"path": [
+				"ANSOKAN",
+				"FORSTAGANG"
+			],
+			"destinationParentPath": [
+				"TILLSYN"
+			]
+		}
+	]
 }

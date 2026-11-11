@@ -376,6 +376,7 @@ class AddLabelActionTest {
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 
@@ -394,6 +395,7 @@ class AddLabelActionTest {
 		assertThat(errand.getLabels()).hasSize(2);
 		assertThat(errand.getLabels()).extracting(ErrandLabelEmbeddable::getMetadataLabelId)
 			.containsExactlyInAnyOrder(LABEL_ID_1, LABEL_ID_2);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 
@@ -426,6 +428,7 @@ class AddLabelActionTest {
 		assertThat(addLabelAction.executeAction(errand, config)).isFalse();
 
 		assertThat(errand.getLabels()).hasSize(1);
+		verify(errandLabelService).settleAccessLabels(errand);
 		verify(errandsRepository).save(errand);
 	}
 

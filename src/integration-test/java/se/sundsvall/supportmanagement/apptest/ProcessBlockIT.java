@@ -363,11 +363,12 @@ class ProcessBlockIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Asks for the label under the blocking one to be moved to the root, and hands back the job it was answered with.
+	 * Asks for the label under the blocking one to be moved to the root, as a one-step restructure, and hands back the job
+	 * it was answered with.
 	 */
 	private JobResponse startMove(final String identity) throws Exception {
 		return setupCall()
-			.withServicePath(LABELS_PATH + "/" + LABEL_UNDER_THE_BLOCK + "/move")
+			.withServicePath(LABELS_PATH + "/restructure")
 			.withHttpMethod(POST)
 			.withHeader(SENT_BY_HEADER, identity)
 			.withRequest(REQUEST_FILE)

@@ -4,6 +4,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 import se.sundsvall.dept44.test.AbstractAppTest;
@@ -55,7 +56,6 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 	private static final String ERRAND_WITH_LIVE_PROCESS = "aa000000-0000-0000-0000-0000000000a1";
 	private static final String ERRAND_WITHOUT_PROCESS = "aa000000-0000-0000-0000-0000000000a2";
 	private static final String ERRAND_WITH_FINISHED_PROCESS = "aa000000-0000-0000-0000-0000000000a3";
-	private static final String MOVED_LABEL = "bb000000-0000-0000-0000-0000000000b6";
 	private static final String APPLICATION_LABEL = "bb000000-0000-0000-0000-0000000000b1";
 	private static final String SUPERVISION_LABEL = "bb000000-0000-0000-0000-0000000000b2";
 
@@ -70,6 +70,9 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 
 	@Autowired
 	private MetadataLabelRepository metadataLabelRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	private static String errandPath(final String errandId) {
 		return "/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/errands/" + errandId;
@@ -202,7 +205,7 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 	@Sql("/db/scripts/testdata-process-key-guard-move.sql")
 	void test08_aMovedLabelNamingAnotherProcessLeavesTheErrandRunningOneAsItIs() throws Exception {
 		final var job = setupCall()
-			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/" + MOVED_LABEL + "/move")
+			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/restructure")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
@@ -246,17 +249,17 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 
 	/**
 	 * A label merge has no caller to answer either. The label naming the application process is merged into the one
-	 * naming the supervision process: the errand running the application process keeps the label and the refusal is
-	 * written on it, the errand that has never had a process is given the supervision label, and the errand whose process
-	 * has finished has no access labels to rebuild its labels from and is left as it is. The merged label is kept, since
-	 * errands still wear it, and the merge completes.
+	 * naming the supervision process, as a one-step restructure: the errand running the application process is refused
+	 * by the guard and keeps the label, and the errand whose process has finished has no access labels to rebuild its
+	 * labels from. The merged label is then still worn, which stops the run: the whole restructure is rolled back, so
+	 * every errand keeps the labels it had and the merged label is kept.
 	 */
 	@Test
-	@DisplayName("Verification that a label merge taking an errand off the process it runs leaves that errand as it is, keeps the merged label the errand still wears, and completes")
+	@DisplayName("Verification that a label merge leaving the merged label on errands that keep their labels rolls the whole restructure back")
 	@Sql("/db/scripts/testdata-process-key-guard-merge.sql")
 	void test09_aMergedLabelNamingAnotherProcessIsKeptOnTheErrandRunningOne() throws Exception {
 		final var job = setupCall()
-			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/" + SUPERVISION_LABEL + "/merge")
+			.withServicePath("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/metadata/labels/restructure")
 			.withHttpMethod(POST)
 			.withRequest(REQUEST_FILE)
 			.withContentType(APPLICATION_JSON)
@@ -273,35 +276,23 @@ class ProcessKeyGuardIT extends AbstractAppTest {
 				.isPresent());
 
 		assertThat(jobRepository.findById(job.getJobId())).hasValueSatisfying(ended -> {
-			assertThat(ended.getStatus()).isEqualTo(COMPLETED);
-			assertThat(ended.getMessage()).isEqualTo("Labels [%s] merged into %s, 1 errand(s) restowed, 2 kept their labels, labels [%s] kept since errands still wear them"
-				.formatted(APPLICATION_LABEL, SUPERVISION_LABEL, APPLICATION_LABEL));
+			assertThat(ended.getStatus()).isEqualTo(FAILED);
+			assertThat(ended.getMessage())
+				.startsWith("Rolled back - no changes applied.")
+				.contains("labels [%s] were merged away but errands still wear them".formatted(APPLICATION_LABEL));
 		});
 
-		setupCall()
-			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS) + "/process-activities")
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response-activities.json")
-			.sendRequest();
-
-		setupCall()
-			.withServicePath(errandPath(ERRAND_WITH_LIVE_PROCESS))
-			.withHttpMethod(GET)
-			.withJsonAssertOptions(null)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response-errand-with-process.json")
-			.sendRequest();
-
-		setupCall()
-			.withServicePath(errandPath(ERRAND_WITHOUT_PROCESS))
-			.withHttpMethod(GET)
-			.withJsonAssertOptions(null)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response-errand-without-process.json")
-			.sendRequestAndVerifyResponse();
-
+		List.of(ERRAND_WITH_LIVE_PROCESS, ERRAND_WITHOUT_PROCESS, ERRAND_WITH_FINISHED_PROCESS)
+			.forEach(errandId -> assertThat(labelIdsOf(errandId)).as(errandId).containsExactly(APPLICATION_LABEL));
 		assertThat(metadataLabelRepository.existsById(APPLICATION_LABEL)).isTrue();
+	}
+
+	/**
+	 * The label ids an errand wears, read from the join table, since the labels of an errand are lazy and the repository
+	 * call fetching it has closed its session by the time a test looks.
+	 */
+	private List<String> labelIdsOf(final String errandId) {
+		return jdbcTemplate.queryForList("SELECT metadata_label_id FROM errand_labels WHERE errand_id = ?", String.class, errandId);
 	}
 
 	/**

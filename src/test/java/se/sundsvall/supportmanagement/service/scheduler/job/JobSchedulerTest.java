@@ -20,7 +20,7 @@ class JobSchedulerTest {
 	private static final String JOB_NAME = "maintain_jobs";
 
 	@Mock
-	private JobWorker jobWorkerMock;
+	private StaleJobWorker staleJobWorkerMock;
 
 	@Mock
 	private Dept44HealthUtility healthUtilityMock;
@@ -29,17 +29,17 @@ class JobSchedulerTest {
 
 	@BeforeEach
 	void setUp() {
-		scheduler = new JobScheduler(jobWorkerMock, healthUtilityMock, JOB_NAME);
+		scheduler = new JobScheduler(staleJobWorkerMock, healthUtilityMock, JOB_NAME);
 	}
 
 	@Test
 	@DisplayName("Verification that a sweep finding nothing abandoned says nothing about the health of the service, leaving the scheduling aspect to report the run as the success it was")
 	void maintainJobsWithNothingAbandoned() {
-		when(jobWorkerMock.endAbandonedJobs()).thenReturn(Optional.empty());
+		when(staleJobWorkerMock.endAbandonedJobs()).thenReturn(Optional.empty());
 
 		scheduler.maintainJobs();
 
-		verify(jobWorkerMock).endAbandonedJobs();
+		verify(staleJobWorkerMock).endAbandonedJobs();
 		verifyNoInteractions(healthUtilityMock);
 	}
 
@@ -48,7 +48,7 @@ class JobSchedulerTest {
 	void maintainJobsWithAbandonedRuns() {
 		final var account = "2 run(s) stopped being reported on and were ended here, leaving the work each was carrying out half done: "
 			+ "ERRAND_PURGE job-1 in namespace NAMESPACE-1 for municipality 2281, last written to 2026-08-25T04:12:11+02:00.";
-		when(jobWorkerMock.endAbandonedJobs()).thenReturn(Optional.of(account));
+		when(staleJobWorkerMock.endAbandonedJobs()).thenReturn(Optional.of(account));
 
 		scheduler.maintainJobs();
 
