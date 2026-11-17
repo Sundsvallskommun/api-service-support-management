@@ -1008,7 +1008,7 @@ together with their ancestors, so a block on a parent label holds for every erra
   `scheduler.process-event.max-age`.
 - The process engine sets `X-Trigger-Process: false` on its own writes, so that they do not wake it again. The header is
   **ignored for AD accounts**, so a handler's change always reaches the process.
-- An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (20
+- An emergency brake stops publishing for an errand once `process-engine.loop-guard.max-events-per-errand` events (50
   by default) written within `window` (10 minutes) have been delivered to its process. Further events are dropped and
   an `ERROR` entry `EVENT_RATE_EXCEEDED` is written. Only delivered events are counted, so a delivery outage never trips
   it.

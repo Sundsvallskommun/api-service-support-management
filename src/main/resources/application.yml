@@ -104,7 +104,7 @@ process-engine:
   # Settings for the process engine errand events are published to. Documented in ProcessEngineProperties, which is where
   # the defaults live.
   loop-guard:
-    max-events-per-errand: 20
+    max-events-per-errand: 50
     window: PT10M
   direct-run:
     enabled: true

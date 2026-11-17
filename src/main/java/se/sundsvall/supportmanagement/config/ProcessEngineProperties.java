@@ -24,7 +24,7 @@ public record ProcessEngineProperties(
 	 */
 	public record LoopGuard(
 
-		@DefaultValue("20") int maxEventsPerErrand,
+		@DefaultValue("50") int maxEventsPerErrand,
 
 		@DefaultValue("PT10M") Duration window) {
 	}
