@@ -1813,7 +1813,7 @@ eftersom det är en uppslagning i cachad konfiguration medan bromsen är en frå
 
 **Lager 3 — nödbromsen.** Den bryr sig varken om vem eller vad, utan bara om takten: räkna raderna med
 `errand_id = ? and delivered_at is not null and created > now() - fönstret`. Når det tröskeln
-(20 stycken på 10 minuter) skrivs ingen rad, en felpost (`LOOP_GUARD`, `EVENT_RATE_EXCEEDED`) hamnar i
+(50 stycken på 10 minuter) skrivs ingen rad, en felpost (`LOOP_GUARD`, `EVENT_RATE_EXCEEDED`) hamnar i
 aktivitetsloggen och en ERROR-rad i applikationsloggen. Hälsoindikatorn rörs inte: bromsen gäller ett ärende, inte
 tjänsten.
 
@@ -1989,7 +1989,7 @@ integration:
   # svarar 202 sa fort handelsen tagits emot. Se 7.6.
   pw-alkt: { url: "${...}", connect-timeout: 5, read-timeout: 10 }
 process-engine:
-  loop-guard: { max-events-per-errand: 20, window: PT10M }
+  loop-guard: { max-events-per-errand: 50, window: PT10M }
   direct-run: { enabled: true, core-pool-size: 2, max-pool-size: 4, queue-capacity: 500 }   # 2.3
 scheduler:                                  # nyckelnamnen foljer notification-dispatch
   process-event:
