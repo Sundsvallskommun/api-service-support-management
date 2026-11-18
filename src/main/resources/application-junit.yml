@@ -35,7 +35,7 @@ integration:
     url: http://telia-ace.url
     username: the-username
     password: the-password
-    entrance: wiDraken
+    entrance: the-entrance
 process-engine:
   direct-run:
     # Off, since there is no pw-alkt to reach, and a direct run would try after every publication a test makes

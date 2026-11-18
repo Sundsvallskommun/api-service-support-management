@@ -12,7 +12,7 @@
 				"equalToJson": {
 					"from": "anna.andersson@example.com",
 					"subject": "Nytt ärende i Draken",
-					"entrance": "wiDraken",
+					"entrance": "the-entrance",
 					"errand": "w01",
 					"workitem": "Öppna ärendet i Draken",
 					"workitemSource": "draken",
