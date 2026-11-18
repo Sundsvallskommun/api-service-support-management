@@ -43,6 +43,7 @@ class TeliaAceWorkItemWorkerTest {
 
 	private static final String ERRAND_ID = "errand-1";
 	private static final String EMAIL_UID = "42.CallGuideWorkItem@computer";
+	private static final String ENTRANCE = "wiTest";
 
 	@Mock
 	private TeliaAceWorkItemRepository workItemRepositoryMock;
@@ -60,7 +61,7 @@ class TeliaAceWorkItemWorkerTest {
 
 	@BeforeEach
 	void setUp() {
-		worker = new TeliaAceWorkItemWorker(workItemRepositoryMock, contactRepositoryMock, errandsRepositoryMock, teliaAceClientMock, Duration.ofDays(3));
+		worker = new TeliaAceWorkItemWorker(workItemRepositoryMock, contactRepositoryMock, errandsRepositoryMock, teliaAceClientMock, Duration.ofDays(3), ENTRANCE);
 	}
 
 	@Captor
@@ -119,7 +120,7 @@ class TeliaAceWorkItemWorkerTest {
 		final var request = addRequestCaptor.getValue();
 		assertThat(request.from()).isEqualTo("anna.andersson@example.com");
 		assertThat(request.subject()).isEqualTo("Nytt ärende i Draken");
-		assertThat(request.entrance()).isEqualTo("wiDraken");
+		assertThat(request.entrance()).isEqualTo(ENTRANCE);
 		assertThat(request.errand()).isEqualTo("w01");
 		assertThat(request.workitem()).isEqualTo("Öppna ärendet i Draken");
 		assertThat(request.workitemSource()).isEqualTo("draken");

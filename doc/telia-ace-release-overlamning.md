@@ -16,12 +16,13 @@ Flyway-migreringen `V1_66__add_telia_ace_tables.sql` skapar tabellerna `telia_ac
 
 ## 2. Miljökonfiguration (config server / env), per miljö
 
-| Property | Värde | Kommentar |
-|---|---|---|
-| `integration.telia-ace.url` | `<Telia ACE WorkItem proxy-URL>` | Saknas den används `https://telia-ace.invalid`. Tjänsten startar ändå, men alla anrop misslyckas. |
-| `integration.telia-ace.username` | `<secret>` | Basic auth. Saknas den loggas en WARN och anropen misslyckas. |
-| `integration.telia-ace.password` | `<secret>` | Samma som ovan. |
-| `scheduler.telia-ace-work-item.enabled` | **`true`** | **Global flagga.** Standard är `false`. Utan den köas inget, oavsett namespace-inställningen. |
+|                                Property                                |              Värde               |                                                            Kommentar                                                            |
+|------------------------------------------------------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `integration.telia-ace.url`                                            | `<Telia ACE WorkItem proxy-URL>` | Saknas den används `https://telia-ace.invalid`. Tjänsten startar ändå, men alla anrop misslyckas.                               |
+| `integration.telia-ace.username`                                       | `<secret>`                       | Basic auth. Saknas den loggas en WARN och anropen misslyckas.                                                                   |
+| `integration.telia-ace.password`                                       | `<secret>`                       | Samma som ovan.                                                                                                                 |
+| `integration.telia-ace.entrance` (env `INTEGRATION_TELIAACE_ENTRANCE`) | `<entrance i Telias miljö>`      | **Skiljer sig mellan miljöer.** Den entrance i ACE som work items hamnar i. **Obligatorisk**, saknas den startar inte tjänsten. |
+| `scheduler.telia-ace-work-item.enabled`                                | **`true`**                       | **Global flagga.** Standard är `false`. Utan den köas inget, oavsett namespace-inställningen.                                   |
 
 Följande har bra standardvärden och behöver normalt inte ändras: `connect-timeout: 5`, `read-timeout: 30`, `cron: 0 */2 * * * *` (varannan minut) och `max-age: P3D` (work items som legat i kö längre än 3 dagar kastas).
 
@@ -29,9 +30,9 @@ Följande har bra standardvärden och behöver normalt inte ändras: `connect-ti
 
 Sätts i namespace-konfigurationen för Kontakt Sundsvalls namespace:
 
-| Fält | Värde |
-|---|---|
-| `teliaAceWorkItemEnabled` | `true` |
+|           Fält            |                                                Värde                                                 |
+|---------------------------|------------------------------------------------------------------------------------------------------|
+| `teliaAceWorkItemEnabled` | `true`                                                                                               |
 | `teliaAceWorkItemBaseUrl` | `https://<draken-host>/kontaktsundsvall` (prod t.ex. `https://draken.sundsvall.se/kontaktsundsvall`) |
 
 Länken till ACE byggs som `<baseUrl>/arende/<ärendenummer>`. Den måste börja med http(s) och får vara högst 230 tecken.
@@ -48,11 +49,11 @@ Bara ärenden som skapas eller uppdateras via EmailReader skickas. Undantag är 
 
 ## Miljöer och ordning
 
-| Steg | Miljö | Miljökonfiguration | Namespace-flaggor |
-|---|---|---|---|
-| 1 | **Test** | Sätt URL, användarnamn och lösenord för Telias testmiljö. `enabled: true` | På, `baseUrl` = test-Draken |
-| 2 | Verifiera i test | Se checklistan nedan | |
-| 3 | **Prod** | Sätt prod-URL och prod-inloggning. `enabled: true` | På, `baseUrl` = `https://draken.sundsvall.se/kontaktsundsvall` |
+| Steg |      Miljö       |                            Miljökonfiguration                             |                       Namespace-flaggor                        |
+|------|------------------|---------------------------------------------------------------------------|----------------------------------------------------------------|
+| 1    | **Test**         | Sätt URL, användarnamn och lösenord för Telias testmiljö. `enabled: true` | På, `baseUrl` = test-Draken                                    |
+| 2    | Verifiera i test | Se checklistan nedan                                                      |                                                                |
+| 3    | **Prod**         | Sätt prod-URL och prod-inloggning. `enabled: true`                        | På, `baseUrl` = `https://draken.sundsvall.se/kontaktsundsvall` |
 
 Sätt integrationen (URL och inloggning) **innan** du slår på flaggorna. Då hamnar inga work items i kö som bara misslyckas.
 
@@ -68,3 +69,4 @@ Sätt integrationen (URL och inloggning) **innan** du slår på flaggorna. Då h
 - **401, 403 eller 429 från Telia:** work itemen ligger kvar i kön och health-indikatorn blir röd. Kontrollera inloggningen. Kön skickas automatiskt när felet är åtgärdat, så länge itemen är yngre än 3 dagar.
 - **Andra 4xx:** work itemen kastas och ett ERROR loggas.
 - **Rollback:** sätt `scheduler.telia-ace-work-item.enabled: false` (stänger av för alla namespaces) eller `teliaAceWorkItemEnabled: false` på namespacet. Ingen deploy krävs för namespace-flaggan.
+

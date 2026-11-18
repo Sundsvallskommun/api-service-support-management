@@ -39,7 +39,6 @@ public class TeliaAceWorkItemWorker {
 
 	private static final Logger LOG = LoggerFactory.getLogger(TeliaAceWorkItemWorker.class);
 
-	private static final String ENTRANCE = "wiDraken";
 	private static final String ERRAND = "w01";
 	private static final String WORKITEM_SOURCE = "draken";
 	private static final String WORKITEM_INSTRUCTION = "Öppna ärendet i Draken";
@@ -55,6 +54,7 @@ public class TeliaAceWorkItemWorker {
 	private static final Set<HttpStatus> PROPAGATED_STATUSES = EnumSet.of(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN, HttpStatus.TOO_MANY_REQUESTS);
 
 	private final Duration maxAge;
+	private final String entrance;
 
 	private final TeliaAceWorkItemRepository workItemRepository;
 	private final TeliaAceContactRepository contactRepository;
@@ -62,12 +62,14 @@ public class TeliaAceWorkItemWorker {
 	private final TeliaAceClient teliaAceClient;
 
 	public TeliaAceWorkItemWorker(final TeliaAceWorkItemRepository workItemRepository, final TeliaAceContactRepository contactRepository, final ErrandsRepository errandsRepository, final TeliaAceClient teliaAceClient,
-		@Value("${scheduler.telia-ace-work-item.max-age:P3D}") final Duration maxAge) {
+		@Value("${scheduler.telia-ace-work-item.max-age:P3D}") final Duration maxAge,
+		@Value("${integration.telia-ace.entrance}") final String entrance) {
 		this.workItemRepository = workItemRepository;
 		this.contactRepository = contactRepository;
 		this.errandsRepository = errandsRepository;
 		this.teliaAceClient = teliaAceClient;
 		this.maxAge = maxAge;
+		this.entrance = entrance;
 	}
 
 	@Transactional(readOnly = true)
@@ -154,7 +156,7 @@ public class TeliaAceWorkItemWorker {
 		return new AddWorkItemRequest(
 			workItem.getFromAddress(),
 			workItem.getSubject(),
-			ENTRANCE,
+			entrance,
 			ERRAND,
 			WORKITEM_INSTRUCTION,
 			WORKITEM_SOURCE,
