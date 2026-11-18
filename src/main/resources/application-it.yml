@@ -29,6 +29,7 @@ integration:
     url: http://localhost:${wiremock.server.port:}/api-telia-ace
     username: the-username
     password: the-password
+    entrance: the-entrance
 scheduler:
   emailreader:
     cron: "-"
