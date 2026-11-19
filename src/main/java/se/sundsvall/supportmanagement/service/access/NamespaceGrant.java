@@ -8,6 +8,7 @@ import se.sundsvall.supportmanagement.model.enums.ErrandField;
 import se.sundsvall.supportmanagement.model.enums.ProtectedResource;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * What one user holds in one namespace at one access level, resolved without an errand in hand.
@@ -97,5 +98,22 @@ public record NamespaceGrant(boolean enforced, LabelRoute labels, LabelRoute lim
 		return !enforced || Stream.of(isNull(labels) ? null : labels.resources(), isNull(limitedLabels) ? null : limitedLabels.resources(), isNull(reporter) ? null : reporter.resources())
 			.filter(java.util.Objects::nonNull)
 			.anyMatch(resources -> resources.contains(resource));
+	}
+
+	/**
+	 * Whether every route of the grant reaching any errand reaches sent in resource on them, which is what a query answered
+	 * across all of them at once, such as the errand listing, may be held to: one route lacking the resource is enough to
+	 * refuse it. A grant reaching no errand at all reveals nothing, whatever it is asked about.
+	 */
+	public boolean reachesOnEveryRoute(final ProtectedResource resource) {
+		if (!enforced) {
+			return true;
+		}
+		return Stream.of(
+			nonNull(labels) && labels.reachesAnything() ? labels.resources() : null,
+			nonNull(limitedLabels) && limitedLabels.reachesAnything() ? limitedLabels.resources() : null,
+			nonNull(reporter) && nonNull(reporter.adAccount()) ? reporter.resources() : null)
+			.filter(java.util.Objects::nonNull)
+			.allMatch(resources -> resources.contains(resource));
 	}
 }
