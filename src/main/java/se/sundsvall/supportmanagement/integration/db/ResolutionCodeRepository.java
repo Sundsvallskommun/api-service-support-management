@@ -1,0 +1,27 @@
+package se.sundsvall.supportmanagement.integration.db;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import java.util.List;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+import se.sundsvall.supportmanagement.integration.db.model.ResolutionCodeEntity;
+
+@Transactional
+@CircuitBreaker(name = "resolutionCodeRepository")
+public interface ResolutionCodeRepository extends JpaRepository<ResolutionCodeEntity, String> {
+
+	List<ResolutionCodeEntity> findAllByNamespaceAndMunicipalityId(String namespace, String municipalityId, Sort sort);
+
+	boolean existsByNamespaceAndMunicipalityId(String namespace, String municipalityId);
+
+	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
+
+	boolean existsByNamespaceAndMunicipalityIdAndNameAndDeprecatedFalse(String namespace, String municipalityId, String name);
+
+	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	ResolutionCodeEntity getByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+
+	void deleteByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
+}

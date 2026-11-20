@@ -47,7 +47,8 @@ class SoftDeleteChokePointTest {
 		entry("existsByAccessLabelsMetadataLabelIdIn", "label removal guard"),
 		entry("findDistinctIdsByLabelsMetadataLabelIdIn", "label restructure: the errands affected, and their count"),
 		entry("findAllByIdForUpdate", "label restructure restow, which locks the affected errands"),
-		entry("existsByPhasesPhaseEntityId", "phase removal guard"));
+		entry("existsByPhasesPhaseEntityId", "phase removal guard"),
+		entry("existsByNamespaceAndMunicipalityIdAndResolution", "resolution code removal guard"));
 
 	@Test
 	void everyFinderLeavesOutSoftDeletedErrands() {

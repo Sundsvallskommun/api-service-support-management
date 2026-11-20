@@ -740,6 +740,14 @@ VALUES ('d1000000-0000-0000-0000-000000000001', 'SUPPORTS', 'Tillstyrker', 1, tr
        ('d1000000-0000-0000-0000-000000000003', 'NO_RESPONSE', 'Inget svar inom fristen', 3, false, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
 
 -- -----------------------------------
+-- Resolution codes (metadata)
+-- -----------------------------------
+INSERT INTO resolution_code(id, name, display_name, description, sort_order, deprecated, namespace, municipality_id, created)
+VALUES ('d2000000-0000-0000-0000-000000000001', 'SOLVED', 'Löst', 'Ärendet är löst', 1, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d2000000-0000-0000-0000-000000000002', 'HANDED_OVER', 'Överlämnat', 'Ärendet är överlämnat till annan verksamhet', 2, false, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000'),
+       ('d2000000-0000-0000-0000-000000000003', 'LEGACY', 'Gammal kod', 'Används inte längre', 3, true, 'NAMESPACE-ARTEFACT', '2281', '2024-01-10 12:00:00.000');
+
+-- -----------------------------------
 -- An attachment of its own for the cascade tests.
 --
 -- The attachments seeded for NAMESPACE-1 share their data rows with communications, and removing one of those takes
