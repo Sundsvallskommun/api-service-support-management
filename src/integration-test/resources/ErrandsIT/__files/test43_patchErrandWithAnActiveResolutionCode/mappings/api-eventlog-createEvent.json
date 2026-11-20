@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPattern": "/api-eventlog/2281/.*"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "*/*"
+		},
+		"status": 202
+	},
+	"name": "api-eventlog-createEvent"
+}

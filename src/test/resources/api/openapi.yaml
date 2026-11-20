@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.5"
+  version: "18.6"
 servers:
 - url: http://localhost:55502
   description: Generated server url
@@ -34,6 +34,8 @@ tags:
   description: Errand handover operations
 - name: Errand JSON Parameters
   description: Errand JSON parameter operations
+- name: Metadata for resolution codes
+  description: Resolution code metadata operations
 - name: Subscribers
   description: "Subscriber CRUD operations. A subscriber describes who receives notifications\
     \ and how (channels, event filters, optional pause window)."
@@ -5578,6 +5580,173 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Role"
+        required: true
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/resolutioncodes:
+    get:
+      tags:
+      - Metadata for resolution codes
+      summary: Get resolution codes
+      description: Get all resolution codes for the namespace and municipality
+      operationId: getResolutionCodes
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResolutionCode"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    post:
+      tags:
+      - Metadata for resolution codes
+      summary: Create resolution code
+      description: Create new resolution code for the namespace and municipality
+      operationId: createResolutionCode
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolutionCode"
         required: true
       responses:
         "201":
@@ -14263,6 +14432,272 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Role"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/metadata/resolutioncodes/{id}:
+    get:
+      tags:
+      - Metadata for resolution codes
+      summary: Get resolution code
+      description: "Get resolution code matching namespace, municipality and id"
+      operationId: getResolutionCode
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Resolution code id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolutionCode"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    delete:
+      tags:
+      - Metadata for resolution codes
+      summary: Delete resolution code
+      description: "Delete resolution code matching namespace, municipality and id.\
+        \ A code used by errands can only be deprecated"
+      operationId: deleteResolutionCode
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Resolution code id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "204":
+          description: Successful operation
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+    patch:
+      tags:
+      - Metadata for resolution codes
+      summary: Update resolution code
+      description: "Update resolution code matching namespace, municipality and id.\
+        \ The name cannot be changed"
+      operationId: updateResolutionCode
+      parameters:
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: id
+        in: path
+        description: Resolution code id
+        required: true
+        schema:
+          type: string
+        example: 5f79a808-0ef3-4985-99b9-b12f23e202a7
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolutionCode"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolutionCode"
         "400":
           description: Bad Request
           content:
@@ -25308,6 +25743,65 @@ components:
           readOnly: true
       required:
       - name
+    ResolutionCode:
+      type: object
+      description: ResolutionCode model
+      properties:
+        id:
+          type: string
+          description: ResolutionCode ID
+          examples:
+          - 5f79a808-0ef3-4985-99b9-b12f23e202a7
+          readOnly: true
+        name:
+          type: string
+          description: "Name for the resolution code. Used as key, unique within the\
+            \ namespace, and cannot be changed once created"
+          examples:
+          - SOLVED
+        displayName:
+          type:
+          - string
+          - "null"
+          description: Display name for the resolution code
+          examples:
+          - Löst
+        description:
+          type:
+          - string
+          - "null"
+          description: Description of the resolution code
+          examples:
+          - The errand has been solved
+        sortOrder:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Sort order for the resolution code
+          examples:
+          - 1
+        deprecated:
+          type: boolean
+          default: false
+          description: Indicates if the resolution code is deprecated. A deprecated
+            code is no longer accepted on errands
+          examples:
+          - true
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the resolution code was created
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the resolution code was last modified
+          examples:
+          - 2000-10-31T01:30:00.000+02:00
+          readOnly: true
     Phase:
       type: object
       description: Phase model
@@ -26130,7 +26624,9 @@ components:
           - ACTIVE
         resolution:
           type: string
-          description: Resolution status for closed errands. Value can be set to anything
+          description: "Resolution status for closed errands. When the namespace has\
+            \ registered resolution codes, it must be one of the codes not deprecated,\
+            \ otherwise the value can be set to anything. An empty value clears it"
           examples:
           - FIXED
         description:
@@ -27772,7 +28268,8 @@ components:
           example: SOLVED
         resolution:
           type: string
-          description: Resolution to set on the source errand
+          description: "Resolution to set on the source errand. When the source namespace\
+            \ has registered resolution codes, it must be one of the codes not deprecated"
           example: HANDED_OVER
         closingComment:
           type: string
@@ -28901,6 +29398,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatementOutcome"
+        resolutionCodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResolutionCode"
         contactReasons:
           type: array
           items:

@@ -108,7 +108,7 @@ public class Errand {
 	})
 	private String lifecycle;
 
-	@Schema(description = "Resolution status for closed errands. Value can be set to anything", examples = "FIXED")
+	@Schema(description = "Resolution status for closed errands. When the namespace has registered resolution codes, it must be one of the codes not deprecated, otherwise the value can be set to anything. An empty value clears it", examples = "FIXED")
 	private String resolution;
 
 	@Schema(description = "Errand description text", examples = "Order cake for everyone")

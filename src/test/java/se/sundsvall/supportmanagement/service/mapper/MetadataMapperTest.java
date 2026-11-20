@@ -18,6 +18,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.LabelAttribute;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -30,6 +31,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ResolutionCodeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
@@ -890,6 +892,92 @@ class MetadataMapperTest {
 	void updateDecisionOutcomeEntityWithNull() {
 		final var entity = DecisionOutcomeEntity.create().withName("name");
 		assertThat(MetadataMapper.updateDecisionOutcomeEntity(entity, null)).isEqualTo(entity);
+	}
+
+	// =================================================================
+	// ResolutionCode tests
+	// =================================================================
+
+	@Test
+	void toResolutionCode() {
+		final var created = OffsetDateTime.now().minusDays(1);
+		final var modified = OffsetDateTime.now();
+
+		final var entity = ResolutionCodeEntity.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("SOLVED")
+			.withDisplayName("Löst")
+			.withDescription("Ärendet är löst")
+			.withSortOrder(1)
+			.withDeprecated(true);
+
+		assertThat(MetadataMapper.toResolutionCode(entity)).isEqualTo(ResolutionCode.create()
+			.withId("id")
+			.withCreated(created)
+			.withModified(modified)
+			.withName("SOLVED")
+			.withDisplayName("Löst")
+			.withDescription("Ärendet är löst")
+			.withSortOrder(1)
+			.withDeprecated(true));
+	}
+
+	@Test
+	void toResolutionCodeForNull() {
+		assertThat(MetadataMapper.toResolutionCode(null)).isNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource(value = "toResolutionCodeEntityArguments")
+	void toResolutionCodeEntity(final String namespace, final String municipalityId, final ResolutionCode resolutionCode, final ResolutionCodeEntity expectedResult) {
+		assertThat(MetadataMapper.toResolutionCodeEntity(namespace, municipalityId, resolutionCode)).isEqualTo(expectedResult);
+	}
+
+	private static Stream<Arguments> toResolutionCodeEntityArguments() {
+		return Stream.of(
+			Arguments.of("namespace", "municipalityId", null, null),
+			Arguments.of("namespace", null, ResolutionCode.create().withName("name"), null),
+			Arguments.of(null, "municipalityId", ResolutionCode.create().withName("name"), null),
+			Arguments.of("namespace", "municipalityId", ResolutionCode.create().withName("name"),
+				ResolutionCodeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name")),
+			Arguments.of("namespace", "municipalityId", ResolutionCode.create().withName("name").withDisplayName("displayName").withDescription("description").withSortOrder(2).withDeprecated(true),
+				ResolutionCodeEntity.create().withNamespace("namespace").withMunicipalityId("municipalityId").withName("name").withDisplayName("displayName").withDescription("description").withSortOrder(2).withDeprecated(true)));
+	}
+
+	@Test
+	void updateResolutionCodeEntity() {
+		final var entity = ResolutionCodeEntity.create().withName("name").withDisplayName("oldDisplayName").withDescription("oldDescription").withSortOrder(1);
+
+		final var result = MetadataMapper.updateResolutionCodeEntity(entity, ResolutionCode.create()
+			.withName("newName")
+			.withDisplayName("newDisplayName")
+			.withDescription("newDescription")
+			.withSortOrder(2)
+			.withDeprecated(true));
+
+		// The name is the key errands hold the code by, and is never changed
+		assertThat(result.getName()).isEqualTo("name");
+		assertThat(result.getDisplayName()).isEqualTo("newDisplayName");
+		assertThat(result.getDescription()).isEqualTo("newDescription");
+		assertThat(result.getSortOrder()).isEqualTo(2);
+		assertThat(result.isDeprecated()).isTrue();
+	}
+
+	@Test
+	void updateResolutionCodeEntityLeavesOmittedFieldsAlone() {
+		final var entity = ResolutionCodeEntity.create().withName("name").withDisplayName("displayName").withDescription("description").withSortOrder(1).withDeprecated(true);
+
+		final var result = MetadataMapper.updateResolutionCodeEntity(entity, ResolutionCode.create());
+
+		assertThat(result).isEqualTo(ResolutionCodeEntity.create().withName("name").withDisplayName("displayName").withDescription("description").withSortOrder(1).withDeprecated(true));
+	}
+
+	@Test
+	void updateResolutionCodeEntityWithNull() {
+		final var entity = ResolutionCodeEntity.create().withName("name");
+		assertThat(MetadataMapper.updateResolutionCodeEntity(entity, null)).isEqualTo(entity);
 	}
 
 	// =================================================================

@@ -21,6 +21,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.Labels;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -35,6 +36,7 @@ import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseEntity;
 import se.sundsvall.supportmanagement.integration.db.model.PhaseTransitionEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ResolutionCodeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
@@ -715,6 +717,56 @@ public class MetadataMapper {
 		ofNullable(decisionOutcome.getDisplayName()).ifPresent(entity::setDisplayName);
 		ofNullable(decisionOutcome.getSortOrder()).ifPresent(entity::setSortOrder);
 		ofNullable(decisionOutcome.getDeprecated()).ifPresent(entity::setDeprecated);
+
+		return entity;
+	}
+
+	// =================================================================
+	// ResolutionCode operations
+	// =================================================================
+
+	public static ResolutionCode toResolutionCode(final ResolutionCodeEntity entity) {
+		return ofNullable(entity)
+			.map(e -> ResolutionCode.create()
+				.withId(e.getId())
+				.withCreated(e.getCreated())
+				.withModified(e.getModified())
+				.withName(e.getName())
+				.withDisplayName(e.getDisplayName())
+				.withDescription(e.getDescription())
+				.withDeprecated(e.isDeprecated())
+				.withSortOrder(e.getSortOrder()))
+			.orElse(null);
+	}
+
+	public static ResolutionCodeEntity toResolutionCodeEntity(final String namespace, final String municipalityId, final ResolutionCode resolutionCode) {
+		if (anyNull(namespace, municipalityId, resolutionCode)) {
+			return null;
+		}
+
+		final var entity = ResolutionCodeEntity.create()
+			.withMunicipalityId(municipalityId)
+			.withName(resolutionCode.getName())
+			.withDisplayName(resolutionCode.getDisplayName())
+			.withDescription(resolutionCode.getDescription())
+			.withSortOrder(resolutionCode.getSortOrder())
+			.withNamespace(namespace);
+		ofNullable(resolutionCode.getDeprecated()).ifPresent(entity::setDeprecated);
+		return entity;
+	}
+
+	/**
+	 * Applies the fields the update carries. The name is left alone, since it is the key errands hold the code by.
+	 */
+	public static ResolutionCodeEntity updateResolutionCodeEntity(final ResolutionCodeEntity entity, final ResolutionCode resolutionCode) {
+		if (isNull(resolutionCode)) {
+			return entity;
+		}
+
+		ofNullable(resolutionCode.getDisplayName()).ifPresent(entity::setDisplayName);
+		ofNullable(resolutionCode.getDescription()).ifPresent(entity::setDescription);
+		ofNullable(resolutionCode.getSortOrder()).ifPresent(entity::setSortOrder);
+		ofNullable(resolutionCode.getDeprecated()).ifPresent(entity::setDeprecated);
 
 		return entity;
 	}

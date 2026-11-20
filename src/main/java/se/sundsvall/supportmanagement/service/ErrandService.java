@@ -111,6 +111,7 @@ public class ErrandService {
 	private final ErrandsRepository repository;
 	private final ContactReasonRepository contactReasonRepository;
 	private final MeasureValidator measureValidator;
+	private final ResolutionValidator resolutionValidator;
 	private final RevisionService revisionService;
 	private final EventService eventService;
 	private final ErrandNumberGeneratorService errandNumberGeneratorService;
@@ -134,6 +135,7 @@ public class ErrandService {
 		final ErrandsRepository repository,
 		final ContactReasonRepository contactReasonRepository,
 		final MeasureValidator measureValidator,
+		final ResolutionValidator resolutionValidator,
 		final RevisionService revisionService,
 		final EventService eventService,
 		final ErrandNumberGeneratorService errandNumberGeneratorService,
@@ -156,6 +158,7 @@ public class ErrandService {
 		this.repository = repository;
 		this.contactReasonRepository = contactReasonRepository;
 		this.measureValidator = measureValidator;
+		this.resolutionValidator = resolutionValidator;
 		this.revisionService = revisionService;
 		this.eventService = eventService;
 		this.errandNumberGeneratorService = errandNumberGeneratorService;
@@ -182,6 +185,7 @@ public class ErrandService {
 
 		// Everything the request is held to on its own, before an errand is built from it.
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		resolutionValidator.validate(errand.getResolution(), namespace, municipalityId);
 		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 
@@ -271,6 +275,11 @@ public class ErrandService {
 		requireMatchingVersion(ifMatch, errandEntityToUpdate.getVersion(), id, namespace, municipalityId);
 		requireLifecycleTransition(errandEntityToUpdate, errand);
 		measureValidator.validate(errand.getMeasures(), namespace, municipalityId);
+		// The resolution the errand already holds is let through, so that a code deprecated since then does not stop the
+		// rest of the patch.
+		resolutionValidator.validate(ofNullable(errand.getResolution())
+			.filter(resolution -> !resolution.equals(errandEntityToUpdate.getResolution()))
+			.orElse(null), namespace, municipalityId);
 		errandLabelService.validateLabels(namespace, municipalityId, errand.getLabels());
 		final var contactReason = resolveContactReason(errand.getContactReason(), namespace, municipalityId);
 

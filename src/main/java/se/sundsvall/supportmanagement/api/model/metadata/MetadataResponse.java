@@ -37,6 +37,9 @@ public class MetadataResponse {
 	@ArraySchema(schema = @Schema(implementation = StatementOutcome.class))
 	private List<StatementOutcome> statementOutcomes;
 
+	@ArraySchema(schema = @Schema(implementation = ResolutionCode.class))
+	private List<ResolutionCode> resolutionCodes;
+
 	@ArraySchema(schema = @Schema(implementation = ContactReason.class))
 	private List<ContactReason> contactReasons;
 
@@ -190,6 +193,19 @@ public class MetadataResponse {
 		return this;
 	}
 
+	public List<ResolutionCode> getResolutionCodes() {
+		return resolutionCodes;
+	}
+
+	public void setResolutionCodes(final List<ResolutionCode> resolutionCodes) {
+		this.resolutionCodes = resolutionCodes;
+	}
+
+	public MetadataResponse withResolutionCodes(final List<ResolutionCode> resolutionCodes) {
+		this.resolutionCodes = resolutionCodes;
+		return this;
+	}
+
 	@Override
 	public String toString() {
 		return "MetadataResponse{" +
@@ -201,6 +217,7 @@ public class MetadataResponse {
 			", measureTypes=" + measureTypes +
 			", decisionOutcomes=" + decisionOutcomes +
 			", statementOutcomes=" + statementOutcomes +
+			", resolutionCodes=" + resolutionCodes +
 			", attachmentPurposes=" + attachmentPurposes +
 			", contactReasons=" + contactReasons +
 			", phases=" + phases +
@@ -215,12 +232,12 @@ public class MetadataResponse {
 			return false;
 		final MetadataResponse that = (MetadataResponse) o;
 		return Objects.equals(categories, that.categories) && Objects.equals(externalIdTypes, that.externalIdTypes) && Objects.equals(labels, that.labels) && Objects.equals(statuses, that.statuses) && Objects.equals(roles, that.roles)
-			&& Objects.equals(measureTypes, that.measureTypes) && Objects.equals(decisionOutcomes, that.decisionOutcomes) && Objects.equals(statementOutcomes, that.statementOutcomes)
+			&& Objects.equals(measureTypes, that.measureTypes) && Objects.equals(decisionOutcomes, that.decisionOutcomes) && Objects.equals(statementOutcomes, that.statementOutcomes) && Objects.equals(resolutionCodes, that.resolutionCodes)
 			&& Objects.equals(attachmentPurposes, that.attachmentPurposes) && Objects.equals(contactReasons, that.contactReasons) && Objects.equals(phases, that.phases);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(categories, externalIdTypes, labels, measureTypes, decisionOutcomes, statementOutcomes, attachmentPurposes, phases, statuses, roles, contactReasons);
+		return Objects.hash(categories, externalIdTypes, labels, measureTypes, decisionOutcomes, statementOutcomes, resolutionCodes, attachmentPurposes, phases, statuses, roles, contactReasons);
 	}
 }

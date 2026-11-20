@@ -14,7 +14,7 @@ public class HandoverSourceHandling {
 	@Schema(description = "Status to set on the source errand", example = "SOLVED")
 	private String status;
 
-	@Schema(description = "Resolution to set on the source errand", example = "HANDED_OVER")
+	@Schema(description = "Resolution to set on the source errand. When the source namespace has registered resolution codes, it must be one of the codes not deprecated", example = "HANDED_OVER")
 	private String resolution;
 
 	@Schema(description = "Closing comment to add to the source errand", example = "Överlämnad till annan drake")
