@@ -105,6 +105,10 @@ public interface ErrandsRepository extends JpaRepository<ErrandEntity, String>, 
 
 	boolean existsByPhasesPhaseEntityId(String phaseId);
 
+	// Soft deleted errands count too: they still carry the resolution and can be restored, so a code they use may only be
+	// deprecated.
+	boolean existsByNamespaceAndMunicipalityIdAndResolution(String namespace, String municipalityId, String resolution);
+
 	/**
 	 * The ids of the next batch of a keyset walk over the errands the specification reaches: in ascending id order,
 	 * starting after the id the previous batch ended on, and no more than the limit. Only the ids are read.

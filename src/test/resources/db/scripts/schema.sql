@@ -848,6 +848,20 @@
         primary key (id)
     ) engine=InnoDB;
 
+    create table resolution_code (
+        deprecated bit not null,
+        sort_order integer,
+        created datetime(6),
+        modified datetime(6),
+        municipality_id varchar(8) not null,
+        namespace varchar(32) not null,
+        description varchar(1024),
+        display_name varchar(255),
+        id varchar(255) not null,
+        name varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
     create table revision (
         version integer,
         created datetime(6),
@@ -1560,6 +1574,12 @@
 
     create index idx_peo_guard 
        on process_event_outbox (errand_id, delivered_at, created);
+
+    create index idx_resolution_code_namespace_municipality_id 
+       on resolution_code (namespace, municipality_id);
+
+    alter table if exists resolution_code 
+       add constraint uq_resolution_code_namespace_municipality_id_name unique (namespace, municipality_id, name);
 
     create index revision_entity_id_index 
        on revision (entity_id);
