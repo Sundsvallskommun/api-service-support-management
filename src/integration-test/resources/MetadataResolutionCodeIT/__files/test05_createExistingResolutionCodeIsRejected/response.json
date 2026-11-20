@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "ResolutionCode 'SOLVED' already exists in namespace 'NAMESPACE-ARTEFACT' for municipalityId '2281'"
+}

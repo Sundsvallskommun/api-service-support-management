@@ -1,0 +1,5 @@
+{
+	"title": "Bad Request",
+	"status": 400,
+	"detail": "The name of ResolutionCode 'SOLVED' cannot be changed"
+}

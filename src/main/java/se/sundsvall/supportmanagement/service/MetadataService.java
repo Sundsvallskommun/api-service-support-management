@@ -40,6 +40,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
 import se.sundsvall.supportmanagement.api.model.metadata.MetadataResponse;
 import se.sundsvall.supportmanagement.api.model.metadata.Phase;
 import se.sundsvall.supportmanagement.api.model.metadata.PhaseTransition;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -57,6 +58,7 @@ import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
+import se.sundsvall.supportmanagement.integration.db.ResolutionCodeRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
@@ -104,6 +106,8 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toMet
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhase;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toPhaseTransitionEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toResolutionCode;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toResolutionCodeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRole;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.toStatementOutcome;
@@ -118,6 +122,7 @@ import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updat
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMeasureTypeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateMetadataLabelEntities;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updatePhaseEntity;
+import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateResolutionCodeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateRoleEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatementOutcomeEntity;
 import static se.sundsvall.supportmanagement.service.mapper.MetadataMapper.updateStatusEntity;
@@ -151,6 +156,9 @@ public class MetadataService {
 	private static final String MEASURE_TYPE = "MeasureType";
 	private static final String ATTACHMENT_PURPOSE = "AttachmentPurpose";
 	private static final String ATTACHMENT_PURPOSE_IN_USE = "AttachmentPurpose '%s' cannot be deleted because it is referenced by one or more attachments";
+	private static final String RESOLUTION_CODE = "ResolutionCode";
+	private static final String RESOLUTION_CODE_NAME_UNCHANGEABLE = "The name of ResolutionCode '%s' cannot be changed";
+	private static final String RESOLUTION_CODE_IN_USE = "ResolutionCode '%s' is used by one or more errands and can only be deprecated";
 	private static final String ROLE = "Role";
 	private static final String STATEMENT_OUTCOME = "StatementOutcome";
 	private static final String STATUS = "Status";
@@ -165,6 +173,7 @@ public class MetadataService {
 	private final AttachmentRepository attachmentRepository;
 	private final DecisionOutcomeRepository decisionOutcomeRepository;
 	private final StatementOutcomeRepository statementOutcomeRepository;
+	private final ResolutionCodeRepository resolutionCodeRepository;
 	private final MetadataLabelRepository metadataLabelRepository;
 	private final PhaseRepository phaseRepository;
 	private final RoleRepository roleRepository;
@@ -189,6 +198,7 @@ public class MetadataService {
 		final AttachmentRepository attachmentRepository,
 		final DecisionOutcomeRepository decisionOutcomeRepository,
 		final StatementOutcomeRepository statementOutcomeRepository,
+		final ResolutionCodeRepository resolutionCodeRepository,
 		final MetadataLabelRepository metadataLabelRepository,
 		final PhaseRepository phaseRepository,
 		final RoleRepository roleRepository,
@@ -213,6 +223,7 @@ public class MetadataService {
 		this.attachmentRepository = attachmentRepository;
 		this.decisionOutcomeRepository = decisionOutcomeRepository;
 		this.statementOutcomeRepository = statementOutcomeRepository;
+		this.resolutionCodeRepository = resolutionCodeRepository;
 		this.metadataLabelRepository = metadataLabelRepository;
 		this.phaseRepository = phaseRepository;
 		this.roleRepository = roleRepository;
@@ -243,6 +254,7 @@ public class MetadataService {
 			.withAttachmentPurposes(findAttachmentPurposes(namespace, municipalityId, Sort.unsorted()))
 			.withDecisionOutcomes(findDecisionOutcomes(namespace, municipalityId, Sort.unsorted()))
 			.withStatementOutcomes(findStatementOutcomes(namespace, municipalityId, Sort.unsorted()))
+			.withResolutionCodes(findResolutionCodes(namespace, municipalityId, Sort.unsorted()))
 			.withExternalIdTypes(findExternalIdTypes(namespace, municipalityId, Sort.unsorted()))
 			.withContactReasons(findContactReasons(namespace, municipalityId, Sort.unsorted()))
 			.withPhases(findPhases(namespace, municipalityId));
@@ -1526,6 +1538,65 @@ public class MetadataService {
 		}
 		final var entity = updateDecisionOutcomeEntity(decisionOutcomeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId), decisionOutcome);
 		return toDecisionOutcome(decisionOutcomeRepository.save(entity));
+	}
+
+	// =================================================================
+	// ResolutionCode operations
+	// =================================================================
+
+	public String createResolutionCode(final String namespace, final String municipalityId, final ResolutionCode resolutionCode) {
+		if (resolutionCodeRepository.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, resolutionCode.getName())) {
+			throw Problem.valueOf(BAD_REQUEST, ITEM_ALREADY_EXISTS_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(RESOLUTION_CODE, resolutionCode.getName(), namespace, municipalityId));
+		}
+
+		return resolutionCodeRepository.save(toResolutionCodeEntity(namespace, municipalityId, resolutionCode)).getId();
+	}
+
+	public ResolutionCode getResolutionCode(final String namespace, final String municipalityId, final String id) {
+		requireResolutionCode(namespace, municipalityId, id);
+
+		return toResolutionCode(resolutionCodeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId));
+	}
+
+	public List<ResolutionCode> findResolutionCodes(final String namespace, final String municipalityId, final Sort sort) {
+		return resolutionCodeRepository.findAllByNamespaceAndMunicipalityId(namespace, municipalityId, getDefaultSortIfUnsorted(sort))
+			.stream()
+			.map(MetadataMapper::toResolutionCode)
+			.toList();
+	}
+
+	/**
+	 * Removes a code that no errand uses. A code in use, soft deleted errands included, is deprecated instead, so that the
+	 * resolution the errands hold keeps pointing at a registered code.
+	 */
+	public void deleteResolutionCode(final String namespace, final String municipalityId, final String id) {
+		requireResolutionCode(namespace, municipalityId, id);
+
+		final var name = resolutionCodeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId).getName();
+		if (errandsRepository.existsByNamespaceAndMunicipalityIdAndResolution(namespace, municipalityId, name)) {
+			throw Problem.valueOf(BAD_REQUEST, RESOLUTION_CODE_IN_USE.formatted(name));
+		}
+
+		resolutionCodeRepository.deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+	}
+
+	public ResolutionCode updateResolutionCode(final String namespace, final String municipalityId, final String id, final ResolutionCode resolutionCode) {
+		requireResolutionCode(namespace, municipalityId, id);
+
+		final var entity = resolutionCodeRepository.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		ofNullable(resolutionCode.getName())
+			.filter(name -> !name.equals(entity.getName()))
+			.ifPresent(_ -> {
+				throw Problem.valueOf(BAD_REQUEST, RESOLUTION_CODE_NAME_UNCHANGEABLE.formatted(entity.getName()));
+			});
+
+		return toResolutionCode(resolutionCodeRepository.save(updateResolutionCodeEntity(entity, resolutionCode)));
+	}
+
+	private void requireResolutionCode(final String namespace, final String municipalityId, final String id) {
+		if (!resolutionCodeRepository.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)) {
+			throw Problem.valueOf(NOT_FOUND, ITEM_NOT_PRESENT_IN_NAMESPACE_FOR_MUNICIPALITY_ID.formatted(RESOLUTION_CODE, id, namespace, municipalityId));
+		}
 	}
 
 	// =================================================================

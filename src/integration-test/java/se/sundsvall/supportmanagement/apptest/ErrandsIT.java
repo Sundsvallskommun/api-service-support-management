@@ -50,6 +50,8 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String REVISIONS_RESPONSE_FILE = "response-revisions.json";
 	private static final String REPORTER_PROFILE_ID = "ccddeeff-0000-0000-0000-000000000099";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
+	private static final String ARTEFACT_ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
+	private static final String ARTEFACT_ERRAND = "/" + MUNICIPALITY_ID + "/NAMESPACE-ARTEFACT/errands/" + ARTEFACT_ERRAND_ID;
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -682,5 +684,33 @@ class ErrandsIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A namespace that has registered resolution codes holds the resolution of its errands to those not deprecated.
+	 */
+	@Test
+	void test42_patchErrandWithAResolutionThatIsNotAnActiveCodeIsRefused() {
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isNull());
+	}
+
+	@Test
+	void test43_patchErrandWithAnActiveResolutionCode() {
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isEqualTo("SOLVED"));
 	}
 }

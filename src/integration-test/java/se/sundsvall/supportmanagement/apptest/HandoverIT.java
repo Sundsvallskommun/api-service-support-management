@@ -321,6 +321,28 @@ class HandoverIT extends AbstractAppTest {
 			.sendRequestAndVerifyResponse();
 	}
 
+	/**
+	 * The resolution the source errand is closed with is held to the codes of the source namespace before anything is
+	 * created in the target namespace.
+	 */
+	@Test
+	void test18_executeHandoverWithAResolutionThatIsNotAnActiveCodeOfTheSourceIsRefused() {
+		final var artefactErrandId = "a0000000-0000-0000-0000-000000000001";
+		final var errandsBefore = errandsRepository.count();
+
+		setupCall()
+			.withServicePath("/" + MUNICIPALITY_ID + "/NAMESPACE-ARTEFACT/errands/" + artefactErrandId + "/handover/execute")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(errandsRepository.count()).isEqualTo(errandsBefore);
+		assertThat(errandsRepository.findById(artefactErrandId)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isNull());
+	}
+
 	@Test
 	void test17_previewHandoverSchemaNotRegisteredInTarget() {
 		// The source errand has a json parameter with schemaId 'test-schema-1.0'.
