@@ -41,8 +41,8 @@ class SoftDeleteChokePointTest {
 		// Incoming email is kept on the errand it answers, soft deleted or not, so that nothing is lost. A soft deleted
 		// errand is held as closed, and the sender is told so.
 		entry("findByErrandNumberAndNamespaceAndMunicipalityId", "EmailReaderWorker, which keeps incoming email on a soft deleted errand and holds it as closed"),
-		// A soft deleted errand still wears its labels and phases, so metadata it uses may not be removed, and moving or
-		// merging labels rebuilds its labels as well, for it to come back with the labels of the tree.
+		// A soft deleted errand still wears its labels, phases and resolution, so metadata it uses may not be removed, and
+		// moving or merging labels rebuilds its labels as well, for it to come back with the labels of the tree.
 		entry("existsByLabelsMetadataLabelIdIn", "label removal guard"),
 		entry("existsByAccessLabelsMetadataLabelIdIn", "label removal guard"),
 		entry("findDistinctIdsByLabelsMetadataLabelIdIn", "label restructure: the errands affected, and their count"),
