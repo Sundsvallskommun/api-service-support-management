@@ -44,6 +44,7 @@ public enum ProtectedResource {
 	METADATA_LABEL_CLASSIFICATION("metadata/label-classification"),
 	METADATA_MEASURE_TYPE("metadata/measure-type"),
 	METADATA_PHASE("metadata/phase"),
+	METADATA_RESOLUTION_CODE("metadata/resolution-code"),
 	METADATA_ROLE("metadata/role"),
 	METADATA_STATEMENT_OUTCOME("metadata/statement-outcome"),
 	METADATA_STATUS("metadata/status"),

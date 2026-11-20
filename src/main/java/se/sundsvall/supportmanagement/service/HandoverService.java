@@ -74,6 +74,7 @@ public class HandoverService {
 	private final RelationClient relationClient;
 	private final HandoverIdempotencyRepository idempotencyRepository;
 	private final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator;
+	private final ResolutionValidator resolutionValidator;
 
 	public HandoverService(
 		final AccessControlService accessControlService,
@@ -87,7 +88,8 @@ public class HandoverService {
 		final EventService eventService,
 		final RelationClient relationClient,
 		final HandoverIdempotencyRepository idempotencyRepository,
-		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator) {
+		final AttachmentSequenceNumberGenerator attachmentSequenceNumberGenerator,
+		final ResolutionValidator resolutionValidator) {
 
 		this.accessControlService = accessControlService;
 		this.namespaceConfigService = namespaceConfigService;
@@ -101,6 +103,7 @@ public class HandoverService {
 		this.relationClient = relationClient;
 		this.idempotencyRepository = idempotencyRepository;
 		this.attachmentSequenceNumberGenerator = attachmentSequenceNumberGenerator;
+		this.resolutionValidator = resolutionValidator;
 	}
 
 	@Transactional
@@ -130,6 +133,11 @@ public class HandoverService {
 		if (HandoverSourceAction.CLOSE.equals(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getAction()).orElse(null))
 			&& isBlank(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getStatus()).orElse(null))) {
 			throw Problem.valueOf(BAD_REQUEST, "status is required when sourceHandling action is CLOSE");
+		}
+		// Held to the codes of the source namespace now, since the source errand is closed with it only after the target
+		// errand has been created.
+		if (HandoverSourceAction.CLOSE.equals(Optional.ofNullable(request.getSourceHandling()).map(s -> s.getAction()).orElse(null))) {
+			resolutionValidator.validate(request.getSourceHandling().getResolution(), namespace, municipalityId);
 		}
 
 		try {

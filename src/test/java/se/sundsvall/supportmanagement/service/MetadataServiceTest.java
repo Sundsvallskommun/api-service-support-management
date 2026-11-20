@@ -19,6 +19,7 @@ import se.sundsvall.supportmanagement.api.model.metadata.DecisionOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.ExternalIdType;
 import se.sundsvall.supportmanagement.api.model.metadata.Label;
 import se.sundsvall.supportmanagement.api.model.metadata.MeasureType;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.StatementOutcome;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
@@ -34,6 +35,7 @@ import se.sundsvall.supportmanagement.integration.db.ExternalIdTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MeasureTypeRepository;
 import se.sundsvall.supportmanagement.integration.db.MetadataLabelRepository;
 import se.sundsvall.supportmanagement.integration.db.PhaseRepository;
+import se.sundsvall.supportmanagement.integration.db.ResolutionCodeRepository;
 import se.sundsvall.supportmanagement.integration.db.RoleRepository;
 import se.sundsvall.supportmanagement.integration.db.StatementOutcomeRepository;
 import se.sundsvall.supportmanagement.integration.db.StatusRepository;
@@ -45,6 +47,7 @@ import se.sundsvall.supportmanagement.integration.db.model.DecisionOutcomeEntity
 import se.sundsvall.supportmanagement.integration.db.model.ExternalIdTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MeasureTypeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ResolutionCodeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.RoleEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatementOutcomeEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
@@ -92,6 +95,9 @@ class MetadataServiceTest {
 
 	@Mock
 	private StatementOutcomeRepository statementOutcomeRepositoryMock;
+
+	@Mock
+	private ResolutionCodeRepository resolutionCodeRepositoryMock;
 
 	@Mock
 	private MetadataLabelRepository metadataLabelRepositoryMock;
@@ -1496,6 +1502,7 @@ class MetadataServiceTest {
 		assertThat(result.getMeasureTypes()).isEmpty();
 		assertThat(result.getDecisionOutcomes()).isEmpty();
 		assertThat(result.getStatementOutcomes()).isEmpty();
+		assertThat(result.getResolutionCodes()).isEmpty();
 		assertThat(result.getStatuses()).hasSize(3).extracting(Status::getName).containsExactlyInAnyOrder("STATUS-1", "STATUS-2", "STATUS-3");
 		assertThat(result.getContactReasons()).hasSize(2).extracting(ContactReason::getReason).containsExactlyInAnyOrder("CONTACTREASON-1", "CONTACTREASON-2");
 
@@ -1504,6 +1511,7 @@ class MetadataServiceTest {
 		verify(measureTypeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(decisionOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(statementOutcomeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verify(resolutionCodeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(metadataLabelRepositoryMock).findByNamespaceAndMunicipalityIdAndParentIsNull(namespace, municipalityId);
 		verify(roleRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
 		verify(contactReasonRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
@@ -2496,6 +2504,254 @@ class MetadataServiceTest {
 		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
 		verify(decisionOutcomeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
 		verifyNoMoreInteractions(decisionOutcomeRepositoryMock);
+	}
+
+	// =================================================================
+	// ResolutionCode tests
+	// =================================================================
+
+	@Test
+	void createResolutionCode() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var name = "SOLVED";
+		when(resolutionCodeRepositoryMock.save(any())).thenReturn(ResolutionCodeEntity.create().withId(id).withName(name));
+
+		// Act
+		final var result = metadataService.createResolutionCode(namespace, municipalityId, ResolutionCode.create().withName(name).withDisplayName("Löst"));
+
+		// Assert
+		assertThat(result).isEqualTo(id);
+		verify(resolutionCodeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verify(resolutionCodeRepositoryMock).save(ResolutionCodeEntity.create().withNamespace(namespace).withMunicipalityId(municipalityId).withName(name).withDisplayName("Löst"));
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void createResolutionCodeDuplicate() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var name = "SOLVED";
+		when(resolutionCodeRepositoryMock.existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name)).thenReturn(true);
+
+		// Act
+		final var resolutionCode = ResolutionCode.create().withName(name);
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.createResolutionCode(namespace, municipalityId, resolutionCode));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("ResolutionCode 'SOLVED' already exists in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(resolutionCodeRepositoryMock).existsByNamespaceAndMunicipalityIdAndName(namespace, municipalityId, name);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void getResolutionCode() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		when(resolutionCodeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(resolutionCodeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(ResolutionCodeEntity.create().withId(id).withName("SOLVED"));
+
+		// Act
+		final var result = metadataService.getResolutionCode(namespace, municipalityId, id);
+
+		// Assert
+		assertThat(result.getId()).isEqualTo(id);
+		assertThat(result.getName()).isEqualTo("SOLVED");
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void getResolutionCodeNotFound() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.getResolutionCode(namespace, municipalityId, id));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(exception.getDetail()).isEqualTo("ResolutionCode 'id' is not present in namespace 'namespace' for municipalityId 'municipalityId'");
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void findResolutionCodes() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var entities = List.of(
+			ResolutionCodeEntity.create().withName("SOLVED"),
+			ResolutionCodeEntity.create().withName("HANDED_OVER"));
+		when(resolutionCodeRepositoryMock.findAllByNamespaceAndMunicipalityId(any(), any(), any(Sort.class))).thenReturn(entities);
+
+		// Act
+		final var result = metadataService.findResolutionCodes(namespace, municipalityId, Sort.unsorted());
+
+		// Assert
+		assertThat(result).extracting(ResolutionCode::getName).containsExactly("SOLVED", "HANDED_OVER");
+		verify(resolutionCodeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, Sort.by(DEFAULT_SORT));
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void findResolutionCodesWithSort() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var sort = Sort.by("name");
+
+		// Act
+		final var result = metadataService.findResolutionCodes(namespace, municipalityId, sort);
+
+		// Assert
+		assertThat(result).isEmpty();
+		verify(resolutionCodeRepositoryMock).findAllByNamespaceAndMunicipalityId(namespace, municipalityId, sort);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void deleteResolutionCode() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		when(resolutionCodeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(resolutionCodeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(ResolutionCodeEntity.create().withId(id).withName("SOLVED"));
+
+		// Act
+		metadataService.deleteResolutionCode(namespace, municipalityId, id);
+
+		// Assert
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(errandsRepositoryMock).existsByNamespaceAndMunicipalityIdAndResolution(namespace, municipalityId, "SOLVED");
+		verify(resolutionCodeRepositoryMock).deleteByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock, errandsRepositoryMock);
+	}
+
+	@Test
+	void deleteResolutionCodeInUse() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		when(resolutionCodeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(resolutionCodeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(ResolutionCodeEntity.create().withId(id).withName("SOLVED"));
+		when(errandsRepositoryMock.existsByNamespaceAndMunicipalityIdAndResolution(namespace, municipalityId, "SOLVED")).thenReturn(true);
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteResolutionCode(namespace, municipalityId, id));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("ResolutionCode 'SOLVED' is used by one or more errands and can only be deprecated");
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(errandsRepositoryMock).existsByNamespaceAndMunicipalityIdAndResolution(namespace, municipalityId, "SOLVED");
+		verify(resolutionCodeRepositoryMock, never()).deleteByIdAndNamespaceAndMunicipalityId(any(), any(), any());
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock, errandsRepositoryMock);
+	}
+
+	@Test
+	void deleteResolutionCodeNotFound() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Act
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.deleteResolutionCode(namespace, municipalityId, id));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+		verifyNoInteractions(errandsRepositoryMock);
+	}
+
+	@Test
+	void updateResolutionCode() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		final var entity = ResolutionCodeEntity.create().withId(id).withName("SOLVED").withDisplayName("Löst");
+		when(resolutionCodeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(resolutionCodeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(entity);
+		when(resolutionCodeRepositoryMock.save(entity)).thenReturn(entity);
+
+		// Act
+		final var result = metadataService.updateResolutionCode(namespace, municipalityId, id, ResolutionCode.create().withName("SOLVED").withDisplayName("Löst helt").withDeprecated(true));
+
+		// Assert
+		assertThat(result.getName()).isEqualTo("SOLVED");
+		assertThat(result.getDisplayName()).isEqualTo("Löst helt");
+		assertThat(result.getDeprecated()).isTrue();
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).save(entity);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void updateResolutionCodeWithChangedName() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+		when(resolutionCodeRepositoryMock.existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(true);
+		when(resolutionCodeRepositoryMock.getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId)).thenReturn(ResolutionCodeEntity.create().withId(id).withName("SOLVED"));
+
+		// Act
+		final var resolutionCode = ResolutionCode.create().withName("FIXED");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateResolutionCode(namespace, municipalityId, id, resolutionCode));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(exception.getDetail()).isEqualTo("The name of ResolutionCode 'SOLVED' cannot be changed");
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verify(resolutionCodeRepositoryMock).getByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
+	}
+
+	@Test
+	void updateResolutionCodeNotFound() {
+
+		// Arrange
+		final var namespace = "namespace";
+		final var municipalityId = "municipalityId";
+		final var id = "id";
+
+		// Act
+		final var resolutionCode = ResolutionCode.create().withDisplayName("Löst");
+		final var exception = assertThrows(ThrowableProblem.class, () -> metadataService.updateResolutionCode(namespace, municipalityId, id, resolutionCode));
+
+		// Assert
+		assertThat(exception.getStatus()).isEqualTo(NOT_FOUND);
+		verify(resolutionCodeRepositoryMock).existsByIdAndNamespaceAndMunicipalityId(id, namespace, municipalityId);
+		verifyNoMoreInteractions(resolutionCodeRepositoryMock);
 	}
 
 	// =================================================================
