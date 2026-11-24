@@ -28,7 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static java.time.Duration.ofMillis;
-import static java.time.ZoneOffset.UTC;
+import static java.time.ZoneId.systemDefault;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -71,10 +71,12 @@ class ErrandPurgeIT extends AbstractAppTest {
 	private static final String SENT_BY = "joe01doe; type=adAccount";
 
 	/**
-	 * The cutoff the tests are run with, in UTC, the zone the timestamps in the test data are written in. The two errands
-	 * either side of it are one millisecond apart.
+	 * The cutoff the tests are run with, in the JVM's zone. The timestamps in the test data carry no zone, and
+	 * {@code @TimeZoneStorage(NORMALIZE)} reads them as JVM-local time, so the cutoff is placed on the same local wall
+	 * clock to sit on the boundary whatever zone the tests run in. The two errands either side of it are one millisecond
+	 * apart.
 	 */
-	private static final OffsetDateTime CUTOFF = LocalDateTime.of(2023, 1, 1, 0, 0).atOffset(UTC);
+	private static final OffsetDateTime CUTOFF = LocalDateTime.of(2023, 1, 1, 0, 0).atZone(systemDefault()).toOffsetDateTime();
 	private static final String CUTOFF_PLACEHOLDER = "<CUTOFF>";
 
 	// Last touched before the cutoff, and reached by a run in the order their ids sort in. The first of them is the one
