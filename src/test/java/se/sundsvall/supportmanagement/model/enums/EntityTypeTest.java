@@ -8,7 +8,8 @@ class EntityTypeTest {
 
 	@Test
 	void enumValues() {
-		assertThat(EntityType.values()).containsExactlyInAnyOrder(EntityType.CATEGORY, EntityType.EXTERNAL_ID_TYPE, EntityType.STATUS, EntityType.TYPE, EntityType.ROLE, EntityType.CONTACT_REASON);
+		assertThat(EntityType.values()).containsExactlyInAnyOrder(EntityType.CATEGORY, EntityType.EXTERNAL_ID_TYPE, EntityType.STATUS, EntityType.TYPE, EntityType.ROLE, EntityType.CONTACT_REASON,
+			EntityType.RESOLUTION_CODE);
 	}
 
 	@Test
@@ -19,5 +20,6 @@ class EntityTypeTest {
 		assertThat(EntityType.TYPE).hasToString("TYPE");
 		assertThat(EntityType.ROLE).hasToString("ROLE");
 		assertThat(EntityType.CONTACT_REASON).hasToString("CONTACT_REASON");
+		assertThat(EntityType.RESOLUTION_CODE).hasToString("RESOLUTION_CODE");
 	}
 }

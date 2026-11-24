@@ -45,6 +45,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.RESOLUTION_CODE;
 
 @ResourceTest
 class ErrandsCreateResourceFailureTest {
@@ -201,6 +202,36 @@ class ErrandsCreateResourceFailureTest {
 
 		// Verification
 		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findTypes(any(), any(), any());
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithInvalidResolution() {
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withResolution("UNKNOWN"))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("createErrand.errand.resolution", "not a valid resolution"));
+
+		// Verification
+		verify(metadataServiceMock, times(4)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).isValidated(NAMESPACE, MUNICIPALITY_ID, RESOLUTION_CODE);
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());

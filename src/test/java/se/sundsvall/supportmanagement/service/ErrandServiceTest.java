@@ -153,9 +153,6 @@ class ErrandServiceTest {
 	private MeasureValidator measureValidatorMock;
 
 	@Mock
-	private ResolutionValidator resolutionValidatorMock;
-
-	@Mock
 	private RevisionService revisionServiceMock;
 
 	@Mock
@@ -1178,64 +1175,6 @@ class ErrandServiceTest {
 	}
 
 	@Test
-	void createErrandWithInvalidResolution() {
-		final var errand = buildErrand().withResolution("LEGACY");
-
-		when(stringGeneratorServiceMock.generateErrandNumber(any(String.class), any(String.class))).thenReturn("KC-23090001");
-		doThrow(Problem.valueOf(BAD_REQUEST, "'LEGACY' is not a valid resolution for namespace 'namespace' and municipality with id 'municipalityId'"))
-			.when(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-
-		assertThatThrownBy(() -> service.createErrand(NAMESPACE, MUNICIPALITY_ID, errand, null))
-			.hasMessage("Bad Request: 'LEGACY' is not a valid resolution for namespace 'namespace' and municipality with id 'municipalityId'");
-
-		// The request is held to the resolution codes before an errand is built from it, so nothing else runs.
-		verify(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(contactReasonRepositoryMock, errandPhaseServiceMock, errandLabelServiceMock);
-	}
-
-	@Test
-	void updateErrandWithInvalidResolution() {
-		final var entity = buildErrandEntity().withResolution("SOLVED");
-		final var errand = Errand.create().withResolution("LEGACY");
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
-		doThrow(Problem.valueOf(BAD_REQUEST, "'LEGACY' is not a valid resolution for namespace 'namespace' and municipality with id 'municipalityId'"))
-			.when(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
-			.hasMessage("Bad Request: 'LEGACY' is not a valid resolution for namespace 'namespace' and municipality with id 'municipalityId'");
-
-		// The patch is held to the resolution codes before the errand is touched, so nothing downstream of that runs.
-		verify(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-		verifyNoInteractions(contactReasonRepositoryMock, errandPhaseServiceMock, errandLabelServiceMock, errandActionServiceMock);
-		assertThat(entity.getResolution()).isEqualTo("SOLVED");
-	}
-
-	@Test
-	void updateErrandWithUnchangedResolution() {
-		final var entity = buildErrandEntity().withResolution("LEGACY");
-		final var errand = Errand.create().withResolution("LEGACY");
-		final var user = Identifier.create().withType(Identifier.Type.AD_ACCOUNT).withValue("user");
-		Identifier.set(user);
-
-		when(accessControlServiceMock.getErrand(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(entity);
-		when(accessControlServiceMock.verifyKeyAccess(any(), any(), any(), any())).thenReturn(new ErrandKeyAccess(_ -> _ -> true, _ -> null));
-		// Stops the update right after the resolution has been judged
-		doThrow(Problem.valueOf(BAD_REQUEST, "stop"))
-			.when(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
-
-		assertThatThrownBy(() -> service.updateErrand(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, null, errand))
-			.hasMessage("Bad Request: stop");
-
-		// The resolution the errand already holds is not held to the codes again, deprecated or not
-		verify(resolutionValidatorMock).validate(null, NAMESPACE, MUNICIPALITY_ID);
-		verify(errandLabelServiceMock).validateLabels(NAMESPACE, MUNICIPALITY_ID, null);
-	}
-
-	@Test
 	void deleteExistingErrand() {
 		final var entity = buildErrandEntity();
 		final var errandAttachment = ErrandAttachment.create().withId("id");
@@ -1876,9 +1815,9 @@ class ErrandServiceTest {
 			argumentSet("valid input", "REFERRED_FROM|someIdentifier;case;someService;someNamespace|", true, null));
 	}
 
-	// measureValidatorMock and resolutionValidatorMock are deliberately left out - create and update consult them
-	// unconditionally, so every test would have to verify them. That they are consulted on both paths is asserted by the
-	// tests of invalid measure types and resolutions, and what they accept is the business of their own tests.
+	// measureValidatorMock is deliberately left out - create and update consult it unconditionally, so every test would
+	// have to verify it. That it is consulted on both paths is asserted by createErrandWithInvalidMeasureType and
+	// updateErrandWithInvalidMeasureType, and what it accepts is MeasureValidatorTest's business.
 	/**
 	 * Matches the options of an errand event by what the errand service decides itself, leaving out the user who acted,
 	 * which is whoever the test runs as.

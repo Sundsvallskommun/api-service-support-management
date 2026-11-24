@@ -23,6 +23,7 @@ import se.sundsvall.supportmanagement.api.validation.ValidClassificationCreate;
 import se.sundsvall.supportmanagement.api.validation.ValidClassificationUpdate;
 import se.sundsvall.supportmanagement.api.validation.ValidContactReason;
 import se.sundsvall.supportmanagement.api.validation.ValidJsonParameters;
+import se.sundsvall.supportmanagement.api.validation.ValidResolution;
 import se.sundsvall.supportmanagement.api.validation.ValidStatus;
 import se.sundsvall.supportmanagement.api.validation.groups.OnCreate;
 import se.sundsvall.supportmanagement.api.validation.groups.OnUpdate;
@@ -108,7 +109,12 @@ public class Errand {
 	})
 	private String lifecycle;
 
-	@Schema(description = "Resolution status for closed errands. When the namespace has registered resolution codes, it must be one of the codes not deprecated, otherwise the value can be set to anything. An empty value clears it", examples = "FIXED")
+	@Schema(
+		description = "Resolution status for closed errands. When the namespace config validates RESOLUTION_CODE, it must be one of the resolution codes of the namespace not deprecated, otherwise the value can be set to anything. An empty value clears it",
+		examples = "FIXED")
+	@ValidResolution(groups = {
+		OnCreate.class, OnUpdate.class
+	})
 	private String resolution;
 
 	@Schema(description = "Errand description text", examples = "Order cake for everyone")

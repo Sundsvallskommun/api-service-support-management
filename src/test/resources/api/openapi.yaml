@@ -13593,6 +13593,7 @@ paths:
           - TYPE
           - ROLE
           - CONTACT_REASON
+          - RESOLUTION_CODE
         example: STATUS
       - name: X-Request-Group-Id
         in: header
@@ -26624,9 +26625,10 @@ components:
           - ACTIVE
         resolution:
           type: string
-          description: "Resolution status for closed errands. When the namespace has\
-            \ registered resolution codes, it must be one of the codes not deprecated,\
-            \ otherwise the value can be set to anything. An empty value clears it"
+          description: "Resolution status for closed errands. When the namespace config\
+            \ validates RESOLUTION_CODE, it must be one of the resolution codes of\
+            \ the namespace not deprecated, otherwise the value can be set to anything.\
+            \ An empty value clears it"
           examples:
           - FIXED
         description:
@@ -28268,8 +28270,9 @@ components:
           example: SOLVED
         resolution:
           type: string
-          description: "Resolution to set on the source errand. When the source namespace\
-            \ has registered resolution codes, it must be one of the codes not deprecated"
+          description: "Resolution to set on the source errand. When the namespace\
+            \ config of the source validates RESOLUTION_CODE, it must be one of its\
+            \ resolution codes not deprecated"
           example: HANDED_OVER
         closingComment:
           type: string
@@ -28915,6 +28918,7 @@ components:
           - TYPE
           - ROLE
           - CONTACT_REASON
+          - RESOLUTION_CODE
           examples:
           - STATUS
           readOnly: true

@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.hibernate.validator.internal.engine.messageinterpolation.util.InterpolationHelper;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -30,6 +31,17 @@ abstract class AbstractTagConstraintValidator {
 	 * @return              value of path parameter that matches sent in variable name
 	 */
 	String getPathVariable(String variableName) {
+		return findPathVariable(variableName)
+			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Path variable '%s' is not readable from request", variableName)));
+	}
+
+	/**
+	 * Getting value for path variable name from current request, for a variable that not every path carries
+	 *
+	 * @param  variableName path parameter to receive value for
+	 * @return              value of path parameter that matches sent in variable name, or empty if the path has none
+	 */
+	Optional<String> findPathVariable(String variableName) {
 		return Stream.ofNullable(RequestContextHolder.getRequestAttributes())
 			.map(req -> req.getAttribute(URI_TEMPLATE_VARIABLES_ATTRIBUTE, SCOPE_REQUEST))
 			.filter(Objects::nonNull)
@@ -39,8 +51,7 @@ abstract class AbstractTagConstraintValidator {
 			.filter(Objects::nonNull)
 			.filter(String.class::isInstance)
 			.map(String.class::cast)
-			.findAny()
-			.orElseThrow(() -> Problem.valueOf(INTERNAL_SERVER_ERROR, String.format("Path variable '%s' is not readable from request", variableName)));
+			.findAny();
 	}
 
 	boolean isValid(String value, List<String> validTags, ConstraintValidatorContext context) {

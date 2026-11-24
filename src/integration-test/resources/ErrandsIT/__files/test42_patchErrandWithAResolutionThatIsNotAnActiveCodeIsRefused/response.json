@@ -1,5 +1,11 @@
 {
-	"title": "Bad Request",
 	"status": 400,
-	"detail": "'LEGACY' is not a valid resolution for namespace 'NAMESPACE-ARTEFACT' and municipality with id '2281'"
+	"title": "Constraint Violation",
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"violations": [
+		{
+			"field": "updateErrand.errand.resolution",
+			"message": "not a valid resolution"
+		}
+	]
 }

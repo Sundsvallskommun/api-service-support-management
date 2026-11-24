@@ -125,7 +125,8 @@ INSERT INTO validation(id, municipality_id, namespace, `type`, created, modified
 VALUES (100, '2281', 'NAMESPACE-1', 'CATEGORY', '2023-01-01 12:00:00.000', null, true),
        (101, '2281', 'NAMESPACE-1', 'TYPE', '2023-01-01 12:00:00.000', null, false),
        (102, '2281', 'NAMESPACE-2', 'CATEGORY', '2023-01-01 12:00:00.000', null, false),
-       (103, '2281', 'NAMESPACE-2', 'STATUS', '2023-01-01 12:00:00.000', null, true);
+       (103, '2281', 'NAMESPACE-2', 'STATUS', '2023-01-01 12:00:00.000', null, true),
+       (104, '2281', 'NAMESPACE-ARTEFACT', 'RESOLUTION_CODE', '2024-01-10 12:00:00.000', null, true);
 
 -- -----------------------------------
 -- Errand

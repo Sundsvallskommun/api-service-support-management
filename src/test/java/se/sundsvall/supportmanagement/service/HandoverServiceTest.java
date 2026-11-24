@@ -21,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Classification;
 import se.sundsvall.supportmanagement.api.model.errand.handover.HandoverErrandRequest;
@@ -57,7 +56,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -121,9 +119,6 @@ class HandoverServiceTest {
 
 	@Mock
 	private AttachmentSequenceNumberGenerator attachmentSequenceNumberGeneratorMock;
-
-	@Mock
-	private ResolutionValidator resolutionValidatorMock;
 
 	@InjectMocks
 	private HandoverService service;
@@ -479,30 +474,6 @@ class HandoverServiceTest {
 		verify(errandServiceMock).updateErrand(eq(NAMESPACE), eq(MUNICIPALITY_ID), eq(ERRAND_ID), isNull(), errandCaptor.capture());
 		assertThat(errandCaptor.getValue().getStatus()).isEqualTo("SOLVED");
 		assertThat(errandCaptor.getValue().getResolution()).isEqualTo("HANDED_OVER");
-		verify(resolutionValidatorMock).validate("HANDED_OVER", NAMESPACE, MUNICIPALITY_ID);
-	}
-
-	@Test
-	void handoverWithCloseSourceHandlingAndInvalidResolutionThrowsBadRequestAndCreatesNothing() {
-		when(idempotencyRepositoryMock.findBySourceErrandIdAndTargetNamespaceAndTargetMunicipalityId(ERRAND_ID, TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID)).thenReturn(Optional.empty());
-		doThrow(Problem.valueOf(BAD_REQUEST, "'LEGACY' is not a valid resolution for namespace 'namespace' and municipality with id '2281'"))
-			.when(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-
-		final var request = minimalRequest()
-			.withSourceHandling(HandoverSourceHandling.create()
-				.withAction(HandoverSourceAction.CLOSE)
-				.withStatus("SOLVED")
-				.withResolution("LEGACY"));
-
-		assertThatException()
-			.isThrownBy(() -> service.handover(NAMESPACE, MUNICIPALITY_ID, ERRAND_ID, request))
-			.asInstanceOf(InstanceOfAssertFactories.type(ThrowableProblem.class))
-			.satisfies(problem -> assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST));
-
-		// Judged against the source namespace before anything is created in the target namespace
-		verify(resolutionValidatorMock).validate("LEGACY", NAMESPACE, MUNICIPALITY_ID);
-		verify(idempotencyRepositoryMock, never()).save(any());
-		verifyNoInteractions(errandServiceMock, namespaceConfigServiceMock, relationClientMock);
 	}
 
 	@Test
