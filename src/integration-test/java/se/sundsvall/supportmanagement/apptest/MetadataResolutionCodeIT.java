@@ -64,7 +64,9 @@ class MetadataResolutionCodeIT extends AbstractAppTest {
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
 
-		assertThat(resolutionCodeRepository.existsByNamespaceAndMunicipalityIdAndNameAndDeprecatedFalse(NAMESPACE, MUNICIPALITY_2281, "FIXED")).isTrue();
+		assertThat(resolutionCodeRepository.existsByNamespaceAndMunicipalityIdAndName(NAMESPACE, MUNICIPALITY_2281, "FIXED")).isTrue();
+		assertThat(jdbcTemplate.queryForObject("select deprecated from resolution_code where namespace = ? and municipality_id = ? and name = 'FIXED'", Boolean.class, NAMESPACE, MUNICIPALITY_2281))
+			.isFalse();
 	}
 
 	@Test

@@ -15,8 +15,6 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCodeEn
 
 	boolean existsByNamespaceAndMunicipalityIdAndName(String namespace, String municipalityId, String name);
 
-	boolean existsByNamespaceAndMunicipalityIdAndNameAndDeprecatedFalse(String namespace, String municipalityId, String name);
-
 	boolean existsByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
 	ResolutionCodeEntity getByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);

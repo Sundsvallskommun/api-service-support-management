@@ -4,8 +4,8 @@
 	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
 	"violations": [
 		{
-			"field": "sourceHandling.resolution",
-			"message": "not a valid resolution"
+			"field": "updateErrand.errand.resolution",
+			"message": "value 'UNKNOWN' doesn't match any of [SOLVED, HANDED_OVER, LEGACY]"
 		}
 	]
 }

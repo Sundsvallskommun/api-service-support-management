@@ -281,6 +281,25 @@ spring:
 - **No additional setup is required** for database initialization, as long as the database connection settings are
   correctly configured.
 
+### Metadata validation
+
+Each namespace keeps its own metadata - statuses, categories and types, roles, contact reasons, resolution codes and
+more - under `/{municipalityId}/{namespace}/metadata/...`, most of it gathered in the combined metadata response at
+`GET /{municipalityId}/{namespace}/metadata`. Whether the values sent on errands are held to that metadata is decided
+per type in the namespace config, with `PATCH /{municipalityId}/{namespace}/namespace-config/validation/{type}`, and
+`GET .../namespace-config/validation` reads the current settings. A type without a setting is not validated. Where
+validation is on, a value is held to the names registered for the namespace, case ignored.
+
+Resolution codes follow the same rule under the type `RESOLUTION_CODE`, for the `resolution` of an errand and for the
+resolution a handover closes the source errand with, which is held to the codes of the source namespace. The `name` of
+a code is the key the `resolution` of an errand holds: it is unique within the namespace and cannot be changed, and a
+code used by any errand, soft deleted ones included, can only be deprecated, not deleted. A deprecated code is still
+accepted - being deprecated only tells a client not to offer it any longer. An empty value clears the resolution.
+
+Register the values errands already hold before turning validation of `RESOLUTION_CODE` on, as deprecated codes if
+they are no longer to be offered: once it is on, a resolution that is not registered is answered with 400 even when it
+is sent again on an errand that already holds it.
+
 ### Errand Search
 
 `GET /{municipalityId}/{namespace}/errands/search` searches an OpenSearch index that
@@ -310,21 +329,12 @@ and with `groupBy` divides that number over one column: `status`, `resolution`, 
 `type`, `reporterUserId`, `assignedUserId` or `assignedGroupId`. One column at a time, and only the single valued ones -
 labels, parameters and JSON parameters would put an errand in several buckets and make the buckets add up to more than
 the count beside them. Every one of these columns is indexed lowercased, so the casing has to be
-recovered: `status`, `category` and `type` come back as the metadata of the namespace names them, and a value the
-metadata no longer knows is answered with as the index holds it; `priority` is an enum of this API rather than namespace
-metadata, so its casing comes from the enum. `channel` and the three identifier columns have no catalogue behind them,
-and `resolution` has one only in a namespace that validates its resolution codes, which is not consulted here; all of
-them are answered lowercased - recovering what was written would mean indexing them a second time without the
-normalizer, which is only worth doing if a client needs the exact value.
-
-Resolution codes are registered per namespace under `/{municipalityId}/{namespace}/metadata/resolutioncodes`, and are
-part of the combined metadata response. The `name` of a code is the key the `resolution` of an errand holds: it is unique
-within the namespace and cannot be changed, and a code used by any errand, soft deleted ones included, can only be
-deprecated, not deleted. Like the other metadata, the codes are enforced only once validation of `RESOLUTION_CODE` is
-turned on in the namespace config (`PATCH .../namespace-config/validation/RESOLUTION_CODE`), so that a namespace can
-register its codes before it is held to them. From then on the resolution set on its errands, and the one a handover
-closes the source errand with, has to be one of its codes that is not deprecated; a resolution an errand already holds
-is let through unchanged, and an empty value clears it.
+recovered: `status`, `category`, `type` and `resolution` come back as the metadata of the namespace names them -
+`resolution` by its resolution codes, deprecated ones included - and a value the metadata does not know is answered with
+as the index holds it; `priority` is an enum of this API rather than namespace metadata, so its casing comes from the
+enum. `channel` and the three identifier columns have no catalogue behind them, and are answered lowercased -
+recovering what was written would mean indexing them a second time without the normalizer, which is only worth doing if
+a client needs the exact value.
 
 A breakdown accounts for every errand the count counted - its buckets, `withoutValue` and `withheld` add up to the count -
 and that count is the count of the search however it is divided up: a client filters with a search and asks for the

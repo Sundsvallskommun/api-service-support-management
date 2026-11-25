@@ -25,10 +25,16 @@ public class ResolutionCode {
 
 	@Schema(description = "Name for the resolution code. Used as key, unique within the namespace, and cannot be changed once created", examples = "SOLVED")
 	@NotBlank(groups = OnCreate.class)
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class
+	})
 	private String name;
 
 	@Schema(description = "Display name for the resolution code", examples = "Löst", types = {
 		"string", "null"
+	})
+	@Size(max = 255, groups = {
+		Default.class, OnCreate.class
 	})
 	private String displayName;
 
@@ -45,7 +51,7 @@ public class ResolutionCode {
 	})
 	private Integer sortOrder;
 
-	@Schema(description = "Indicates if the resolution code is deprecated. A deprecated code is no longer accepted on errands", defaultValue = "false", examples = "true")
+	@Schema(description = "Indicates if the resolution code is deprecated. A deprecated code is still accepted on errands, but should no longer be offered for selection", defaultValue = "false", examples = "true")
 	private Boolean deprecated;
 
 	@Schema(description = "Timestamp when the resolution code was created", examples = "2000-10-31T01:30:00.000+02:00", accessMode = READ_ONLY)

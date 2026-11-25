@@ -23261,20 +23261,20 @@ paths:
         \ resolution, channel, priority, category, type, reporterUserId, assignedUserId,\
         \ assignedGroupId. Labels, parameters and JSON parameters cannot be grouped\
         \ by, since an errand may carry several of each and the buckets would add\
-        \ up to more than the count. The values come back in the casing the metadata\
-        \ of the namespace gives them, or, for priority, the casing of the enum; the\
-        \ identifiers and the uncatalogued strings come back lowercased as the index\
-        \ holds them. The count is the count of the search however it is divided up,\
-        \ so the same query may be sent to both endpoints, and the breakdown accounts\
-        \ for all of it: its buckets, withoutValue and withheld add up to the count.\
-        \ An errand carrying nothing in the column is counted by withoutValue, and\
-        \ one carrying something the user may not read by withheld, of which nothing\
-        \ further is said. A column dividing the search over more values than a breakdown\
-        \ answers with is refused with 400 rather than answered in part. The count\
-        \ is what the index answers, and unlike the search it is not held against\
-        \ the database afterwards, so while the index is behind it the number can\
-        \ be off by an errand or two. A rebuild puts the two back in step. Sorting\
-        \ and paging have no meaning here and are ignored."
+        \ up to more than the count. The values of status, category, type and resolution\
+        \ come back in the casing the metadata of the namespace gives them, and those\
+        \ of priority in the casing of the enum; the identifiers and channel come\
+        \ back lowercased as the index holds them. The count is the count of the search\
+        \ however it is divided up, so the same query may be sent to both endpoints,\
+        \ and the breakdown accounts for all of it: its buckets, withoutValue and\
+        \ withheld add up to the count. An errand carrying nothing in the column is\
+        \ counted by withoutValue, and one carrying something the user may not read\
+        \ by withheld, of which nothing further is said. A column dividing the search\
+        \ over more values than a breakdown answers with is refused with 400 rather\
+        \ than answered in part. The count is what the index answers, and unlike the\
+        \ search it is not held against the database afterwards, so while the index\
+        \ is behind it the number can be off by an errand or two. A rebuild puts the\
+        \ two back in step. Sorting and paging have no meaning here and are ignored."
       operationId: countErrands
       parameters:
       - name: namespace
@@ -25785,8 +25785,9 @@ components:
         deprecated:
           type: boolean
           default: false
-          description: Indicates if the resolution code is deprecated. A deprecated
-            code is no longer accepted on errands
+          description: "Indicates if the resolution code is deprecated. A deprecated\
+            \ code is still accepted on errands, but should no longer be offered for\
+            \ selection"
           examples:
           - true
         created:
@@ -26626,9 +26627,9 @@ components:
         resolution:
           type: string
           description: "Resolution status for closed errands. When the namespace config\
-            \ validates RESOLUTION_CODE, it must be one of the resolution codes of\
-            \ the namespace not deprecated, otherwise the value can be set to anything.\
-            \ An empty value clears it"
+            \ validates RESOLUTION_CODE, it must be one of the resolution codes registered\
+            \ for the namespace, case ignored and deprecated codes included, otherwise\
+            \ the value can be set to anything. An empty value clears it"
           examples:
           - FIXED
         description:
@@ -28271,8 +28272,9 @@ components:
         resolution:
           type: string
           description: "Resolution to set on the source errand. When the namespace\
-            \ config of the source validates RESOLUTION_CODE, it must be one of its\
-            \ resolution codes not deprecated"
+            \ config of the source validates RESOLUTION_CODE, it must be one of the\
+            \ resolution codes registered for the source, case ignored and deprecated\
+            \ codes included"
           example: HANDED_OVER
         closingComment:
           type: string

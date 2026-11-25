@@ -10,8 +10,9 @@ import java.lang.annotation.Target;
 import se.sundsvall.supportmanagement.api.validation.impl.ValidResolutionConstraintValidator;
 
 /**
- * The resolution of an errand, held to the resolution codes of the namespace in the path once its namespace config
- * validates RESOLUTION_CODE. On a path naming an errand, the resolution that errand already holds is let through.
+ * The resolution of an errand, held to the resolution codes registered for the namespace in the path once its namespace
+ * config validates RESOLUTION_CODE, like the other metadata. Case is ignored, and a deprecated code is accepted: being
+ * deprecated only tells a client not to offer the code. An empty value is left alone, since it clears the resolution.
  */
 @Documented
 @Target({

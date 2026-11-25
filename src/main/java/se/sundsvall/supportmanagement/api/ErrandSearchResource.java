@@ -163,7 +163,7 @@ class ErrandSearchResource {
 	@Operation(summary = "Count matching errands",
 		description = "Counts the errands a query matches, without answering with the errands themselves. The query is the one the search takes, read and refused by the same rules. " + DRAFT_DESCRIPTION
 			+ " Optionally divides the count over one column of the errand with groupBy, which accepts: " + GROUPABLE_DESCRIPTION
-			+ " The values come back in the casing the metadata of the namespace gives them, or, for priority, the casing of the enum; the identifiers and the uncatalogued strings come back lowercased as the index holds them."
+			+ " The values of status, category, type and resolution come back in the casing the metadata of the namespace gives them, and those of priority in the casing of the enum; the identifiers and channel come back lowercased as the index holds them."
 			+ " The count is the count of the search however it is divided up, so the same query may be sent to both endpoints, and the breakdown accounts for all of it:"
 			+ " its buckets, withoutValue and withheld add up to the count. An errand carrying nothing in the column is counted by withoutValue, and one carrying something the user may not read by withheld, of which nothing further is said."
 			+ " A column dividing the search over more values than a breakdown answers with is refused with 400 rather than answered in part."

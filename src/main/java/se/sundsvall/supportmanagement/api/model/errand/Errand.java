@@ -110,7 +110,7 @@ public class Errand {
 	private String lifecycle;
 
 	@Schema(
-		description = "Resolution status for closed errands. When the namespace config validates RESOLUTION_CODE, it must be one of the resolution codes of the namespace not deprecated, otherwise the value can be set to anything. An empty value clears it",
+		description = "Resolution status for closed errands. When the namespace config validates RESOLUTION_CODE, it must be one of the resolution codes registered for the namespace, case ignored and deprecated codes included, otherwise the value can be set to anything. An empty value clears it",
 		examples = "FIXED")
 	@ValidResolution(groups = {
 		OnCreate.class, OnUpdate.class

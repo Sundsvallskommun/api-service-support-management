@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -22,6 +23,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 class MetadataResolutionCodeResourceFailureTest {
 
 	private static final String PATH = "/{municipalityId}/{namespace}/metadata/resolutioncodes";
+	private static final String TOO_LONG = "x".repeat(256);
 
 	@Autowired
 	private MetadataService metadataServiceMock;
@@ -53,6 +55,44 @@ class MetadataResolutionCodeResourceFailureTest {
 		return Stream.of(
 			Arguments.of("MY_NAMESPACE", "666", tuple("createResolutionCode.municipalityId", "not a valid municipality ID")),
 			Arguments.of("invalid,namespace", "2281", tuple("createResolutionCode.namespace", "can only contain A-Z, a-z, 0-9, - and _")));
+	}
+
+	/**
+	 * The name and the display name are held to the length of their columns, rather than failing in the database.
+	 */
+	@Test
+	void createWithTooLongNameAndDisplayName() {
+		final var response = webTestClient.post().uri(builder -> builder.path(PATH).build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281")))
+			.bodyValue(ResolutionCode.create().withName(TOO_LONG).withDisplayName(TOO_LONG))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message).containsExactlyInAnyOrder(
+			tuple("name", "size must be between 0 and 255"),
+			tuple("displayName", "size must be between 0 and 255"));
+
+		verifyNoInteractions(metadataServiceMock);
+	}
+
+	@Test
+	void updateWithTooLongDisplayName() {
+		final var response = webTestClient.patch().uri(builder -> builder.path(PATH + "/{id}").build(Map.of("namespace", "MY_NAMESPACE", "municipalityId", "2281", "id", "5f79a808-0ef3-4985-99b9-b12f23e202a7")))
+			.bodyValue(ResolutionCode.create().withDisplayName(TOO_LONG))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getViolations()).extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("displayName", "size must be between 0 and 255"));
+
+		verifyNoInteractions(metadataServiceMock);
 	}
 
 	@ParameterizedTest
