@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,15 +25,17 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.model.ErrandIndex;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 
-import static org.springframework.http.MediaType.ALL_VALUE;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.accepted;
 import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_REGEXP;
 import static se.sundsvall.supportmanagement.Constants.NAMESPACE_VALIDATION_MESSAGE;
 
@@ -195,26 +198,34 @@ class ErrandSearchResource {
 		return ok(searchService.count(namespace, municipalityId, query, groupBy));
 	}
 
-	@PostMapping(path = "/reindex", produces = ALL_VALUE)
+	@PostMapping(path = "/reindex", produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Rebuild the search index",
-		description = "Rebuilds the search index of the namespace from the database and returns at once, the rebuild goes on in the background. " +
-			"Needed after an outage of the search cluster, and for errands created before search was introduced. A changed index mapping calls for the whole index instead, " +
-			"across every namespace, which POST /search/reindex drops and rebuilds. Only one rebuild runs at a time.",
+		description = "Rebuilds the search index of the namespace from the database as a job and returns at once, the rebuild goes on in the background and is followed " +
+			"through the job, which the Location header points at. The errands of the namespace are written anew before what they did not overwrite is removed, " +
+			"so the namespace stays searchable while the rebuild is under way. Needed after an outage of the search cluster, and for errands created before " +
+			"search was introduced; every namespace is rebuilt this way nightly. A changed index mapping calls for the whole index instead, across every " +
+			"namespace, which POST /search/reindex drops and rebuilds. Only one rebuild runs at a time.",
 		responses = {
-			@ApiResponse(responseCode = "202", description = "Rebuild started", useReturnTypeSchema = true),
+			@ApiResponse(responseCode = "202", headers = @Header(name = LOCATION, schema = @Schema(type = "string")), description = "Rebuild started", useReturnTypeSchema = true),
 			@ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
 				Problem.class, ConstraintViolationProblem.class
 			}))),
 			@ApiResponse(responseCode = "403", description = "The user may not administer the namespace", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "409", description = "A rebuild is already running", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 			@ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
-			@ApiResponse(responseCode = "503", description = "Search not available", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+			@ApiResponse(responseCode = "503",
+				description = "Search not available, or no thread free to carry out the rebuild",
+				content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 		})
-	ResponseEntity<Void> reindexErrands(
+	ResponseEntity<JobResponse> reindexErrands(
 		@Parameter(name = "namespace", description = "Namespace", example = "MY_NAMESPACE") @Pattern(regexp = NAMESPACE_REGEXP, message = NAMESPACE_VALIDATION_MESSAGE) @PathVariable final String namespace,
 		@Parameter(name = "municipalityId", description = "Municipality id", example = "2281") @ValidMunicipalityId @PathVariable final String municipalityId) {
 
-		reindexService.reindex(namespace, municipalityId);
-		return accepted().build();
+		final var job = reindexService.reindex(namespace, municipalityId);
+		return accepted()
+			.header(LOCATION, fromPath("/{municipalityId}/{namespace}/jobs/{jobId}")
+				.buildAndExpand(municipalityId, namespace, job.getJobId())
+				.toString())
+			.body(job);
 	}
 }

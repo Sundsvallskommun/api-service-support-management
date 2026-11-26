@@ -42,6 +42,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.TypeBindin
 import se.sundsvall.supportmanagement.integration.db.model.communication.CommunicationEntity;
 import se.sundsvall.supportmanagement.integration.db.model.listener.ErrandListener;
 import se.sundsvall.supportmanagement.integration.db.search.AccessLabelCountBinder;
+import se.sundsvall.supportmanagement.integration.db.search.IndexedAtBinder;
 import se.sundsvall.supportmanagement.integration.db.search.JsonParametersBinder;
 import se.sundsvall.supportmanagement.integration.db.search.NoOpenFieldBinder;
 import se.sundsvall.supportmanagement.integration.db.search.OffsetDateTimeBinder;
@@ -98,6 +99,7 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
 @Indexed(index = ErrandIndex.NAME)
 @TypeBinding(binder = @TypeBinderRef(type = AccessLabelCountBinder.class))
 @TypeBinding(binder = @TypeBinderRef(type = NoOpenFieldBinder.class))
+@TypeBinding(binder = @TypeBinderRef(type = IndexedAtBinder.class))
 public class ErrandEntity {
 
 	@Id

@@ -82,6 +82,24 @@ public final class ErrandIndex {
 	 * negations of the query still compose.
 	 */
 	public static final String NO_OPEN_FIELD = "noOpenField";
+
+	/**
+	 * When the document was last written. Written by
+	 * {@link se.sundsvall.supportmanagement.integration.db.search.IndexedAtBinder} and bound to no field of the errand.
+	 * A rebuild of a namespace writes every errand of it anew and then removes the documents of the namespace it did
+	 * not write, which are the ones of errands no longer in the database.
+	 */
+	public static final String INDEXED_AT = "indexedAt";
+
+	/**
+	 * The layout of the index, kept in the {@code _meta} of its mapping. Raised by hand with a change that leaves the
+	 * documents already in the index unreachable, or reachable the wrong way, without the mapping refusing it - a change
+	 * of where a field is written, or of a dynamic template in {@code search-mapping.json}. An index of another layout
+	 * is reported by the health of the service as wanting a full reindex, which writes the current layout. A change the
+	 * mapping refuses is reported without this, and one the nightly reindex puts right needs no raise.
+	 */
+	public static final int LAYOUT_VERSION = 1;
+
 	public static final String EXTERNAL_TAG_VALUE = EXTERNAL_TAGS + ".value";
 	public static final String STAKEHOLDER_EXTERNAL_ID = STAKEHOLDERS + ".externalId";
 

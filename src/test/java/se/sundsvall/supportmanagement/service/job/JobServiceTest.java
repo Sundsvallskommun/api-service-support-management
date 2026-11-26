@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.job;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,17 +13,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
 import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 
 import static java.time.OffsetDateTime.now;
 import static java.time.ZoneId.systemDefault;
@@ -30,6 +35,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -240,6 +246,54 @@ class JobServiceTest {
 		verify(jobRepositoryMock).save(captor.capture());
 		assertThat(captor.getValue().getProcessed()).isEqualTo(75);
 		assertThat(captor.getValue().getProgress()).isEqualTo(75);
+	}
+
+	@Test
+	void reportProgressWritesTheJobEvenWhenNothingChanged() {
+		final var entity = jobEntity(RUNNING).withTotal(200).withProcessed(50).withMessage("Writing");
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(entity));
+
+		jobService.reportProgress(JOB_ID, 50, "Writing");
+
+		final var captor = ArgumentCaptor.forClass(JobEntity.class);
+		verify(jobRepositoryMock).save(captor.capture());
+		assertThat(captor.getValue().getProcessed()).isEqualTo(50);
+		assertThat(captor.getValue().getProgress()).isEqualTo(25);
+		assertThat(captor.getValue().getMessage()).isEqualTo("Writing");
+		assertThat(captor.getValue().getModified()).isNotNull();
+	}
+
+	@Test
+	void reportProgressLeavesAJobThatHasEnded() {
+		when(jobRepositoryMock.findById(JOB_ID)).thenReturn(Optional.of(jobEntity(STOPPED)));
+
+		jobService.reportProgress(JOB_ID, 50, "Writing");
+
+		verify(jobRepositoryMock, never()).save(any());
+	}
+
+	@Test
+	void find() {
+		final var entity = jobEntity(COMPLETED);
+		when(jobRepositoryMock.findAll(ArgumentMatchers.<Specification<JobEntity>>any(), eq(JobRepository.NEWEST_FIRST))).thenReturn(List.of(entity));
+
+		final var result = jobService.find(NAMESPACE, MUNICIPALITY_ID, COMPLETED, JobType.SEARCH_REINDEX);
+
+		assertThat(result).extracting(JobResponse::getJobId, JobResponse::getStatus).containsExactly(tuple(entity.getId(), COMPLETED));
+	}
+
+	@Test
+	void removeEndedJobsKeepsTheJobsUnderWay() {
+		when(jobRepositoryMock.deleteByStatusNotInAndCreatedBefore(any(), any())).thenReturn(3);
+		final var before = OffsetDateTime.now().minusDays(90);
+
+		assertThat(jobService.removeEndedJobs(Duration.ofDays(90))).isEqualTo(3);
+
+		final ArgumentCaptor<Collection<JobStatus>> statuses = ArgumentCaptor.captor();
+		final var cutoff = ArgumentCaptor.forClass(OffsetDateTime.class);
+		verify(jobRepositoryMock).deleteByStatusNotInAndCreatedBefore(statuses.capture(), cutoff.capture());
+		assertThat(statuses.getValue()).containsExactlyInAnyOrder(JobStatus.PENDING, RUNNING);
+		assertThat(cutoff.getValue()).isCloseTo(before, within(5, SECONDS));
 	}
 
 	@Test
@@ -522,11 +576,11 @@ class JobServiceTest {
 	}
 
 	@Test
-	@DisplayName("Verification that a job is never removed, whatever state it reached and however long ago: what a run leaves behind is the lasting record that it happened")
-	void nothingRemovesJobs() {
+	@DisplayName("Verification that ending abandoned jobs removes none of them: that is left to the retention")
+	void endingAbandonedJobsRemovesNone() {
 		jobService.failStaleJobs(Duration.ofHours(12));
 
-		verify(jobRepositoryMock, never()).delete(any());
+		verify(jobRepositoryMock, never()).delete(any(JobEntity.class));
 		verify(jobRepositoryMock, never()).deleteAll(any());
 		verify(jobRepositoryMock, never()).deleteById(any());
 	}

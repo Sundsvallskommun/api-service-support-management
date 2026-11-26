@@ -13,11 +13,17 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.supportmanagement.Application;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.integration.db.JobRepository;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.ACCEPTED;
@@ -25,6 +31,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.supportmanagement.Constants.SENT_BY_HEADER;
+import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
 
 /**
  * Searches the OpenSearch index. The index is rebuilt from the database before every test, since the test data is
@@ -53,6 +60,9 @@ class ErrandSearchIT extends AbstractAppTest {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private JobRepository jobRepository;
 
 	@BeforeEach
 	void reindex() throws InterruptedException {
@@ -210,13 +220,17 @@ class ErrandSearchIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test15_reindex() {
-		setupCall()
+	void test15_reindex() throws Exception {
+		// What the rebuild of a namespace does is shown by SearchReindexIT, here only that it is answered with its job, and
+		// waited for so that it is not still running into the next test
+		final var job = setupCall()
 			.withServicePath(PATH + "/reindex")
 			.withHttpMethod(POST)
 			.withExpectedResponseStatus(ACCEPTED)
-			.withExpectedResponseBodyIsNull()
-			.sendRequestAndVerifyResponse();
+			.withExpectedResponseHeader(LOCATION, List.of("^/2281/NAMESPACE-3/jobs/(.+)$"))
+			.sendRequest()
+			.andReturnBody(JobResponse.class);
+		await().atMost(60, SECONDS).until(() -> jobRepository.findById(job.getJobId()).map(JobEntity::getStatus).filter(COMPLETED::equals).isPresent());
 
 		// The whole index belongs to no namespace, so it is rebuilt from outside of one - and it empties the search of
 		// every namespace, so it asks that the caller may administer each one that enforces access control. This test data

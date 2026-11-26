@@ -2,6 +2,7 @@ package se.sundsvall.supportmanagement.service.search.index;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Optional;
 import org.apache.http.HttpEntity;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
@@ -35,6 +36,9 @@ class OpenSearchHealthIndicatorTest {
 	@Mock
 	private HttpEntity entityMock;
 
+	@Mock
+	private SearchIndexHealth indexHealthMock;
+
 	private final SearchAvailability availability = new SearchAvailability(true);
 
 	private void clusterAnswers(final String body) throws IOException {
@@ -48,7 +52,7 @@ class OpenSearchHealthIndicatorTest {
 	void up() throws IOException {
 		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"yellow\"}");
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.CLUSTER_NAME, "support").containsEntry(OpenSearchHealthIndicator.CLUSTER_STATUS, "yellow");
@@ -63,7 +67,7 @@ class OpenSearchHealthIndicatorTest {
 	void downWhenTheClusterIsRed() throws IOException {
 		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"red\"}");
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.CLUSTER_STATUS, "red");
@@ -77,7 +81,7 @@ class OpenSearchHealthIndicatorTest {
 	void downWhenSearchHasBeenGivenUpOn() {
 		availability.giveUp("the index does not hold 'title'");
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.SEARCH, "the index does not hold 'title'");
@@ -88,9 +92,59 @@ class OpenSearchHealthIndicatorTest {
 	void downWhenTheClusterCannotBeReached() {
 		when(openSearchMock.restClient()).thenThrow(new IllegalStateException("Connection refused"));
 
-		final var health = new OpenSearchHealthIndicator(openSearchMock, availability).health();
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
 
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails()).containsEntry("error", "java.lang.IllegalStateException: Connection refused");
+	}
+
+	@Test
+	void upWithTheFieldsTheIndexHolds() throws IOException {
+		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"green\"}");
+		when(indexHealthMock.fieldUsage()).thenReturn(Optional.of(new SearchIndexHealth.FieldUsage(3999, 5000)));
+		when(indexHealthMock.fullReindexWanted()).thenReturn(Optional.empty());
+
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		assertThat(health.getDetails())
+			.containsEntry(OpenSearchHealthIndicator.FIELDS, 3999)
+			.containsEntry(OpenSearchHealthIndicator.FIELDS_LIMIT, 5000)
+			.doesNotContainKeys(OpenSearchHealthIndicator.FIELDS_NEAR_LIMIT, OpenSearchHealthIndicator.FULL_REINDEX_WANTED);
+	}
+
+	@Test
+	void restrictedWhenTheFieldsNearTheLimit() throws IOException {
+		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"green\"}");
+		when(indexHealthMock.fieldUsage()).thenReturn(Optional.of(new SearchIndexHealth.FieldUsage(4000, 5000)));
+		when(indexHealthMock.fullReindexWanted()).thenReturn(Optional.empty());
+
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
+
+		assertThat(health.getStatus()).isEqualTo(OpenSearchHealthIndicator.RESTRICTED);
+		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.FIELDS_NEAR_LIMIT,
+			"The search index holds 4000 of the 5000 fields it may hold. A document bringing a field beyond the limit is refused");
+	}
+
+	@Test
+	void restrictedWhenTheIndexWantsAFullReindex() throws IOException {
+		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"green\"}");
+		when(indexHealthMock.fieldUsage()).thenReturn(Optional.empty());
+		when(indexHealthMock.fullReindexWanted()).thenReturn(Optional.of("of another layout"));
+
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
+
+		assertThat(health.getStatus()).isEqualTo(OpenSearchHealthIndicator.RESTRICTED);
+		assertThat(health.getDetails()).containsEntry(OpenSearchHealthIndicator.FULL_REINDEX_WANTED, "of another layout");
+	}
+
+	@Test
+	void downWhenTheClusterIsRedWhateverTheIndexWants() throws IOException {
+		clusterAnswers("{\"cluster_name\":\"support\",\"status\":\"red\"}");
+
+		final var health = new OpenSearchHealthIndicator(openSearchMock, availability, indexHealthMock).health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		verifyNoInteractions(indexHealthMock);
 	}
 }

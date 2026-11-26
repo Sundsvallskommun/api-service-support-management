@@ -7,7 +7,7 @@ info:
     url: https://opensource.org/licenses/MIT
   version: "18.6"
 servers:
-- url: http://localhost:55502
+- url: http://localhost:35503
   description: Generated server url
 tags:
 - name: Configuration for namespace
@@ -11614,8 +11614,8 @@ paths:
       summary: Send email to multiple recipients in context of an errand
       description: "Sends a separate email message to each recipient specified in\
         \ the request, and stores one communication per recipient on the errand. Recipients\
-        \ do not see each other. To send one email message to several recipients, use\
-        \ the email endpoint instead"
+        \ do not see each other. To send one email message to several recipients,\
+        \ use the email endpoint instead"
       operationId: sendBulkEmail
       parameters:
       - name: namespace
@@ -12417,12 +12417,16 @@ paths:
       tags:
       - Errand search
       summary: Rebuild the search index
-      description: "Rebuilds the search index of the namespace from the database and\
-        \ returns at once, the rebuild goes on in the background. Needed after an\
-        \ outage of the search cluster, and for errands created before search was\
-        \ introduced. A changed index mapping calls for the whole index instead, across\
-        \ every namespace, which POST /search/reindex drops and rebuilds. Only one\
-        \ rebuild runs at a time."
+      description: "Rebuilds the search index of the namespace from the database as\
+        \ a job and returns at once, the rebuild goes on in the background and is\
+        \ followed through the job, which the Location header points at. The errands\
+        \ of the namespace are written anew before what they did not overwrite is\
+        \ removed, so the namespace stays searchable while the rebuild is under way.\
+        \ Needed after an outage of the search cluster, and for errands created before\
+        \ search was introduced; every namespace is rebuilt this way nightly. A changed\
+        \ index mapping calls for the whole index instead, across every namespace,\
+        \ which POST /search/reindex drops and rebuilds. Only one rebuild runs at\
+        \ a time."
       operationId: reindexErrands
       parameters:
       - name: namespace
@@ -12474,6 +12478,15 @@ paths:
       responses:
         "202":
           description: Rebuild started
+          headers:
+            Location:
+              style: simple
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
         "400":
           description: Bad Request
           content:
@@ -12501,7 +12514,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
         "503":
-          description: Search not available
+          description: "Search not available, or no thread free to carry out the rebuild"
           content:
             application/problem+json:
               schema:
@@ -20901,6 +20914,115 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/jobs:
+    get:
+      tags:
+      - Jobs
+      summary: Get jobs
+      description: "Get the background jobs of the namespace, newest first, optionally\
+        \ narrowed to a status and a type. Jobs that have ended are kept for a period\
+        \ of time and then removed."
+      operationId: getJobs
+      parameters:
+      - name: municipalityId
+        in: path
+        description: Municipality id
+        required: true
+        schema:
+          type: string
+        example: 2281
+      - name: namespace
+        in: path
+        description: Namespace
+        required: true
+        schema:
+          type: string
+          pattern: "[\\w|\\-]+"
+        example: MY_NAMESPACE
+      - name: status
+        in: query
+        description: "Status of the jobs to get, every status when left out"
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - RUNNING
+          - COMPLETED
+          - STOPPED
+          - FAILED
+      - name: type
+        in: query
+        description: "Type of the jobs to get, every type when left out"
+        required: false
+        schema:
+          type: string
+          enum:
+          - MOVE_LABEL
+          - MERGE_LABELS
+          - ERRAND_PURGE
+          - RESTRUCTURE_LABEL_TREE
+          - SEARCH_REINDEX
+      - name: X-Request-Group-Id
+        in: header
+        description: "Optional UUID that groups related events and notifications for\
+          \ this operation. If omitted, no grouping is applied."
+        required: false
+        schema:
+          type: string
+          format: uuid
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      - name: X-Trigger-Process
+        in: header
+        description: "Set to 'false' by a process engine writing to an errand it is\
+          \ itself running, to keep the write from waking that process again. An omitted\
+          \ header, and any other value, wakes it. Disregarded for ad account identities,\
+          \ whose writes always wake the process."
+        required: false
+        schema:
+          type: string
+        example: "false"
+      - name: X-notify
+        in: header
+        description: "Set to false to keep the operation from notifying the subscribers\
+          \ of the errand, on any channel. A change to the errand itself then notifies\
+          \ no one directly either, while a change to a note still notifies the users\
+          \ it would notify directly. Any other value, or leaving the header out,\
+          \ notifies as usual."
+        required: false
+        schema:
+          type: boolean
+          default: true
+        example: false
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/Problem"
+                - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/jobs/{jobId}:
     get:
       tags:
@@ -20976,6 +21098,12 @@ paths:
                 oneOf:
                 - $ref: "#/components/schemas/Problem"
                 - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "403":
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
         "404":
           description: Not Found
           content:
@@ -24066,16 +24194,16 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
         type:
           type: string
           format: uri
+        title:
+          type: string
+        detail:
+          type: string
         status:
           type: integer
           format: int32
@@ -24119,11 +24247,11 @@ components:
             $ref: "#/components/schemas/Violation"
         title:
           type: string
-        detail:
-          type: string
         instance:
           type: string
           format: uri
+        detail:
+          type: string
     Violation:
       type: object
       properties:
@@ -24222,9 +24350,9 @@ components:
         softDeletedRetentionInDays:
           type: integer
           format: int32
-          description: "Days a soft deleted errand in this namespace is kept before\
-            \ it is deleted for good. Leaving it out keeps soft deleted errands until\
-            \ they are restored or deleted."
+          description: Days a soft deleted errand in this namespace is kept before
+            it is deleted for good. Leaving it out keeps soft deleted errands until
+            they are restored or deleted.
           examples:
           - 90
           minimum: 1
@@ -24708,11 +24836,15 @@ components:
     JsonNode:
       type: object
       properties:
-        missingNode:
+        empty:
           type: boolean
-        number:
+        array:
           type: boolean
-        container:
+        "null":
+          type: boolean
+        object:
+          type: boolean
+        float:
           type: boolean
         nodeType:
           type: string
@@ -24726,13 +24858,17 @@ components:
           - OBJECT
           - POJO
           - STRING
+        integralNumber:
+          type: boolean
         string:
           type: boolean
-        integralNumber:
+        missingNode:
           type: boolean
         valueNode:
           type: boolean
         pojo:
+          type: boolean
+        floatingPointNumber:
           type: boolean
         short:
           type: boolean
@@ -24753,17 +24889,9 @@ components:
           type: boolean
         binary:
           type: boolean
-        floatingPointNumber:
+        container:
           type: boolean
-        empty:
-          type: boolean
-        array:
-          type: boolean
-        "null":
-          type: boolean
-        object:
-          type: boolean
-        float:
+        number:
           type: boolean
         embeddedValue:
           type: boolean
@@ -26059,6 +26187,7 @@ components:
           - MERGE_LABELS
           - ERRAND_PURGE
           - RESTRUCTURE_LABEL_TREE
+          - SEARCH_REINDEX
         status:
           type: string
           description: Job status
@@ -26079,10 +26208,14 @@ components:
         processed:
           type: integer
           format: int32
-          description: "Number of items the run has got through. On a FAILED label restructure, which is applied in one transaction, this is how far the run got before everything was rolled back, not how much was applied"
+          description: "Number of items the run has got through. On a FAILED label\
+            \ restructure, which is applied in one transaction, this is how far the\
+            \ run got before everything was rolled back, not how much was applied"
         message:
           type: string
-          description: "Outcome of the run: a summary when it has COMPLETED, and on FAILED what went wrong. For a label restructure, a FAILED message states that the run was rolled back and no changes were applied"
+          description: "Outcome of the run: a summary when it has COMPLETED, and on\
+            \ FAILED what went wrong. For a label restructure, a FAILED message states\
+            \ that the run was rolled back and no changes were applied"
         created:
           type: string
           format: date-time

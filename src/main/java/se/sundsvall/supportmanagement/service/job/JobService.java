@@ -30,6 +30,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
+import static se.sundsvall.supportmanagement.integration.db.specification.JobSpecification.within;
 import static se.sundsvall.supportmanagement.model.enums.JobStatus.COMPLETED;
 import static se.sundsvall.supportmanagement.model.enums.JobStatus.FAILED;
 import static se.sundsvall.supportmanagement.model.enums.JobStatus.RUNNING;
@@ -93,6 +94,34 @@ public class JobService {
 	@Transactional(readOnly = true)
 	public JobResponse get(final String namespace, final String municipalityId, final String jobId) {
 		return toJobResponse(findOrThrow(namespace, municipalityId, jobId));
+	}
+
+	/**
+	 * The jobs of a namespace, newest first, narrowed to a status and a kind where those are sent in.
+	 *
+	 * @param  namespace      namespace the jobs belong to.
+	 * @param  municipalityId id of the municipality the jobs belong to.
+	 * @param  status         the status the jobs are in, or {@code null} for every status.
+	 * @param  type           the kind of job, or {@code null} for every kind.
+	 * @return                the jobs.
+	 */
+	@Transactional(readOnly = true)
+	public List<JobResponse> find(final String namespace, final String municipalityId, final JobStatus status, final JobType type) {
+		return jobRepository.findAll(within(namespace, municipalityId, status, type), JobRepository.NEWEST_FIRST).stream()
+			.map(JobService::toJobResponse)
+			.toList();
+	}
+
+	/**
+	 * Removes the jobs that ended longer ago than sent in retention. A job still under way is kept however old it is,
+	 * since a run is reporting against it, or it is ended as abandoned first.
+	 *
+	 * @param  retention how long a job is kept after it was created.
+	 * @return           how many jobs were removed.
+	 */
+	@Transactional
+	public long removeEndedJobs(final Duration retention) {
+		return jobRepository.deleteByStatusNotInAndCreatedBefore(ACTIVE_STATUSES, now(systemDefault()).minus(retention));
 	}
 
 	/**
@@ -171,6 +200,29 @@ public class JobService {
 			job.setProgress(Math.min(100, Math.max(0, rawProgress)));
 			jobRepository.save(job);
 		}, () -> LOG.warn("updateProgress called with unknown jobId '{}'", jobId));
+	}
+
+	/**
+	 * Reports how far a run has come and what it is doing, and that it is alive: the job is written to even when neither
+	 * has changed since it was last reported, which a run doing one long piece of work - waiting for a task of the
+	 * search cluster, say - relies on so as not to be taken for one whose instance is gone.
+	 * <p>
+	 * A job that has already left the states a run works in is left as it is.
+	 */
+	@Transactional(propagation = REQUIRES_NEW)
+	public void reportProgress(final String jobId, final int processed, final String message) {
+		jobRepository.findById(jobId).ifPresentOrElse(job -> {
+			if (ACTIVE_STATUSES.contains(job.getStatus())) {
+				final var total = job.getTotal();
+				final var rawProgress = (total == null || total == 0) ? 100 : (int) ((long) processed * 100 / total);
+				job.setProcessed(processed);
+				job.setProgress(Math.min(100, Math.max(0, rawProgress)));
+				job.setMessage(toStoredMessage(message));
+				// Set here for the entity to be written whatever else changed, and set again as it is written
+				job.setModified(now(systemDefault()));
+				jobRepository.save(job);
+			}
+		}, () -> LOG.warn("reportProgress called with unknown jobId '{}'", jobId));
 	}
 
 	/**

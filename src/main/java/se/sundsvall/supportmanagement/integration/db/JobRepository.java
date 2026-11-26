@@ -5,7 +5,12 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import se.sundsvall.supportmanagement.integration.db.model.JobEntity;
 import se.sundsvall.supportmanagement.model.enums.JobStatus;
@@ -13,7 +18,7 @@ import se.sundsvall.supportmanagement.model.enums.JobType;
 
 @Transactional
 @CircuitBreaker(name = "jobRepository")
-public interface JobRepository extends JpaRepository<JobEntity, String> {
+public interface JobRepository extends JpaRepository<JobEntity, String>, JpaSpecificationExecutor<JobEntity> {
 
 	Optional<JobEntity> findByIdAndNamespaceAndMunicipalityId(String id, String namespace, String municipalityId);
 
@@ -56,5 +61,19 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
 	 * @return          the jobs never reported on that were created before the sent in point in time.
 	 */
 	List<JobEntity> findByStatusInAndModifiedIsNullAndCreatedBefore(Collection<JobStatus> statuses, OffsetDateTime before);
+
+	/** Newest first, which is the order a namespace's jobs are listed in. */
+	Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "created");
+
+	/**
+	 * Removes the jobs not in one of the sent in states that were created before the sent in point in time.
+	 *
+	 * @param  statuses the states of the jobs to keep, whatever their age.
+	 * @param  before   the point in time a job must have been created before to be removed.
+	 * @return          how many jobs were removed.
+	 */
+	@Modifying
+	@Query("delete from JobEntity j where j.status not in :statuses and j.created < :before")
+	int deleteByStatusNotInAndCreatedBefore(@Param("statuses") Collection<JobStatus> statuses, @Param("before") OffsetDateTime before);
 
 }

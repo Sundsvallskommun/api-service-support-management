@@ -39,10 +39,11 @@ public class ErrandIndexModel {
 
 	/**
 	 * Fields the index holds that belong to no field of an errand: the two the search is filtered by, what access
-	 * control counts its own labels with, and the field a word looks in when a route opens none.
+	 * control counts its own labels with, the field a word looks in when a route opens none, and when the document was
+	 * written.
 	 */
 	private static final Set<String> NOT_OF_AN_ERRAND = Set.of(ErrandIndex.MUNICIPALITY_ID, ErrandIndex.NAMESPACE, ErrandIndex.ACCESS_LABEL_ID, ErrandIndex.ACCESS_LABEL_COUNT,
-		ErrandIndex.NO_OPEN_FIELD);
+		ErrandIndex.NO_OPEN_FIELD, ErrandIndex.INDEXED_AT);
 
 	private final List<String> textFields;
 

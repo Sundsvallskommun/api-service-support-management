@@ -35,7 +35,15 @@ public record SearchProperties(
 	/**
 	 * @param lockAtMostFor how long the lock guarding a reindex is held at most. A reindex that has not released the lock
 	 *                      within this time is taken to have died with its pod, and a new one may start.
+	 * @param sweepTimeout  how long the removal of the documents a rebuild of a namespace did not write may run before
+	 *                      it is cancelled and the rebuild failed. The removal runs as a task of the cluster, so this is
+	 *                      not bound by the timeout of a single request.
+	 * @param pollInterval  how often the task removing the documents is asked whether it is done. Every answer is
+	 *                      written to the job of the rebuild, which keeps the job from being taken as abandoned.
 	 */
-	public record Reindex(@DefaultValue("PT6H") Duration lockAtMostFor) {
+	public record Reindex(
+		@DefaultValue("PT6H") Duration lockAtMostFor,
+		@DefaultValue("PT10M") Duration sweepTimeout,
+		@DefaultValue("PT2S") Duration pollInterval) {
 	}
 }

@@ -12,6 +12,9 @@ import se.sundsvall.supportmanagement.api.model.errand.CountBucket;
 import se.sundsvall.supportmanagement.api.model.errand.CountGroup;
 import se.sundsvall.supportmanagement.api.model.errand.Errand;
 import se.sundsvall.supportmanagement.api.model.errand.SearchCountResponse;
+import se.sundsvall.supportmanagement.api.model.job.JobResponse;
+import se.sundsvall.supportmanagement.model.enums.JobStatus;
+import se.sundsvall.supportmanagement.model.enums.JobType;
 import se.sundsvall.supportmanagement.service.search.ErrandSearchService;
 import se.sundsvall.supportmanagement.service.search.index.ErrandReindexService;
 import tools.jackson.databind.JsonNode;
@@ -140,11 +143,18 @@ class ErrandSearchResourceTest {
 
 	@Test
 	void reindexErrands() {
-		webTestClient.post()
+		final var job = JobResponse.create().withJobId("6a5b8c9d-1234-5678-abcd-ef0123456789").withType(JobType.SEARCH_REINDEX).withStatus(JobStatus.PENDING);
+		when(reindexServiceMock.reindex(NAMESPACE, MUNICIPALITY_ID)).thenReturn(job);
+
+		final var response = webTestClient.post()
 			.uri(builder -> builder.path(PATH + "/reindex").build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isAccepted()
-			.expectBody().isEmpty();
+			.expectHeader().location("/" + MUNICIPALITY_ID + "/" + NAMESPACE + "/jobs/6a5b8c9d-1234-5678-abcd-ef0123456789")
+			.expectBody(JobResponse.class)
+			.returnResult().getResponseBody();
+
+		assertThat(response).isEqualTo(job);
 
 		verify(reindexServiceMock).reindex(NAMESPACE, MUNICIPALITY_ID);
 		verifyNoInteractions(searchServiceMock);

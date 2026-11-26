@@ -1,5 +1,7 @@
 package se.sundsvall.supportmanagement.service.scheduler.job;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
@@ -7,6 +9,8 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthUtility;
 
 @Service
 public class JobScheduler {
+
+	private static final Logger LOG = LoggerFactory.getLogger(JobScheduler.class);
 
 	private final StaleJobWorker staleJobWorker;
 	private final Dept44HealthUtility healthUtility;
@@ -35,5 +39,10 @@ public class JobScheduler {
 		// starts, so this holds until a sweep finds nothing abandoned, and no longer.
 		staleJobWorker.endAbandonedJobs()
 			.ifPresent(account -> healthUtility.setHealthIndicatorUnhealthy(jobName, account));
+
+		final var removed = staleJobWorker.removeExpiredJobs();
+		if (removed > 0) {
+			LOG.info("{} job(s) that ended longer ago than they are kept for were removed", removed);
+		}
 	}
 }

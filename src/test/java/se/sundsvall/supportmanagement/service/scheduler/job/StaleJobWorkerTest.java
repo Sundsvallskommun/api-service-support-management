@@ -25,6 +25,7 @@ import static se.sundsvall.supportmanagement.model.enums.JobType.ERRAND_PURGE;
 class StaleJobWorkerTest {
 
 	private static final Duration STALE_AFTER = Duration.ofDays(3);
+	private static final Duration RETENTION = Duration.ofDays(90);
 	private static final OffsetDateTime LAST_WRITTEN_TO = OffsetDateTime.parse("2026-08-25T04:12:11+02:00");
 
 	@Mock
@@ -79,7 +80,7 @@ class StaleJobWorkerTest {
 	}
 
 	@Test
-	@DisplayName("Verification that nothing is removed from the job table, however old a job is: a purge leaves one row behind and that row is the lasting record of it")
+	@DisplayName("Verification that ending abandoned jobs removes nothing from the job table: that is left to the retention")
 	void endAbandonedJobsRemovesNothing() {
 		final var worker = worker();
 		when(jobServiceMock.failStaleJobs(STALE_AFTER)).thenReturn(emptyList());
@@ -90,8 +91,18 @@ class StaleJobWorkerTest {
 		verifyNoMoreInteractions(jobServiceMock);
 	}
 
+	@Test
+	void removesTheJobsOlderThanTheRetention() {
+		when(jobServiceMock.removeEndedJobs(RETENTION)).thenReturn(7L);
+
+		assertThat(worker().removeExpiredJobs()).isEqualTo(7);
+
+		verify(jobServiceMock).removeEndedJobs(RETENTION);
+		verifyNoMoreInteractions(jobServiceMock);
+	}
+
 	private StaleJobWorker worker() {
-		return new StaleJobWorker(jobServiceMock, new JobProperties(STALE_AFTER));
+		return new StaleJobWorker(jobServiceMock, new JobProperties(STALE_AFTER, RETENTION));
 	}
 
 	private static JobEntity abandonedJob(final String id) {
