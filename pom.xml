@@ -10,12 +10,12 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>api-service-support-management</artifactId>
-	<version>18.5</version>
+	<version>18.6</version>
 	<name>api-service-support-management</name>
 	<properties>
 		<spring-filter.version>4.1.1</spring-filter.version>
 		<hibernate-search.version>8.4.1.Final</hibernate-search.version>
-		<opensearch-testcontainers.version>4.1.1</opensearch-testcontainers.version>
+		<opensearch-testcontainers.version>4.1.0</opensearch-testcontainers.version>
 		<!-- The Lucene of the OpenSearch the index runs on, whose query parser reads a search the way the index will -->
 		<lucene.version>10.6.0</lucene.version>
 		<tika-core.version>4.2.0</tika-core.version>

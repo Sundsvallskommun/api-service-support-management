@@ -1,0 +1,11 @@
+{
+	"status": 400,
+	"title": "Constraint Violation",
+	"type": "https://github.com/Sundsvallskommun/dept44/problems/constraint-violation",
+	"violations": [
+		{
+			"field": "updateErrand.errand.resolution",
+			"message": "value 'UNKNOWN' doesn't match any of [SOLVED, HANDED_OVER, LEGACY]"
+		}
+	]
+}

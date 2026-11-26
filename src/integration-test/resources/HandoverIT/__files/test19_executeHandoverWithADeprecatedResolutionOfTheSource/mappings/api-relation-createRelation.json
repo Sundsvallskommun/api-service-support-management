@@ -1,0 +1,32 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPathPattern": "/api-relation/2281/relations",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"type": "HANDOVER",
+					"source": {
+						"resourceId": "a0000000-0000-0000-0000-000000000001",
+						"type": "case",
+						"service": "supportmanagement",
+						"namespace": "NAMESPACE-ARTEFACT"
+					},
+					"target": {
+						"type": "case",
+						"service": "supportmanagement",
+						"namespace": "NAMESPACE-3"
+					}
+				},
+				"ignoreExtraElements": true
+			}
+		]
+	},
+	"response": {
+		"status": 201,
+		"headers": {
+			"Location": "/api-relation/2281/relations/RELATION-ID-123"
+		}
+	},
+	"name": "api-relation-createRelation"
+}

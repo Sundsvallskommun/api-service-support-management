@@ -4,6 +4,7 @@ import java.util.List;
 import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -50,6 +51,8 @@ class ErrandsIT extends AbstractAppTest {
 	private static final String REVISIONS_RESPONSE_FILE = "response-revisions.json";
 	private static final String REPORTER_PROFILE_ID = "ccddeeff-0000-0000-0000-000000000099";
 	private static final String ACCESS_CONTROLLED_ERRAND = "/2506/NAMESPACE-2506/errands/58c41b44-0b9f-413d-bd46-406d24bf5ca8";
+	private static final String ARTEFACT_ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
+	private static final String ARTEFACT_ERRAND = "/" + MUNICIPALITY_ID + "/NAMESPACE-ARTEFACT/errands/" + ARTEFACT_ERRAND_ID;
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -59,6 +62,9 @@ class ErrandsIT extends AbstractAppTest {
 
 	@Autowired
 	private SubscriptionRepository subscriptionRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Test
 	void test01_getAllErrandsSortedByTouched() {
@@ -682,5 +688,80 @@ class ErrandsIT extends AbstractAppTest {
 			.withRequest(REQUEST_FILE)
 			.withExpectedResponseStatus(FORBIDDEN)
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * A namespace whose namespace config validates RESOLUTION_CODE holds the resolution of its errands to the codes it has
+	 * registered.
+	 */
+	@Test
+	void test42_patchErrandWithAnUnregisteredResolutionIsRefused() {
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isNull());
+	}
+
+	@Test
+	void test43_patchErrandWithAnActiveResolutionCode() {
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isEqualTo("SOLVED"));
+	}
+
+	/**
+	 * Being deprecated only tells a client not to offer a code. It is still registered, and so still accepted.
+	 */
+	@Test
+	void test44_patchErrandWithADeprecatedResolutionCode() {
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isEqualTo("LEGACY"));
+	}
+
+	@Test
+	void test45_patchErrandWithAnEmptyResolutionClearsIt() {
+		jdbcTemplate.update("update errand set resolution = 'SOLVED' where id = ?", ARTEFACT_ERRAND_ID);
+
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isNull());
+	}
+
+	/**
+	 * Registered codes are not enforced until the namespace config turns validation of RESOLUTION_CODE on.
+	 */
+	@Test
+	void test46_patchErrandWithAnUnregisteredResolutionWhenValidationIsOff() {
+		jdbcTemplate.update("update validation set validated = false where namespace = 'NAMESPACE-ARTEFACT' and municipality_id = ? and `type` = 'RESOLUTION_CODE'", MUNICIPALITY_ID);
+
+		setupCall()
+			.withServicePath(ARTEFACT_ERRAND)
+			.withHttpMethod(PATCH)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.sendRequest();
+
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isEqualTo("UNKNOWN"));
 	}
 }

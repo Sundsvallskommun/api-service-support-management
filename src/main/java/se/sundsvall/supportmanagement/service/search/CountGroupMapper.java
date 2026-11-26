@@ -12,6 +12,7 @@ import se.sundsvall.supportmanagement.api.model.errand.CountBucket;
 import se.sundsvall.supportmanagement.api.model.errand.CountGroup;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -87,10 +88,12 @@ public class CountGroupMapper {
 				.filter(Objects::nonNull)
 				.flatMap(List::stream)
 				.map(Type::getName);
+			case "resolution" -> metadataService.findResolutionCodes(namespace, municipalityId, Sort.unsorted()).stream().map(ResolutionCode::getName);
 			// A closed enum of the API, so the casing is known here and needs no namespace to be asked. Without this the
 			// index answered 'high' where the model declares HIGH, which is a value no client can read back into Priority
 			case "priority" -> Stream.of(Priority.values()).map(Priority::name);
-			// What is left is identifiers and the uncatalogued strings: answered as the errand holds them, lowercased by
+			// What is left is identifiers and the uncatalogued strings, channel among them: answered as the errand holds them,
+			// lowercased by
 			// the index, which is as close as the index can come to the value that was written
 			default -> Stream.<String>empty();
 		};

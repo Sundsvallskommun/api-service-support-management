@@ -49,6 +49,8 @@ class HandoverIT extends AbstractAppTest {
 	private static final String RESPONSE_FILE = "response.json";
 	private static final String SOURCE_PATH = "/" + MUNICIPALITY_ID + "/" + SOURCE_NAMESPACE + "/errands/" + SOURCE_ERRAND_ID;
 	private static final String SOURCE_PATH_2 = "/" + MUNICIPALITY_ID + "/" + SOURCE_NAMESPACE + "/errands/" + SOURCE_ERRAND_ID_2;
+	private static final String ARTEFACT_ERRAND_ID = "a0000000-0000-0000-0000-000000000001";
+	private static final String ARTEFACT_PATH = "/" + MUNICIPALITY_ID + "/NAMESPACE-ARTEFACT/errands/" + ARTEFACT_ERRAND_ID;
 
 	@Autowired
 	private ErrandsRepository errandsRepository;
@@ -333,5 +335,44 @@ class HandoverIT extends AbstractAppTest {
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
 			.withExpectedResponse(RESPONSE_FILE)
 			.sendRequestAndVerifyResponse();
+	}
+
+	/**
+	 * The resolution the source errand is closed with is held to the codes registered for the source namespace, whose
+	 * namespace config validates RESOLUTION_CODE, before anything is created in the target namespace.
+	 */
+	@Test
+	void test18_executeHandoverWithAnUnregisteredResolutionOfTheSourceIsRefused() {
+		final var errandsBefore = errandsRepository.count();
+
+		setupCall()
+			.withServicePath(ARTEFACT_PATH + "/handover/execute")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(BAD_REQUEST)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+
+		assertThat(errandsRepository.count()).isEqualTo(errandsBefore);
+		assertThat(errandsRepository.findById(ARTEFACT_ERRAND_ID)).hasValueSatisfying(errand -> assertThat(errand.getResolution()).isNull());
+	}
+
+	/**
+	 * A deprecated code of the source is still registered, so the source errand may be closed with it.
+	 */
+	@Test
+	void test19_executeHandoverWithADeprecatedResolutionOfTheSource() {
+		setupCall()
+			.withServicePath(ARTEFACT_PATH + "/handover/execute")
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequest();
+
+		final var sourceErrand = errandsRepository.findById(ARTEFACT_ERRAND_ID).orElseThrow();
+		assertThat(sourceErrand.getStatus()).isEqualTo("STATUS-2");
+		assertThat(sourceErrand.getResolution()).isEqualTo("LEGACY");
 	}
 }

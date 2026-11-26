@@ -6,5 +6,6 @@ public enum EntityType {
 	STATUS,
 	TYPE,
 	ROLE,
-	CONTACT_REASON
+	CONTACT_REASON,
+	RESOLUTION_CODE
 }

@@ -338,6 +338,11 @@
 			"errandScoped": false
 		},
 		{
+			"resource": "METADATA_RESOLUTION_CODE",
+			"path": "metadata/resolution-code",
+			"errandScoped": false
+		},
+		{
 			"resource": "METADATA_ROLE",
 			"path": "metadata/role",
 			"errandScoped": false

@@ -24,6 +24,7 @@ import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.errand.Stakeholder;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
 import se.sundsvall.supportmanagement.api.model.metadata.ContactReason;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Role;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.sundsvall.supportmanagement.model.enums.EntityType.RESOLUTION_CODE;
 
 @ResourceTest
 class ErrandsCreateResourceFailureTest {
@@ -115,7 +117,8 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.namespace", "can only contain A-Z, a-z, 0-9, - and _"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(4)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findResolutionCodes(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
@@ -144,7 +147,8 @@ class ErrandsCreateResourceFailureTest {
 			.containsExactly(tuple("createErrand.municipalityId", "not a valid municipality ID"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(4)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findResolutionCodes(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());
@@ -200,7 +204,42 @@ class ErrandsCreateResourceFailureTest {
 			tuple("createErrand.errand.modified", "must be null"));
 
 		// Verification
-		verify(metadataServiceMock, times(3)).isValidated(any(), any(), any());
+		verify(metadataServiceMock, times(4)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).findResolutionCodes(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
+		verify(metadataServiceMock).findTypes(any(), any(), any());
+		verify(metadataServiceMock).findRoles(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
+		verifyNoInteractions(errandServiceMock);
+	}
+
+	@Test
+	void createErrandWithInvalidResolution() {
+		when(metadataServiceMock.findResolutionCodes(any(), any(), any(Sort.class))).thenReturn(List.of(ResolutionCode.create().withName("SOLVED"),
+			ResolutionCode.create().withName("LEGACY").withDeprecated(true)));
+
+		// Call
+		final var response = webTestClient.post()
+			.uri(builder -> builder.path(PATH).build(Map.of("namespace", NAMESPACE, "municipalityId", MUNICIPALITY_ID)))
+			.contentType(APPLICATION_JSON)
+			.bodyValue(createErrandInstance().withResolution("UNKNOWN"))
+			.exchange()
+			.expectStatus().isBadRequest()
+			.expectBody(ConstraintViolationProblem.class)
+			.returnResult()
+			.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(tuple("createErrand.errand.resolution", "value 'UNKNOWN' doesn't match any of [SOLVED, LEGACY]"));
+
+		// Verification
+		verify(metadataServiceMock, times(4)).isValidated(any(), any(), any());
+		verify(metadataServiceMock).isValidated(NAMESPACE, MUNICIPALITY_ID, RESOLUTION_CODE);
+		verify(metadataServiceMock).findResolutionCodes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any(Sort.class));
 		verify(metadataServiceMock).findCategories(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findStatuses(any(), any(), any(Sort.class));
 		verify(metadataServiceMock).findTypes(any(), any(), any());

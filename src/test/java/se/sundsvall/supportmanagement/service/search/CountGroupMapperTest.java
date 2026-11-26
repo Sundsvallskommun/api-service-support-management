@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.api.model.errand.CountBucket;
 import se.sundsvall.supportmanagement.api.model.metadata.Category;
+import se.sundsvall.supportmanagement.api.model.metadata.ResolutionCode;
 import se.sundsvall.supportmanagement.api.model.metadata.Status;
 import se.sundsvall.supportmanagement.api.model.metadata.Type;
 import se.sundsvall.supportmanagement.service.MetadataService;
@@ -68,6 +69,17 @@ class CountGroupMapperTest {
 		final var group = mapper.toGroup("status", counts("new", 3, "retired_status", 1), 4, 4, NAMESPACE, MUNICIPALITY_ID);
 
 		assertThat(group.buckets()).containsExactly(new CountBucket("NEW", 3), new CountBucket("retired_status", 1));
+	}
+
+	/** The resolution codes of the namespace are a catalogue like the statuses, deprecated codes included. */
+	@Test
+	void theCasingOfAResolutionComesFromTheResolutionCodes() {
+		when(metadataServiceMock.findResolutionCodes(eq(NAMESPACE), eq(MUNICIPALITY_ID), any())).thenReturn(List.of(
+			ResolutionCode.create().withName("SOLVED"), ResolutionCode.create().withName("LEGACY").withDeprecated(true)));
+
+		final var group = mapper.toGroup("resolution", counts("solved", 5, "legacy", 2, "unregistered", 1), 8, 8, NAMESPACE, MUNICIPALITY_ID);
+
+		assertThat(group.buckets()).containsExactly(new CountBucket("SOLVED", 5), new CountBucket("LEGACY", 2), new CountBucket("unregistered", 1));
 	}
 
 	/**

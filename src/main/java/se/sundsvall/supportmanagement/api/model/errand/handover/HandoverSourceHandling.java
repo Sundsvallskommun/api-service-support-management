@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.api.model.errand.handover;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
+import se.sundsvall.supportmanagement.api.validation.ValidResolution;
 
 @Schema(description = "Defines what happens to the source errand after handover")
 public class HandoverSourceHandling {
@@ -14,7 +15,9 @@ public class HandoverSourceHandling {
 	@Schema(description = "Status to set on the source errand", example = "SOLVED")
 	private String status;
 
-	@Schema(description = "Resolution to set on the source errand", example = "HANDED_OVER")
+	@Schema(description = "Resolution to set on the source errand. When the namespace config of the source validates RESOLUTION_CODE, it must be one of the resolution codes registered for the source, case ignored and deprecated codes included",
+		example = "HANDED_OVER")
+	@ValidResolution
 	private String resolution;
 
 	@Schema(description = "Closing comment to add to the source errand", example = "Överlämnad till annan drake")
