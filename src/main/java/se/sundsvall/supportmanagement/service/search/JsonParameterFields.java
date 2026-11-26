@@ -143,6 +143,65 @@ final class JsonParameterFields {
 		String result() {
 			return copiedUpTo == 0 ? query : rewritten.append(query.substring(copiedUpTo)).toString();
 		}
+
+		private static boolean isField(final List<Token> tokens, final int i) {
+			return tokens.get(i).kind == TERM && i + 1 < tokens.size() && tokens.get(i + 1).kind == COLON && i + 2 < tokens.size();
+		}
+
+		/**
+		 * The last token of the value starting at sent in token: a group up to the parenthesis closing it, a range up to its
+		 * end, or a single term, with a boost or a fuzziness after any of them. Negative when the value does not end.
+		 */
+		private static int endOfValue(final List<Token> tokens, final int start) {
+			final var kind = tokens.get(start).kind;
+			final int end;
+			if (kind == LPAREN) {
+				end = endOfGroup(tokens, start);
+			} else if (kind == RANGEIN_START || kind == RANGEEX_START) {
+				end = endOfRange(tokens, start);
+			} else {
+				end = start;
+			}
+			return end < 0 ? end : withBoostOrSlop(tokens, end);
+		}
+
+		/** The parenthesis closing the group opened at sent in token, negative when there is none. */
+		private static int endOfGroup(final List<Token> tokens, final int start) {
+			var depth = 0;
+			for (var end = start; end < tokens.size(); end++) {
+				depth += depthChange(tokens.get(end).kind);
+				if (depth == 0) {
+					return end;
+				}
+			}
+			return -1;
+		}
+
+		private static int depthChange(final int kind) {
+			if (kind == LPAREN) {
+				return 1;
+			}
+			return kind == RPAREN ? -1 : 0;
+		}
+
+		/** The end of the range opened at sent in token, negative when there is none. */
+		private static int endOfRange(final List<Token> tokens, final int start) {
+			for (var end = start; end < tokens.size(); end++) {
+				if (tokens.get(end).kind == RANGEIN_END || tokens.get(end).kind == RANGEEX_END) {
+					return end;
+				}
+			}
+			return -1;
+		}
+
+		/** The last of the boost and fuzziness tokens following sent in token, or the token itself. */
+		private static int withBoostOrSlop(final List<Token> tokens, final int end) {
+			var last = end;
+			while (last + 1 < tokens.size() && BOOST_OR_SLOP.contains(tokens.get(last + 1).kind)) {
+				last++;
+			}
+			return last;
+		}
 	}
 
 	/**
@@ -176,65 +235,6 @@ final class JsonParameterFields {
 			}
 		}
 		return false;
-	}
-
-	private static boolean isField(final List<Token> tokens, final int i) {
-		return tokens.get(i).kind == TERM && i + 1 < tokens.size() && tokens.get(i + 1).kind == COLON && i + 2 < tokens.size();
-	}
-
-	/**
-	 * The last token of the value starting at sent in token: a group up to the parenthesis closing it, a range up to its
-	 * end, or a single term, with a boost or a fuzziness after any of them. Negative when the value does not end.
-	 */
-	private static int endOfValue(final List<Token> tokens, final int start) {
-		final var kind = tokens.get(start).kind;
-		final int end;
-		if (kind == LPAREN) {
-			end = endOfGroup(tokens, start);
-		} else if (kind == RANGEIN_START || kind == RANGEEX_START) {
-			end = endOfRange(tokens, start);
-		} else {
-			end = start;
-		}
-		return end < 0 ? end : withBoostOrSlop(tokens, end);
-	}
-
-	/** The parenthesis closing the group opened at sent in token, negative when there is none. */
-	private static int endOfGroup(final List<Token> tokens, final int start) {
-		var depth = 0;
-		for (var end = start; end < tokens.size(); end++) {
-			depth += depthChange(tokens.get(end).kind);
-			if (depth == 0) {
-				return end;
-			}
-		}
-		return -1;
-	}
-
-	private static int depthChange(final int kind) {
-		if (kind == LPAREN) {
-			return 1;
-		}
-		return kind == RPAREN ? -1 : 0;
-	}
-
-	/** The end of the range opened at sent in token, negative when there is none. */
-	private static int endOfRange(final List<Token> tokens, final int start) {
-		for (var end = start; end < tokens.size(); end++) {
-			if (tokens.get(end).kind == RANGEIN_END || tokens.get(end).kind == RANGEEX_END) {
-				return end;
-			}
-		}
-		return -1;
-	}
-
-	/** The last of the boost and fuzziness tokens following sent in token, or the token itself. */
-	private static int withBoostOrSlop(final List<Token> tokens, final int end) {
-		var last = end;
-		while (last + 1 < tokens.size() && BOOST_OR_SLOP.contains(tokens.get(last + 1).kind)) {
-			last++;
-		}
-		return last;
 	}
 
 	/**
