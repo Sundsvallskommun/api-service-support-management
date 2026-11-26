@@ -68,40 +68,60 @@ final class JsonParameterFields {
 			return query;
 		}
 
-		final var rewritten = new StringBuilder();
-		var copiedUpTo = 0;
-		for (var i = 0; i < tokens.size(); i++) {
+		final var rewriting = new Rewriting(query, tokens);
+		var i = 0;
+		while (i < tokens.size()) {
+			i = rewriting.at(i);
+		}
+		return rewriting.result();
+	}
+
+	/** A query on its way through, copied over as far as its tokens have been looked at. */
+	private static final class Rewriting {
+
+		private final String query;
+		private final List<Token> tokens;
+		private final StringBuilder rewritten = new StringBuilder();
+		private int copiedUpTo;
+
+		Rewriting(final String query, final List<Token> tokens) {
+			this.query = query;
+			this.tokens = tokens;
+		}
+
+		/** Rewrites what the token at sent in index begins, if anything, and says where to go on from. */
+		int at(final int i) {
 			if (!isField(tokens, i)) {
-				continue;
+				return i + 1;
 			}
 
 			final var name = tokens.get(i);
 			final var names = namesFor(name.image);
-			if (names.size() == 1 && names.getFirst().equals(name.image)) {
-				continue;
-			}
-
-			rewritten.append(query, copiedUpTo, name.beginColumn);
 			if (names.size() == 1) {
-				rewritten.append(names.getFirst());
-				copiedUpTo = name.endColumn;
-				continue;
+				replace(name.beginColumn, name.endColumn, names.getFirst());
+				return i + 1;
 			}
 
 			// Both names, each with what was asked of the one: the value runs from after the colon to its end
 			final var last = endOfValue(tokens, i + 2);
 			if (last < 0) {
-				rewritten.append(name.image);
-				copiedUpTo = name.endColumn;
-				continue;
+				return i + 1;
 			}
 			final var value = query.substring(tokens.get(i + 2).beginColumn, tokens.get(last).endColumn);
-			rewritten.append('(').append(names.get(0)).append(':').append(value).append(" OR ").append(names.get(1)).append(':').append(value).append(')');
-			copiedUpTo = tokens.get(last).endColumn;
-			i = last;
+			replace(name.beginColumn, tokens.get(last).endColumn, "(%s:%s OR %s:%s)".formatted(names.get(0), value, names.get(1), value));
+			return last + 1;
 		}
 
-		return copiedUpTo == 0 ? query : rewritten.append(query.substring(copiedUpTo)).toString();
+		private void replace(final int from, final int to, final String text) {
+			if (!text.equals(query.substring(from, to))) {
+				rewritten.append(query, copiedUpTo, from).append(text);
+				copiedUpTo = to;
+			}
+		}
+
+		String result() {
+			return copiedUpTo == 0 ? query : rewritten.append(query.substring(copiedUpTo)).toString();
+		}
 	}
 
 	/**
@@ -146,28 +166,54 @@ final class JsonParameterFields {
 	 * end, or a single term, with a boost or a fuzziness after any of them. Negative when the value does not end.
 	 */
 	private static int endOfValue(final List<Token> tokens, final int start) {
-		var end = start;
 		final var kind = tokens.get(start).kind;
+		final int end;
 		if (kind == LPAREN) {
-			var depth = 0;
-			for (; end < tokens.size(); end++) {
-				depth += tokens.get(end).kind == LPAREN ? 1 : tokens.get(end).kind == RPAREN ? -1 : 0;
-				if (depth == 0) {
-					break;
-				}
-			}
+			end = endOfGroup(tokens, start);
 		} else if (kind == RANGEIN_START || kind == RANGEEX_START) {
-			while (end < tokens.size() && tokens.get(end).kind != RANGEIN_END && tokens.get(end).kind != RANGEEX_END) {
-				end++;
+			end = endOfRange(tokens, start);
+		} else {
+			end = start;
+		}
+		return end < 0 ? end : withBoostOrSlop(tokens, end);
+	}
+
+	/** The parenthesis closing the group opened at sent in token, negative when there is none. */
+	private static int endOfGroup(final List<Token> tokens, final int start) {
+		var depth = 0;
+		for (var end = start; end < tokens.size(); end++) {
+			depth += depthChange(tokens.get(end).kind);
+			if (depth == 0) {
+				return end;
 			}
 		}
-		if (end >= tokens.size()) {
-			return -1;
+		return -1;
+	}
+
+	private static int depthChange(final int kind) {
+		if (kind == LPAREN) {
+			return 1;
 		}
-		while (end + 1 < tokens.size() && BOOST_OR_SLOP.contains(tokens.get(end + 1).kind)) {
-			end++;
+		return kind == RPAREN ? -1 : 0;
+	}
+
+	/** The end of the range opened at sent in token, negative when there is none. */
+	private static int endOfRange(final List<Token> tokens, final int start) {
+		for (var end = start; end < tokens.size(); end++) {
+			if (tokens.get(end).kind == RANGEIN_END || tokens.get(end).kind == RANGEEX_END) {
+				return end;
+			}
 		}
-		return end;
+		return -1;
+	}
+
+	/** The last of the boost and fuzziness tokens following sent in token, or the token itself. */
+	private static int withBoostOrSlop(final List<Token> tokens, final int end) {
+		var last = end;
+		while (last + 1 < tokens.size() && BOOST_OR_SLOP.contains(tokens.get(last + 1).kind)) {
+			last++;
+		}
+		return last;
 	}
 
 	/**

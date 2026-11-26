@@ -29,6 +29,7 @@ public class DeleteByQueryTask {
 	static final String FAILED = "The removal of documents from the search index failed: %s";
 	static final String INTERRUPTED = "The removal of documents from the search index was interrupted and cancelled";
 
+	private static final String ERROR = "error";
 	private static final Logger LOG = LoggerFactory.getLogger(DeleteByQueryTask.class);
 	private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
@@ -103,8 +104,9 @@ public class DeleteByQueryTask {
 	 * and still completes, so they are looked for rather than taken from the task having completed.
 	 */
 	private static long outcomeOf(final JsonNode task) {
-		if (task.hasNonNull("error")) {
-			throw new IllegalStateException(FAILED.formatted(task.path("error").path("reason").asString(task.path("error").toString())));
+		if (task.hasNonNull(ERROR)) {
+			final var error = task.path(ERROR);
+			throw new IllegalStateException(FAILED.formatted(error.path("reason").asString(error.toString())));
 		}
 
 		final var response = task.path("response");

@@ -3,6 +3,7 @@ package se.sundsvall.supportmanagement.service.job;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import se.sundsvall.supportmanagement.service.search.index.NamespaceIndexRebuilder;
 import se.sundsvall.supportmanagement.service.search.index.SearchIndexHealth;
@@ -33,12 +34,19 @@ public class SearchReindexRunner extends JobRunner<SearchReindexRun> {
 	private final JobService jobService;
 	private final NamespaceIndexRebuilder rebuilder;
 	private final SearchIndexHealth indexHealth;
+	private final Duration reportInterval;
 
+	@Autowired
 	SearchReindexRunner(final JobService jobService, final NamespaceIndexRebuilder rebuilder, final SearchIndexHealth indexHealth) {
+		this(jobService, rebuilder, indexHealth, REPORT_INTERVAL);
+	}
+
+	SearchReindexRunner(final JobService jobService, final NamespaceIndexRebuilder rebuilder, final SearchIndexHealth indexHealth, final Duration reportInterval) {
 		super(jobService);
 		this.jobService = jobService;
 		this.rebuilder = rebuilder;
 		this.indexHealth = indexHealth;
+		this.reportInterval = reportInterval;
 	}
 
 	@Override
@@ -79,7 +87,8 @@ public class SearchReindexRunner extends JobRunner<SearchReindexRun> {
 	}
 
 	/**
-	 * Reports to the job at most every {@link #REPORT_INTERVAL} while errands are written, the mass indexer telling of
+	 * Reports to the job at most every report interval ({@link #REPORT_INTERVAL} unless told otherwise) while errands are
+	 * written, the mass indexer telling of
 	 * every batch, and every time the removal is asked about, which is seldom enough by itself.
 	 */
 	private final class Reporter implements NamespaceIndexRebuilder.Progress {
@@ -96,7 +105,7 @@ public class SearchReindexRunner extends JobRunner<SearchReindexRun> {
 		@Override
 		public synchronized void written(final long errands) {
 			written = (int) Math.min(Integer.MAX_VALUE, errands);
-			if (System.nanoTime() - lastReport >= REPORT_INTERVAL.toNanos()) {
+			if (System.nanoTime() - lastReport >= reportInterval.toNanos()) {
 				jobService.reportProgress(jobId, written, WRITING);
 				lastReport = System.nanoTime();
 			}

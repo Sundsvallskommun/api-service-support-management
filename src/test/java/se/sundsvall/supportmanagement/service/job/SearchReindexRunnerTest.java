@@ -1,9 +1,10 @@
 package se.sundsvall.supportmanagement.service.job;
 
+import java.time.Duration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.supportmanagement.service.search.index.NamespaceIndexRebuilder;
@@ -32,8 +33,12 @@ class SearchReindexRunnerTest {
 	@Mock
 	private SearchIndexHealth indexHealthMock;
 
-	@InjectMocks
 	private SearchReindexRunner runner;
+
+	@BeforeEach
+	void runner() {
+		runner = new SearchReindexRunner(jobServiceMock, rebuilderMock, indexHealthMock);
+	}
 
 	@Test
 	void rebuildsTheNamespaceAndCompletesTheJob() throws InterruptedException {
@@ -78,5 +83,45 @@ class SearchReindexRunnerTest {
 		} finally {
 			Thread.interrupted();
 		}
+	}
+
+	@Test
+	void writingIsReportedOnceTheIntervalHasPassed() throws InterruptedException {
+		final var reportingEveryTime = new SearchReindexRunner(jobServiceMock, rebuilderMock, indexHealthMock, Duration.ZERO);
+		when(rebuilderMock.rebuild(eq("namespace"), eq("2281"), any())).thenAnswer(invocation -> {
+			invocation.<NamespaceIndexRebuilder.Progress>getArgument(2).written(4);
+			return new NamespaceIndexRebuilder.Outcome(4, 0);
+		});
+
+		reportingEveryTime.run(RUN);
+
+		verify(jobServiceMock).reportProgress("job-id", 4, SearchReindexRunner.WRITING);
+		verify(jobServiceMock).complete("job-id", SearchReindexRunner.SUMMARY.formatted(4, 0));
+	}
+
+	@Test
+	void anErrandCountBeyondWhatAJobHoldsIsReportedAsTheMost() throws InterruptedException {
+		final var reportingEveryTime = new SearchReindexRunner(jobServiceMock, rebuilderMock, indexHealthMock, Duration.ZERO);
+		when(rebuilderMock.rebuild(eq("namespace"), eq("2281"), any())).thenAnswer(invocation -> {
+			invocation.<NamespaceIndexRebuilder.Progress>getArgument(2).written(Long.MAX_VALUE);
+			return new NamespaceIndexRebuilder.Outcome(1, 0);
+		});
+
+		reportingEveryTime.run(RUN);
+
+		verify(jobServiceMock).reportProgress("job-id", Integer.MAX_VALUE, SearchReindexRunner.WRITING);
+	}
+
+	@Test
+	void aThreadTakenDownWithoutAnExceptionFailsTheJob() throws InterruptedException {
+		when(rebuilderMock.rebuild(eq("namespace"), eq("2281"), any())).thenThrow(new StackOverflowError());
+
+		try {
+			runner.run(RUN);
+		} catch (final StackOverflowError e) {
+			// Let through by the envelope once the job has been failed
+		}
+
+		verify(jobServiceMock).fail("job-id", SearchReindexRunner.ENDED_WITHOUT_RESULT);
 	}
 }

@@ -34,7 +34,8 @@ public class SearchSchemaInitializer {
 	static final Duration PAUSE_BETWEEN_ATTEMPTS = Duration.ofSeconds(10);
 	static final String REFUSED = "Response: 400 ";
 
-	private static final Pattern REASON = Pattern.compile("\"reason\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+	// Unrolled, possessive and without an alternation that is repeated, so that a long reason does not recurse
+	private static final Pattern REASON = Pattern.compile("\"reason\"\\s*+:\\s*+\"([^\"\\\\]*+(?:\\\\.[^\"\\\\]*+)*+)\"");
 
 	private static final Logger LOG = LoggerFactory.getLogger(SearchSchemaInitializer.class);
 

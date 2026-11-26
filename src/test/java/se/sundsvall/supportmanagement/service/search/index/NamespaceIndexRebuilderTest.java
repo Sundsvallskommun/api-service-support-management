@@ -17,6 +17,7 @@ import org.hibernate.search.mapper.orm.massindexing.MassIndexerFilteringTypeStep
 import org.hibernate.search.mapper.orm.massindexing.MassIndexerReindexParameterStep;
 import org.hibernate.search.mapper.orm.scope.SearchScope;
 import org.hibernate.search.mapper.pojo.massindexing.MassIndexingEntityFailureContext;
+import org.hibernate.search.mapper.pojo.massindexing.MassIndexingFailureContext;
 import org.hibernate.search.mapper.pojo.massindexing.MassIndexingFailureHandler;
 import org.hibernate.search.mapper.pojo.massindexing.MassIndexingMonitor;
 import org.junit.jupiter.api.Test;
@@ -223,5 +224,27 @@ class NamespaceIndexRebuilderTest {
 				"filter": [{"term": {"municipalityId": "2281"}}, {"term": {"namespace": "my_namespace"}}],
 				"must_not": [{"range": {"indexedAt": {"gte": 1000, "format": "epoch_millis"}}}]
 			}}""").toString());
+	}
+
+	@Test
+	void aFailureNamingNoErrandIsToldByWhatWentWrong() {
+		final var failures = new NamespaceIndexRebuilder.Failures();
+		final var generic = MassIndexingFailureContext.builder();
+		generic.throwable(new IllegalStateException("cluster went away"));
+		generic.failingOperation("Fetching identifiers");
+		final var withoutReference = MassIndexingEntityFailureContext.builder();
+		withoutReference.throwable(new IllegalStateException("no reference"));
+		withoutReference.failingOperation("Indexing");
+
+		failures.handle(generic.build());
+		failures.handle(withoutReference.build());
+
+		assertThat(failures.isEmpty()).isFalse();
+		assertThat(failures.describe()).isEqualTo(NamespaceIndexRebuilder.NOT_ALL_WRITTEN.formatted(2, "cluster went away, no reference"));
+	}
+
+	@Test
+	void noFailureIsNothing() {
+		assertThat(new NamespaceIndexRebuilder.Failures().isEmpty()).isTrue();
 	}
 }

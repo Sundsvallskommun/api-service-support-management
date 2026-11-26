@@ -6,9 +6,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.message.BasicRequestLine;
+import org.apache.http.message.BasicStatusLine;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -104,7 +109,9 @@ class DeleteByQueryTaskTest {
 			null);
 		final var query = MAPPER.readTree("{}");
 
-		final var e = assertThrows(IllegalStateException.class, () -> task(Duration.ofMinutes(1)).run(query, _ -> {}));
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
 
 		assertThat(e.getMessage()).isEqualTo("The removal of documents from the search index failed: 2 document(s) could not be removed, the first because: shard went away");
 	}
@@ -118,7 +125,9 @@ class DeleteByQueryTaskTest {
 			null);
 		final var query = MAPPER.readTree("{}");
 
-		final var e = assertThrows(IllegalStateException.class, () -> task(Duration.ofMinutes(1)).run(query, _ -> {}));
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
 
 		assertThat(e.getMessage()).isEqualTo("The removal of documents from the search index failed: all shards failed");
 	}
@@ -132,7 +141,9 @@ class DeleteByQueryTaskTest {
 			"{}");
 		final var query = MAPPER.readTree("{}");
 
-		final var e = assertThrows(IllegalStateException.class, () -> task(Duration.ZERO).run(query, _ -> {}));
+		final var task = task(Duration.ZERO);
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
 
 		assertThat(e.getMessage()).isEqualTo("The removal of documents from the search index was not done within PT0S and was cancelled");
 		assertThat(requests.getLast().getMethod()).isEqualTo("POST");
@@ -145,7 +156,9 @@ class DeleteByQueryTaskTest {
 		clusterAnswers("{}");
 		final var query = MAPPER.readTree("{}");
 
-		final var e = assertThrows(IllegalStateException.class, () -> task(Duration.ofMinutes(1)).run(query, _ -> {}));
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
 
 		assertThat(e.getMessage()).isEqualTo(DeleteByQueryTask.NOT_STARTED);
 		assertThat(requests).hasSize(1);
@@ -158,9 +171,88 @@ class DeleteByQueryTaskTest {
 		when(restClientMock.performRequest(any())).thenThrow(new IOException("Connection refused"));
 		final var query = MAPPER.readTree("{}");
 
-		final var e = assertThrows(RuntimeException.class, () -> task(Duration.ofMinutes(1)).run(query, _ -> {}));
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(RuntimeException.class, () -> task.run(query, _ -> {}));
 
 		assertThat(e.getMessage()).isEqualTo(DeleteByQueryTask.NOT_STARTED);
 		assertThat(e.getCause()).hasMessage("Connection refused");
+	}
+
+	@Test
+	void anErrorAnswerOfTheClusterFailsTheRemoval() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
+		final var response = mock(Response.class);
+		when(response.getStatusLine()).thenReturn(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 400, "Bad Request"));
+		when(response.getRequestLine()).thenReturn(new BasicRequestLine("POST", "/errand-write/_delete_by_query", new ProtocolVersion("HTTP", 1, 1)));
+		when(response.getHost()).thenReturn(new HttpHost("localhost", 9200));
+		final var refused = new ResponseException(response);
+		when(restClientMock.performRequest(any())).thenThrow(refused);
+		final var query = MAPPER.readTree("{}");
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
+
+		assertThat(e.getMessage()).startsWith(DeleteByQueryTask.NOT_STARTED + ": ");
+		assertThat(e.getCause()).isSameAs(refused);
+	}
+
+	@Test
+	void aWaitThatIsInterruptedCancelsTheTaskAndKeepsTheInterrupt() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		clusterAnswers("{\"task\":\"" + TASK_ID + "\"}", "{}");
+		final var query = MAPPER.readTree("{}");
+		final var task = task(Duration.ofMinutes(1));
+
+		Thread.currentThread().interrupt();
+		try {
+			final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
+
+			assertThat(e.getMessage()).isEqualTo(DeleteByQueryTask.INTERRUPTED);
+			assertThat(Thread.currentThread().isInterrupted()).isTrue();
+			assertThat(requests.getLast().getEndpoint()).isEqualTo("/_tasks/" + TASK_ID + "/_cancel");
+		} finally {
+			Thread.interrupted();
+		}
+	}
+
+	@Test
+	void aTaskThatCannotBeCancelledOrForgottenIsLetBe() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
+		final var started = mock(Response.class);
+		final var startedEntity = mock(HttpEntity.class);
+		when(started.getEntity()).thenReturn(startedEntity);
+		when(startedEntity.getContent()).thenReturn(new ByteArrayInputStream(("{\"task\":\"" + TASK_ID + "\"}").getBytes(UTF_8)));
+		final var running = mock(Response.class);
+		final var runningEntity = mock(HttpEntity.class);
+		when(running.getEntity()).thenReturn(runningEntity);
+		when(runningEntity.getContent()).thenReturn(new ByteArrayInputStream("{\"completed\":false}".getBytes(UTF_8)));
+		when(restClientMock.performRequest(any())).thenReturn(started, running).thenThrow(new IOException("gone"));
+		final var query = MAPPER.readTree("{}");
+		final var task = task(Duration.ZERO);
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {}));
+
+		// The cancel that failed is logged, and what is reported is that the task was not done in time
+		assertThat(e.getMessage()).isEqualTo(DeleteByQueryTask.NOT_DONE_IN_TIME.formatted(Duration.ZERO));
+	}
+
+	@Test
+	void aResultThatCannotBeForgottenIsLetBe() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
+		final var started = mock(Response.class);
+		final var startedEntity = mock(HttpEntity.class);
+		when(started.getEntity()).thenReturn(startedEntity);
+		when(startedEntity.getContent()).thenReturn(new ByteArrayInputStream(("{\"task\":\"" + TASK_ID + "\"}").getBytes(UTF_8)));
+		final var done = mock(Response.class);
+		final var doneEntity = mock(HttpEntity.class);
+		when(done.getEntity()).thenReturn(doneEntity);
+		when(doneEntity.getContent()).thenReturn(new ByteArrayInputStream("{\"completed\":true,\"response\":{\"deleted\":2}}".getBytes(UTF_8)));
+		when(restClientMock.performRequest(any())).thenReturn(started, done).thenThrow(new IOException("system index"));
+
+		assertThat(task(Duration.ofMinutes(1)).run(MAPPER.readTree("{}"), _ -> {})).isEqualTo(2);
 	}
 }

@@ -28,6 +28,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class SearchIndexHealth {
 
 	static final String LAYOUT_VERSION = "layoutVersion";
+	static final String PROPERTIES = "properties";
 	static final String TOTAL_FIELDS_LIMIT = "index.mapping.total_fields.limit";
 	static final int DEFAULT_TOTAL_FIELDS_LIMIT = 1000;
 	static final int FIRST_LAYOUT = 1;
@@ -77,7 +78,7 @@ public class SearchIndexHealth {
 			settingsRequest.addParameter("flat_settings", "true");
 			final var settings = firstIndexOf(get(settingsRequest)).path("settings");
 
-			fieldUsage = new FieldUsage(countFields(mapping.path("properties")), settings.path(TOTAL_FIELDS_LIMIT).asInt(DEFAULT_TOTAL_FIELDS_LIMIT));
+			fieldUsage = new FieldUsage(countFields(mapping.path(PROPERTIES)), settings.path(TOTAL_FIELDS_LIMIT).asInt(DEFAULT_TOTAL_FIELDS_LIMIT));
 
 			final var layout = mapping.path("_meta").path(LAYOUT_VERSION).asInt(FIRST_LAYOUT);
 			otherLayout = layout == ErrandIndex.LAYOUT_VERSION ? null : OTHER_LAYOUT.formatted(layout, ErrandIndex.LAYOUT_VERSION);
@@ -125,8 +126,8 @@ public class SearchIndexHealth {
 			count++;
 			final var definition = field.getValue();
 			count += definition.path("fields").size();
-			if (definition.has("properties")) {
-				count += countFields(definition.path("properties"));
+			if (definition.has(PROPERTIES)) {
+				count += countFields(definition.path(PROPERTIES));
 			}
 		}
 		return count;
