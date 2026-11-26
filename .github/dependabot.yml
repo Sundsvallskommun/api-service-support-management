@@ -10,3 +10,7 @@ updates:
     target-branch: "main"
     schedule:
       interval: "weekly"
+    ignore:
+      # 4.1.1 breaks Testcontainers' Docker discovery when the ITs run in two forks under Podman
+      - dependency-name: "org.opensearch:opensearch-testcontainers"
+        versions: [ "4.1.1" ]
