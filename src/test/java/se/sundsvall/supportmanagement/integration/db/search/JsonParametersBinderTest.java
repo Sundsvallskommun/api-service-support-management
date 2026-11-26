@@ -45,7 +45,13 @@ class JsonParametersBinderTest {
 
 		final var json = ArgumentCaptor.forClass(JsonElement.class);
 		verify(documentMock).addValue(eq(jsonFieldMock), json.capture());
-		assertThat(json.getValue()).isEqualTo(JsonParser.parseString("{\"vehicle\":{\"regNo\":\"ABC123\",\"owner\":{\"name\":\"Anna\"},\"tags\":[\"diesel\",42,true,null]},\"note\":\"just a string\"}"));
+		// Every scalar one step below its path, so that no path is a value in one errand and an object in another
+		assertThat(json.getValue()).isEqualTo(JsonParser.parseString("""
+			{"vehicle": {
+				"regNo": {"_v": "ABC123"},
+				"owner": {"name": {"_v": "Anna"}},
+				"tags": [{"_v": "diesel"}, {"_v": 42}, {"_v": true}, null]},
+			 "note": {"_v": "just a string"}}"""));
 
 		final var texts = ArgumentCaptor.forClass(String.class);
 		verify(documentMock, times(6)).addValue(eq(textFieldMock), texts.capture());
@@ -64,7 +70,7 @@ class JsonParametersBinderTest {
 
 		final var json = ArgumentCaptor.forClass(JsonElement.class);
 		verify(documentMock).addValue(eq(jsonFieldMock), json.capture());
-		assertThat(json.getValue()).isEqualTo(JsonParser.parseString("{\"fine\":{\"a\":1}}"));
+		assertThat(json.getValue()).isEqualTo(JsonParser.parseString("{\"fine\":{\"a\":{\"_v\":1}}}"));
 		verify(documentMock).addValue(textFieldMock, "1");
 	}
 
@@ -78,5 +84,11 @@ class JsonParametersBinderTest {
 
 		verify(documentMock, never()).addValue(eq(jsonFieldMock), any(JsonElement.class));
 		verifyNoInteractions(jsonFieldMock, textFieldMock);
+	}
+
+	@Test
+	void aValueAndAnObjectAtOnePathAreBothObjects() {
+		assertThat(JsonParametersBinder.Bridge.belowItsPath(JsonParser.parseString("[\"Erik\", {\"name\": \"Frida\"}]")))
+			.isEqualTo(JsonParser.parseString("[{\"_v\": \"Erik\"}, {\"name\": {\"_v\": \"Frida\"}}]"));
 	}
 }

@@ -3,13 +3,13 @@ package se.sundsvall.supportmanagement.apptest;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.util.List;
-import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.ResponseException;
 import org.hibernate.search.mapper.orm.Search;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -32,7 +32,6 @@ import static java.time.Duration.ofMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.ACCEPTED;
@@ -81,6 +80,9 @@ class SearchReindexIT extends AbstractAppTest {
 
 	@Autowired
 	private SearchSchemaInitializer schemaInitializer;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@BeforeEach
 	void reindexEverything() throws InterruptedException {
@@ -195,21 +197,22 @@ class SearchReindexIT extends AbstractAppTest {
 	}
 
 	/**
-	 * Every JSON parameter of every namespace shares the one mapping of the index: a key whose value is an object in one
-	 * errand and a plain value in another, as two namespaces with schemas of their own may well have it, is refused for
-	 * the errand that comes second, whole. Shows the cluster doing so, with a key of its own, as the mapping it leaves
-	 * behind outlives the test.
+	 * Every JSON parameter of every namespace shares the one mapping of the index, so a key whose value is an object in
+	 * one errand and a plain value in another - two namespaces with schemas of their own, or as here one schema allowing
+	 * either - used to have the errand coming second refused whole. Every value being written one step below its path,
+	 * both are indexed, and each is found by the path as its JSON has it.
 	 */
 	@Test
-	void test06_aJsonParameterOfAnotherShapeUnderTheSameKeyIsRefused() throws IOException {
-		writeDocument("shape-1", "{\"municipalityId\": \"2281\", \"namespace\": \"namespace-a\", \"jsonParameters\": {\"shapeProbe\": {\"owner\": \"Anna\"}}}");
+	void test06_aJsonParameterOfAnotherShapeUnderTheSameKeyIsIndexedAsWell() throws InterruptedException {
+		jdbcTemplate.update("UPDATE json_parameter SET value = ? WHERE id = ?", "{\"regNo\":\"XYZ789\",\"owner\":[\"Timrå Industri AB\",{\"name\":\"Kalle\"}]}",
+			"jp000000-0000-0000-0000-000000000902");
+		Search.mapping(entityManagerFactory).scope(ErrandEntity.class).massIndexer().startAndWait();
 
-		final var e = assertThrows(ResponseException.class,
-			() -> writeDocument("shape-2", "{\"municipalityId\": \"2281\", \"namespace\": \"namespace-b\", \"jsonParameters\": {\"shapeProbe\": {\"owner\": {\"name\": \"Anna\"}}}}"));
-
-		assertThat(e.getResponse().getStatusLine().getStatusCode()).isEqualTo(400);
-		assertThat(EntityUtils.toString(e.getResponse().getEntity())).contains("mapper_parsing_exception");
-		deleteDocument("shape-1");
+		assertThat(search("jsonParameters.vehicle.owner.name:bergström")).containsExactly("NS3-25010001");
+		assertThat(search("jsonParameters.vehicle.owner:timrå")).containsExactly("NS3-25030001");
+		assertThat(search("jsonParameters.vehicle.owner.name:kalle")).containsExactly("NS3-25030001");
+		assertThat(search("jsonParameters.vehicle.owner.raw:timrå\\ industri\\ ab")).containsExactly("NS3-25030001");
+		assertThat(search("_exists_:jsonParameters.vehicle.owner")).containsExactlyInAnyOrder("NS3-25010001", "NS3-25030001");
 	}
 
 	/**

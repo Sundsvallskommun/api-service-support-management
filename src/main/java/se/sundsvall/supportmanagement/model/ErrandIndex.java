@@ -98,7 +98,8 @@ public final class ErrandIndex {
 	 * is reported by the health of the service as wanting a full reindex, which writes the current layout. A change the
 	 * mapping refuses is reported without this, and one the nightly reindex puts right needs no raise.
 	 */
-	public static final int LAYOUT_VERSION = 1;
+	// 2: every scalar of a JSON parameter written one step below its path (JsonParametersBinder.VALUE)
+	public static final int LAYOUT_VERSION = 2;
 
 	public static final String EXTERNAL_TAG_VALUE = EXTERNAL_TAGS + ".value";
 	public static final String STAKEHOLDER_EXTERNAL_ID = STAKEHOLDERS + ".externalId";

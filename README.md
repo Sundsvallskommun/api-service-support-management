@@ -467,12 +467,18 @@ How the pieces hold together, from the API to the index:
   resource the route reaches, so a name nobody thought of is refused instead of permitted. `service/search/index` is the index itself: rebuild, schema, health, and the one facade (`SearchIndexing`) the
   services writing the database may use.
 
-JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
-under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to
-keep its shape across the errands of the index, a scalar in one and an object in another cannot both be mapped, and the
-errand that breaks the shape is logged and left out of the index. And values longer than 8191 characters have no
-keyword twin, only their words. The index allows 5000 fields, well beyond what the paths of a service's schemas amount
-to; the log says so if that is ever reached.
+JSON parameters are indexed as they come, every scalar as text with a keyword twin under `.raw`, which is what makes
+them searchable by path without a schema. One index holds every namespace, and a field of it is either a value or an
+object, so a key whose value is a plain value in one errand and an object in another - two namespaces with schemas of
+their own, a schema allowing either, an array holding both - could not both be mapped. Every scalar is therefore written
+one step below its path, under `_v`: `{"owner": "Anna"}` is indexed as `jsonParameters.<key>.owner._v`, so every path is
+an object whatever the JSON holds at it. A search names the path as the JSON has it - `jsonParameters.vehicle.owner`,
+`jsonParameters.vehicle.owner.raw` - and the service looks in the value below it; a wildcard in a field name that may
+reach into the JSON parameters, `*.supplier`, asks for both. A JSON property named `_v` itself is the one shape that can
+still clash. In an array of objects the fields of one object are not kept apart from those of the next, as is the way
+of the index: `owner.name:anna AND owner.city:umeå` finds an errand where Anna lives in Sundsvall and someone else in
+Umeå. Values longer than 8191 characters have no keyword twin, only their words. The index allows 5000 fields, and every
+path of every namespace is one; the health of the service turns `RESTRICTED` at 80 percent of that.
 
 The integration tests start one of their own through Testcontainers.
 

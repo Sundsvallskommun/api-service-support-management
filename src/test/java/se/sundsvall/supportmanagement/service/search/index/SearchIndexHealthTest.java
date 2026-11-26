@@ -32,6 +32,7 @@ class SearchIndexHealthTest {
 			"stakeholders": {"properties": {"firstName": {"type": "text"}, "lastName": {"type": "text"}}},
 			"namespace": {"type": "keyword"}
 		}}}}""";
+	private static final String CURRENT_LAYOUT = "\"_meta\": {\"layoutVersion\": " + ErrandIndex.LAYOUT_VERSION + "}, ";
 	private static final String SETTINGS = """
 		{"errand-000001": {"settings": {"index.mapping.total_fields.limit": "10"}}}""";
 
@@ -71,7 +72,7 @@ class SearchIndexHealthTest {
 	@Test
 	void countsTheFieldsTheWayTheLimitDoes() throws IOException {
 		// title, title.raw, stakeholders, stakeholders.firstName, stakeholders.lastName and namespace
-		clusterAnswers(MAPPING.formatted(""), SETTINGS);
+		clusterAnswers(MAPPING.formatted(CURRENT_LAYOUT), SETTINGS);
 		final var health = new SearchIndexHealth(openSearchMock);
 
 		health.inspect();
@@ -84,7 +85,7 @@ class SearchIndexHealthTest {
 
 	@Test
 	void theDefaultLimitIsTakenWhereTheIndexSetsNone() throws IOException {
-		clusterAnswers(MAPPING.formatted(""), "{\"errand-000001\": {\"settings\": {}}}");
+		clusterAnswers(MAPPING.formatted(CURRENT_LAYOUT), "{\"errand-000001\": {\"settings\": {}}}");
 		final var health = new SearchIndexHealth(openSearchMock);
 
 		health.inspect();
@@ -99,7 +100,16 @@ class SearchIndexHealthTest {
 
 		health.inspect();
 
-		assertThat(ErrandIndex.LAYOUT_VERSION).isEqualTo(SearchIndexHealth.FIRST_LAYOUT);
+		assertThat(health.fullReindexWanted()).contains(SearchIndexHealth.OTHER_LAYOUT.formatted(SearchIndexHealth.FIRST_LAYOUT, ErrandIndex.LAYOUT_VERSION));
+	}
+
+	@Test
+	void anIndexOfTheCurrentLayoutWantsNothing() throws IOException {
+		clusterAnswers(MAPPING.formatted("\"_meta\": {\"layoutVersion\": " + ErrandIndex.LAYOUT_VERSION + "}, "), SETTINGS);
+		final var health = new SearchIndexHealth(openSearchMock);
+
+		health.inspect();
+
 		assertThat(health.fullReindexWanted()).isEmpty();
 	}
 
@@ -115,7 +125,7 @@ class SearchIndexHealthTest {
 
 	@Test
 	void aMappingThatCouldNotBeUpdatedWantsAFullReindexUntilTheIndexIsCreatedAnew() throws IOException {
-		clusterAnswers(MAPPING.formatted(""), SETTINGS);
+		clusterAnswers(MAPPING.formatted(CURRENT_LAYOUT), SETTINGS);
 		final var health = new SearchIndexHealth(openSearchMock);
 
 		health.mappingNotUpdated("mapper [title] cannot be changed from type [text] to [keyword]");
@@ -134,7 +144,7 @@ class SearchIndexHealthTest {
 
 	@Test
 	void aClusterThatCannotBeReadLeavesWhatWasKnown() throws IOException {
-		clusterAnswers(MAPPING.formatted(""), SETTINGS);
+		clusterAnswers(MAPPING.formatted(CURRENT_LAYOUT), SETTINGS);
 		final var health = new SearchIndexHealth(openSearchMock);
 		health.inspect();
 
