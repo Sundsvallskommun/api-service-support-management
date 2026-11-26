@@ -240,11 +240,25 @@ class NamespaceIndexRebuilderTest {
 		failures.handle(withoutReference.build());
 
 		assertThat(failures.isEmpty()).isFalse();
-		assertThat(failures.describe()).isEqualTo(NamespaceIndexRebuilder.NOT_ALL_WRITTEN.formatted(2, "cluster went away, no reference"));
+		// Not of any one errand, so not said to be
+		assertThat(failures.describe()).isEqualTo(NamespaceIndexRebuilder.NOT_WRITTEN.formatted("cluster went away; no reference"));
 	}
 
 	@Test
 	void noFailureIsNothing() {
 		assertThat(new NamespaceIndexRebuilder.Failures().isEmpty()).isTrue();
+	}
+
+	@Test
+	void errandsThatCouldNotBeWrittenAreNamedBesideOtherFailures() {
+		final var failures = new NamespaceIndexRebuilder.Failures();
+		final var generic = MassIndexingFailureContext.builder();
+		generic.throwable(new IllegalStateException("cluster went away"));
+		generic.failingOperation("Fetching identifiers");
+
+		failures.handle(generic.build());
+		failures.handle(failureOf("errand-1"));
+
+		assertThat(failures.describe()).isEqualTo(NamespaceIndexRebuilder.NOT_ALL_WRITTEN.formatted(1, "errand-1"));
 	}
 }

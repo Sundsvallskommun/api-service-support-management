@@ -24,6 +24,9 @@ class JsonParameterFieldsTest {
 		jsonParameters.\\*.regNo:abc123                            | jsonParameters.\\*.regNo._v:abc123
 		jsonParameters.\\*.regNo.raw:xyz789                        | jsonParameters.\\*.regNo._v.raw:xyz789
 		jsonParameters.vehicle.\\*.name:bergström                  | jsonParameters.vehicle.\\*.name._v:bergström
+		_exists_:jsonParameters.vehicle.regNo.raw                  | _exists_:jsonParameters.vehicle.regNo._v.raw
+		NOT _exists_:measures.jsonParameters.order.supplier.raw    | NOT _exists_:measures.jsonParameters.order.supplier._v.raw
+		_exists_:jsonParameters.vehicle.\\*.raw                    | _exists_:jsonParameters.vehicle.\\*._v.raw
 		""")
 	void namesUnderTheJsonParametersAreLookedForInTheValueBelowThem(final String query, final String expected) {
 		assertThat(JsonParameterFields.rewrite(query)).isEqualTo(expected);
@@ -47,6 +50,7 @@ class JsonParameterFieldsTest {
 		"svenson~",
 		"jsonParametersText:anna",
 		"_exists_:jsonParameters.vehicle.owner",
+		"_exists_:title.raw",
 		"jsonParameters.vehicle.\\*:anna",
 		"jsonParameters.\\*:anna",
 		"\\*:anna",

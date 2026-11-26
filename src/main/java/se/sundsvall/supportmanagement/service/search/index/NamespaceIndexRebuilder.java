@@ -42,6 +42,7 @@ public class NamespaceIndexRebuilder {
 	static final Duration CLOCK_MARGIN = Duration.ofMinutes(1);
 	static final int MAX_FAILURES_NAMED = 10;
 	static final String NOT_ALL_WRITTEN = "%d errand(s) of the namespace could not be written to the search index, nothing was removed from it. Errand(s): %s";
+	static final String NOT_WRITTEN = "The errands of the namespace could not all be written to the search index, nothing was removed from it: %s";
 	static final String FAILED = "The errands of the namespace could not be written to the search index: %s";
 
 	private static final JsonMapper MAPPER = JsonMapper.builder().build();
@@ -187,11 +188,12 @@ public class NamespaceIndexRebuilder {
 
 		private final List<String> errandIds = new ArrayList<>();
 		private final List<String> other = new ArrayList<>();
-		private long count;
+		private long errands;
+		private long others;
 
 		@Override
 		public synchronized void handle(final MassIndexingFailureContext context) {
-			count++;
+			others++;
 			if (other.size() < MAX_FAILURES_NAMED) {
 				other.add(String.valueOf(context.throwable().getMessage()));
 			}
@@ -205,7 +207,7 @@ public class NamespaceIndexRebuilder {
 				return;
 			}
 			references.forEach(reference -> {
-				count++;
+				errands++;
 				if (errandIds.size() < MAX_FAILURES_NAMED) {
 					errandIds.add(String.valueOf(reference.id()));
 				}
@@ -213,15 +215,18 @@ public class NamespaceIndexRebuilder {
 		}
 
 		synchronized boolean isEmpty() {
-			return count == 0;
+			return errands == 0 && others == 0;
 		}
 
+		/**
+		 * The errands that could not be written where any are named, and otherwise what went wrong, which then is not of
+		 * any one errand - an identifier that could not be loaded, a connection that went away.
+		 */
 		synchronized String describe() {
-			final var named = new ArrayList<>(errandIds);
-			if (named.isEmpty()) {
-				named.addAll(other);
+			if (errandIds.isEmpty()) {
+				return NOT_WRITTEN.formatted(String.join("; ", other));
 			}
-			return NOT_ALL_WRITTEN.formatted(count, String.join(", ", named) + (count > named.size() ? " and %d more".formatted(count - named.size()) : ""));
+			return NOT_ALL_WRITTEN.formatted(errands, String.join(", ", errandIds) + (errands > errandIds.size() ? " and %d more".formatted(errands - errandIds.size()) : ""));
 		}
 	}
 }

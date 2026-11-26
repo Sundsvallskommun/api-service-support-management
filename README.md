@@ -400,7 +400,11 @@ dropped and rebuilt by `POST /search/reindex`. The first is found when the servi
 The second is declared: the layout of the index is kept in the `_meta` of its mapping, and a change of that kind raises
 `ErrandIndex.LAYOUT_VERSION`. Either way `/actuator/health` reports `openSearch` as `RESTRICTED` with the reason under
 `fullReindexWanted` until the full rebuild has been done - which is how a deploy to test says that the deploy to
-production wants one. The same indicator reports the number of fields the mapping holds against
+production wants one. Until then the index is not what the service writes: documents of the new layout may be refused
+by the old mapping, so errands saved meanwhile are missing from search and the nightly rebuild fails, and searches by
+what moved find nothing. Nothing is lost, as the full rebuild writes everything from the database, so it is run right
+after the deploy. What the health says is found out by each pod for itself, so once the full rebuild is done the pods
+are restarted to stop reporting it. The same indicator reports the number of fields the mapping holds against
 `index.mapping.total_fields.limit`, and turns `RESTRICTED` at 80 percent: every JSON parameter path of every namespace
 is a field of its own, and a document bringing a field beyond the limit is refused.
 

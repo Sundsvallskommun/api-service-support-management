@@ -52,29 +52,40 @@ public class DeleteByQueryTask {
 	 */
 	public long run(final JsonNode query, final ProgressListener onProgress) {
 		final var taskId = start(query);
-		final var deadline = System.nanoTime() + timeout.toNanos();
 
+		final JsonNode finished;
 		try {
-			while (true) {
-				Thread.sleep(pollInterval);
-
-				final var task = get(taskId);
-				onProgress.removed(task.path("task").path("status").path("deleted").asLong());
-
-				if (task.path("completed").asBoolean()) {
-					forget(taskId);
-					return outcomeOf(task);
-				}
-
-				if (System.nanoTime() - deadline >= 0) {
-					cancel(taskId);
-					throw new IllegalStateException(NOT_DONE_IN_TIME.formatted(timeout));
-				}
-			}
+			finished = awaitCompletion(taskId, onProgress);
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
 			cancel(taskId);
 			throw new IllegalStateException(INTERRUPTED, e);
+		} catch (final RuntimeException e) {
+			// Whatever ends the wait - the deadline, a cluster that stopped answering, a progress that could not be
+			// written - ends the removal too, so that it does not go on beside whatever the caller does next
+			cancel(taskId);
+			throw e;
+		}
+
+		forget(taskId);
+		return outcomeOf(finished);
+	}
+
+	/** Asks the task until it is done, and answers with what it reported then. */
+	private JsonNode awaitCompletion(final String taskId, final ProgressListener onProgress) throws InterruptedException {
+		final var deadline = System.nanoTime() + timeout.toNanos();
+		while (true) {
+			Thread.sleep(pollInterval);
+
+			final var task = get(taskId);
+			onProgress.removed(task.path("task").path("status").path("deleted").asLong());
+
+			if (task.path("completed").asBoolean()) {
+				return task;
+			}
+			if (System.nanoTime() - deadline >= 0) {
+				throw new IllegalStateException(NOT_DONE_IN_TIME.formatted(timeout));
+			}
 		}
 	}
 

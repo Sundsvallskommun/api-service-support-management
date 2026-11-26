@@ -36,7 +36,8 @@ import static se.sundsvall.supportmanagement.integration.db.search.JsonParameter
  * <p>
  * Only names are changed, never what is looked for in them, and a name is found the way OpenSearch finds it: by the
  * tokens of the classic query parser, a term followed by a colon. A name ending in a wildcard already reaches what is
- * below it and is left be, as is the field {@code _exists_} asks about, which is an object either way. A name with a
+ * below it and is left be, as is the field {@code _exists_} asks about, which is an object either way - unless it is
+ * the exact twin of a path, which is below the value. A name with a
  * wildcard elsewhere that does not start in the JSON parameters may still reach into them -
  * {@code *.supplier} - and so asks both for what it names and for the value below it.
  * <p>
@@ -47,6 +48,7 @@ import static se.sundsvall.supportmanagement.integration.db.search.JsonParameter
 final class JsonParameterFields {
 
 	private static final String RAW = ".raw";
+	private static final String EXISTS = "_exists_";
 	private static final String LEAF = "." + VALUE;
 	private static final Set<Integer> BOOST_OR_SLOP = Set.of(CARAT, NUMBER, FUZZY_SLOP);
 
@@ -96,6 +98,10 @@ final class JsonParameterFields {
 			}
 
 			final var name = tokens.get(i);
+			if (EXISTS.equals(name.image)) {
+				return existsAt(i);
+			}
+
 			final var names = namesFor(name.image);
 			if (names.size() == 1) {
 				replace(name.beginColumn, name.endColumn, names.getFirst());
@@ -110,6 +116,21 @@ final class JsonParameterFields {
 			final var value = query.substring(tokens.get(i + 2).beginColumn, tokens.get(last).endColumn);
 			replace(name.beginColumn, tokens.get(last).endColumn, "(%s:%s OR %s:%s)".formatted(names.get(0), value, names.get(1), value));
 			return last + 1;
+		}
+
+		/**
+		 * The field {@code _exists_} asks about is an object below a path of the JSON parameters, and found as it is. Its
+		 * exact twin is not, as {@code .raw} is below the value, and is asked about there.
+		 */
+		private int existsAt(final int i) {
+			final var field = tokens.get(i + 2);
+			if (field.kind == TERM) {
+				final var bare = field.image.replace("\\", "");
+				if (bare.endsWith(RAW) && isUnderJsonParameters(bare)) {
+					replace(field.beginColumn, field.endColumn, toValue(field.image));
+				}
+			}
+			return i + 3;
 		}
 
 		private void replace(final int from, final int to, final String text) {

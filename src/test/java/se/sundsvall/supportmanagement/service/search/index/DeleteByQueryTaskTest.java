@@ -255,4 +255,47 @@ class DeleteByQueryTaskTest {
 
 		assertThat(task(Duration.ofMinutes(1)).run(MAPPER.readTree("{}"), _ -> {})).isEqualTo(2);
 	}
+
+	@Test
+	void aClusterThatStopsAnsweringWhileAskedCancelsTheTask() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		when(openSearchMock.restClient()).thenReturn(restClientMock);
+		final var started = mock(Response.class);
+		final var startedEntity = mock(HttpEntity.class);
+		when(started.getEntity()).thenReturn(startedEntity);
+		when(startedEntity.getContent()).thenReturn(new ByteArrayInputStream(("{\"task\":\"" + TASK_ID + "\"}").getBytes(UTF_8)));
+		when(restClientMock.performRequest(any())).thenAnswer(invocation -> {
+			final Request request = invocation.getArgument(0);
+			requests.add(request);
+			if (request.getEndpoint().endsWith("_delete_by_query")) {
+				return started;
+			}
+			if ("GET".equals(request.getMethod())) {
+				throw new IOException("gone");
+			}
+			return mock(Response.class);
+		});
+		final var query = MAPPER.readTree("{}");
+		final var task = task(Duration.ofMinutes(1));
+
+		assertThrows(RuntimeException.class, () -> task.run(query, _ -> {}));
+
+		assertThat(requests.getLast().getMethod()).isEqualTo("POST");
+		assertThat(requests.getLast().getEndpoint()).isEqualTo("/_tasks/" + TASK_ID + "/_cancel");
+	}
+
+	@Test
+	void progressThatCannotBeWrittenCancelsTheTask() throws IOException {
+		when(openSearchMock.errandWriteIndex()).thenReturn("errand-write");
+		clusterAnswers("{\"task\":\"" + TASK_ID + "\"}", "{\"completed\":false}", "{}");
+		final var query = MAPPER.readTree("{}");
+		final var task = task(Duration.ofMinutes(1));
+
+		final var e = assertThrows(IllegalStateException.class, () -> task.run(query, _ -> {
+			throw new IllegalStateException("job table unreachable");
+		}));
+
+		assertThat(e).hasMessage("job table unreachable");
+		assertThat(requests.getLast().getEndpoint()).isEqualTo("/_tasks/" + TASK_ID + "/_cancel");
+	}
 }
