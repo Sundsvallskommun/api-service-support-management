@@ -5,7 +5,7 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "18.6"
+  version: "18.7"
 servers:
 - url: http://localhost:55502
   description: Generated server url
@@ -27976,6 +27976,15 @@ components:
           description: Hierarchical resource path of the label
           examples:
           - /access/keycard
+        displayNameChain:
+          type: array
+          description: "Display names of the label and its ancestors, from the root\
+            \ to the label itself"
+          examples:
+          - - Behörighet
+            - Nyckelkort
+          items:
+            type: string
     LabelMapping:
       type: object
       description: Mapping suggestion for a single namespace-bound label
@@ -28002,7 +28011,15 @@ components:
           - uuid-b
         matchReason:
           $ref: "#/components/schemas/MatchReason"
-          description: "Reason the target was suggested, or null if there is no suggestion"
+          description: "Reason the target was suggested, or null if no candidate matched.\
+            \ BEST_EFFORT without a suggestedTargetId means several candidates matched\
+            \ equally well"
+        matchCandidates:
+          type: array
+          description: "The best effort candidates, ranked with the best match first.\
+            \ Only present when matchReason is BEST_EFFORT"
+          items:
+            $ref: "#/components/schemas/LabelCandidate"
     LabelMappingGroup:
       type: object
       description: "Label mapping section: the selectable target labels shared by\
@@ -28047,12 +28064,15 @@ components:
       type: string
       description: "Reason a target was auto-suggested for a namespace-bound field:\
         \ NAME_EXACT (exact match on technical name), DISPLAY_NAME_EXACT (case-insensitive\
-        \ exact match on display name), RESOURCE_PATH_MATCH (match on hierarchical\
-        \ resource path, labels only)"
+        \ exact match on display name), RESOURCE_PATH_MATCH (labels only: exact match\
+        \ on the classification path, the CATEGORY and TYPE segments of the resource\
+        \ path), BEST_EFFORT (labels only: no exact match, the best ranked candidates\
+        \ on the classification path, see matchCandidates)"
       enum:
       - NAME_EXACT
       - DISPLAY_NAME_EXACT
       - RESOURCE_PATH_MATCH
+      - BEST_EFFORT
     MetadataOption:
       type: object
       description: A selectable metadata option identified by its technical name and

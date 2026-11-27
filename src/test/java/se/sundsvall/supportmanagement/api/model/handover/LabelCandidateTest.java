@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -28,16 +29,19 @@ class LabelCandidateTest {
 		final var id = "b82bd8ac-1507-4d9a-958d-369261eecc15";
 		final var displayName = "Nyckelkort";
 		final var resourcePath = "/access/keycard";
+		final var displayNameChain = List.of("Behörighet", "Nyckelkort");
 
 		final var bean = LabelCandidate.create()
 			.withId(id)
 			.withDisplayName(displayName)
-			.withResourcePath(resourcePath);
+			.withResourcePath(resourcePath)
+			.withDisplayNameChain(displayNameChain);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
 		assertThat(bean.getDisplayName()).isEqualTo(displayName);
 		assertThat(bean.getResourcePath()).isEqualTo(resourcePath);
+		assertThat(bean.getDisplayNameChain()).isEqualTo(displayNameChain);
 	}
 
 	@Test

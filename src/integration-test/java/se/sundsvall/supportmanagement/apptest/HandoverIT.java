@@ -375,4 +375,21 @@ class HandoverIT extends AbstractAppTest {
 		assertThat(sourceErrand.getStatus()).isEqualTo("STATUS-2");
 		assertThat(sourceErrand.getResolution()).isEqualTo("LEGACY");
 	}
+
+	/**
+	 * The classification labels of the target sit under a root of their own, which the source lacks. CATEGORY-1/TYPE-1 is
+	 * still an exact match on the classification path, while TYPE-2 has several equally good best effort candidates and is
+	 * therefore not suggested.
+	 */
+	@Test
+	void test20_previewHandoverSuggestsLabelsOnTheClassificationPath() {
+		setupCall()
+			.withServicePath(PATH + "/aa980000-0000-0000-0000-0000000000e1" + PREVIEW)
+			.withHttpMethod(POST)
+			.withRequest(REQUEST_FILE)
+			.withExpectedResponseStatus(OK)
+			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE))
+			.withExpectedResponse(RESPONSE_FILE)
+			.sendRequestAndVerifyResponse();
+	}
 }

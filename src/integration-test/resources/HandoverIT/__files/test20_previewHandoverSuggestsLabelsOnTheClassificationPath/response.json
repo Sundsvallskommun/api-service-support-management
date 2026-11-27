@@ -1,0 +1,179 @@
+{
+	"directlyCopyable": {
+		"title": "Labels to hand over",
+		"priority": "LOW",
+		"stakeholderCount": 0,
+		"externalTagCount": 0,
+		"attachmentCount": 0
+	},
+	"mappingRequired": {
+		"status": {
+			"source": {
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			},
+			"candidates": []
+		},
+		"classification": {
+			"source": {
+				"category": "CATEGORY-1",
+				"type": "TYPE-1"
+			},
+			"candidates": {}
+		},
+		"labels": {
+			"candidates": [
+				{
+					"id": "aa980000-0000-0000-0000-000000000001",
+					"displayName": "Rot",
+					"resourcePath": "ROOT-HANDOVER",
+					"displayNameChain": [
+						"Rot"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000002",
+					"displayName": "Kategori 1",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-1",
+					"displayNameChain": [
+						"Rot",
+						"Kategori 1"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000003",
+					"displayName": "Typ 1",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-1/TYPE-1",
+					"displayNameChain": [
+						"Rot",
+						"Kategori 1",
+						"Typ 1"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000004",
+					"displayName": "Kategori A",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-A",
+					"displayNameChain": [
+						"Rot",
+						"Kategori A"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000005",
+					"displayName": "Typ A2",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-A/TYPE-2",
+					"displayNameChain": [
+						"Rot",
+						"Kategori A",
+						"Typ A2"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000006",
+					"displayName": "Kategori B",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-B",
+					"displayNameChain": [
+						"Rot",
+						"Kategori B"
+					]
+				},
+				{
+					"id": "aa980000-0000-0000-0000-000000000007",
+					"displayName": "Typ B2",
+					"resourcePath": "ROOT-HANDOVER/CATEGORY-B/TYPE-2",
+					"displayNameChain": [
+						"Rot",
+						"Kategori B",
+						"Typ B2"
+					]
+				}
+			],
+			"mappings": [
+				{
+					"sourceId": "a8fe832f-77a7-4906-9a97-ac5cbd73dbe7",
+					"sourceDisplayName": "CATEGORY-DISPLAY-NAME-1",
+					"sourceResourcePath": "CATEGORY-1",
+					"suggestedTargetId": "aa980000-0000-0000-0000-000000000002",
+					"matchReason": "RESOURCE_PATH_MATCH",
+					"matchCandidates": []
+				},
+				{
+					"sourceId": "cd99569f-6b6d-4d7a-b04c-9ae528be8258",
+					"sourceDisplayName": "TYPE-DISPLAY-NAME-1",
+					"sourceResourcePath": "CATEGORY-1/TYPE-1",
+					"suggestedTargetId": "aa980000-0000-0000-0000-000000000003",
+					"matchReason": "RESOURCE_PATH_MATCH",
+					"matchCandidates": []
+				},
+				{
+					"sourceId": "3273e374-855c-4525-b8fc-aeaa710b83c5",
+					"sourceDisplayName": "TYPE-DISPLAY-NAME-2",
+					"sourceResourcePath": "CATEGORY-1/TYPE-2",
+					"matchReason": "BEST_EFFORT",
+					"matchCandidates": [
+						{
+							"id": "aa980000-0000-0000-0000-000000000002",
+							"displayName": "Kategori 1",
+							"resourcePath": "ROOT-HANDOVER/CATEGORY-1",
+							"displayNameChain": [
+								"Rot",
+								"Kategori 1"
+							]
+						},
+						{
+							"id": "aa980000-0000-0000-0000-000000000005",
+							"displayName": "Typ A2",
+							"resourcePath": "ROOT-HANDOVER/CATEGORY-A/TYPE-2",
+							"displayNameChain": [
+								"Rot",
+								"Kategori A",
+								"Typ A2"
+							]
+						},
+						{
+							"id": "aa980000-0000-0000-0000-000000000007",
+							"displayName": "Typ B2",
+							"resourcePath": "ROOT-HANDOVER/CATEGORY-B/TYPE-2",
+							"displayNameChain": [
+								"Rot",
+								"Kategori B",
+								"Typ B2"
+							]
+						}
+					]
+				}
+			]
+		},
+		"contactReason": {
+			"candidates": []
+		}
+	},
+	"sourceHandling": {
+		"statusCandidates": [
+			{
+				"name": "STATUS-2",
+				"displayName": "Status 2"
+			},
+			{
+				"name": "STATUS-3",
+				"displayName": "Status 3"
+			},
+			{
+				"name": "STATUS-1",
+				"displayName": "Status 1"
+			}
+		]
+	},
+	"notCopyable": [
+		{
+			"field": "phases",
+			"reason": "Phase history is source-specific"
+		},
+		{
+			"field": "activePhaseId",
+			"reason": "Phase IDs differ per namespace"
+		}
+	],
+	"warnings": []
+}

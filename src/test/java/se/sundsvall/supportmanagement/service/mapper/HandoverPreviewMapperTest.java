@@ -6,6 +6,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.handover.LabelCandidate;
 import se.sundsvall.supportmanagement.api.model.handover.LabelMapping;
+import se.sundsvall.supportmanagement.api.model.handover.LabelMappingGroup;
 import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
 import se.sundsvall.supportmanagement.integration.db.model.AttachmentEntity;
@@ -21,6 +22,7 @@ import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.Assertions.tuple;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toClassificationCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toClassificationMapping;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toContactReasonMapping;
@@ -154,12 +156,14 @@ class HandoverPreviewMapperTest {
 	}
 
 	@Test
-	void toLabelCandidatesMapsIdDisplayNameAndResourcePath() {
+	void toLabelCandidatesMapsIdDisplayNameResourcePathAndDisplayNameChain() {
 		final var candidates = toLabelCandidates(List.of(
-			MetadataLabelEntity.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard")));
+			label("uuid-a", "CLASS", "Behörighet", "ACCESS"),
+			label("uuid-b", "CATEGORY", "Nyckelkort", "ACCESS/KEYCARD")));
 
 		assertThat(candidates).containsExactly(
-			LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
+			LabelCandidate.create().withId("uuid-a").withDisplayName("Behörighet").withResourcePath("ACCESS").withDisplayNameChain(List.of("Behörighet")),
+			LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("ACCESS/KEYCARD").withDisplayNameChain(List.of("Behörighet", "Nyckelkort")));
 	}
 
 	@Test
@@ -304,45 +308,117 @@ class HandoverPreviewMapperTest {
 	}
 
 	@Test
-	void toLabelMappingGroupBuildsOneEntryPerSourceLabelWithSharedCandidates() {
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
-		final var errand = ErrandEntity.create().withLabels(List.of(
-			ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a")));
+	void toLabelMappingGroupKeepsEveryTargetLabelInThePoolButMapsOnlyClassificationLabels() {
+		final var sourceLabels = List.of(
+			label("s-cat", "CATEGORY", "Faktura", "FAKTURA"),
+			label("s-type", "TYPE", "Annat", "FAKTURA/ANNAT"),
+			label("s-sub", "SUBTYPE", "Papper", "FAKTURA/ANNAT/PAPPER"),
+			label("s-other", "PURPOSE", "Annat syfte", "OTHER"));
+		final var targetLabels = List.of(
+			label("t-root", "CLASS", "Rot", "ROOT"),
+			label("t-cat", "CATEGORY", "Faktura", "ROOT/FAKTURA"),
+			label("t-type", "TYPE", "Annat", "ROOT/FAKTURA/ANNAT"),
+			label("t-sub", "SUBTYPE", "Papper", "ROOT/FAKTURA/ANNAT/PAPPER"),
+			label("t-other", "PURPOSE", "Annat syfte", "OTHER"));
+		final var errand = errandWithLabels(sourceLabels);
 
-		final var group = toLabelMappingGroup(errand, candidates);
+		final var group = toLabelMappingGroup(errand, targetLabels);
 
-		assertThat(group.getCandidates()).isEqualTo(candidates);
-		assertThat(group.getMappings()).hasSize(1);
-		assertThat(group.getMappings().getFirst().getSourceId()).isEqualTo("uuid-a");
-		// The lazy metadataLabel association is only populated by Hibernate on load, so it is null for a hand-built entity
-		assertThat(group.getMappings().getFirst().getSourceDisplayName()).isNull();
-		assertThat(group.getMappings().getFirst().getSourceResourcePath()).isNull();
+		// The pool holds every target label, the root and the labels for other purposes included
+		assertThat(group.getCandidates()).extracting(LabelCandidate::getId)
+			.containsExactly("t-other", "t-root", "t-cat", "t-type", "t-sub");
+		assertThat(group.getCandidates()).filteredOn(candidate -> "t-type".equals(candidate.getId()))
+			.extracting(LabelCandidate::getDisplayNameChain)
+			.containsExactly(List.of("Rot", "Faktura", "Annat"));
+
+		// Only the source labels classifying the errand are mapped, ordered by resource path
+		assertThat(group.getMappings())
+			.extracting(LabelMapping::getSourceId, LabelMapping::getSourceDisplayName, LabelMapping::getSourceResourcePath, LabelMapping::getSuggestedTargetId, LabelMapping::getMatchReason)
+			.containsExactly(
+				tuple("s-cat", "Faktura", "FAKTURA", "t-cat", MatchReason.RESOURCE_PATH_MATCH),
+				tuple("s-type", "Annat", "FAKTURA/ANNAT", "t-type", MatchReason.RESOURCE_PATH_MATCH));
+		assertThat(group.getMappings()).allSatisfy(mapping -> assertThat(mapping.getMatchCandidates()).isEmpty());
+	}
+
+	@Test
+	void toLabelMappingGroupReturnsRankedBestEffortCandidatesWithoutSuggestionWhenTied() {
+		final var sourceLabels = List.of(
+			label("s-cat", "CATEGORY", "Faktura", "FAKTURA"),
+			label("s-type", "TYPE", "Annat", "FAKTURA/ANNAT"));
+		final var targetLabels = List.of(
+			label("t-it", "CATEGORY", "IT", "IT"),
+			label("t-it-annat", "TYPE", "Övrigt", "IT/ANNAT"),
+			label("t-eko", "CATEGORY", "Ekonomi", "EKONOMI"),
+			label("t-eko-annat", "TYPE", "Övrigt", "EKONOMI/ANNAT"));
+		final var errand = errandWithLabels(sourceLabels);
+
+		final var mapping = mappingOf(toLabelMappingGroup(errand, targetLabels), "s-type");
+
+		assertThat(mapping.getSuggestedTargetId()).isNull();
+		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.BEST_EFFORT);
+		assertThat(mapping.getMatchCandidates()).containsExactly(
+			LabelCandidate.create().withId("t-eko-annat").withDisplayName("Övrigt").withResourcePath("EKONOMI/ANNAT").withDisplayNameChain(List.of("Ekonomi", "Övrigt")),
+			LabelCandidate.create().withId("t-it-annat").withDisplayName("Övrigt").withResourcePath("IT/ANNAT").withDisplayNameChain(List.of("IT", "Övrigt")));
+	}
+
+	@Test
+	void toLabelMappingGroupSuggestsSingleBestEffortCandidate() {
+		final var sourceLabels = List.of(
+			label("s-cat", "CATEGORY", "Faktura", "FAKTURA"),
+			label("s-type", "TYPE", "Annat", "FAKTURA/ANNAT"));
+		final var targetLabels = List.of(
+			label("t-cat", "CATEGORY", "Faktura", "FAKTURA"),
+			label("t-type", "TYPE", "Påminnelse", "FAKTURA/PAMINNELSE"));
+		final var errand = errandWithLabels(sourceLabels);
+
+		final var mapping = mappingOf(toLabelMappingGroup(errand, targetLabels), "s-type");
+
+		assertThat(mapping.getSuggestedTargetId()).isEqualTo("t-cat");
+		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.BEST_EFFORT);
+		assertThat(mapping.getMatchCandidates()).extracting(LabelCandidate::getId).containsExactly("t-cat");
+	}
+
+	@Test
+	void toLabelMappingGroupLeavesSuggestionNullWhenNothingMatches() {
+		final var sourceLabels = List.of(label("s-cat", "CATEGORY", "Faktura", "FAKTURA"));
+		final var targetLabels = List.of(label("t-cat", "CATEGORY", "IT", "IT"));
+
+		final var mapping = toLabelMappingGroup(errandWithLabels(sourceLabels), targetLabels).getMappings().getFirst();
+
+		assertThat(mapping.getSuggestedTargetId()).isNull();
+		assertThat(mapping.getMatchReason()).isNull();
+		assertThat(mapping.getMatchCandidates()).isEmpty();
+	}
+
+	@Test
+	void toLabelMappingGroupDoesNotMatchDeprecatedOrOtherTargetLabels() {
+		// The deprecated label is left out everywhere; the label for another purpose stays in the pool but is never matched
+		final var sourceLabels = List.of(label("s-cat", "CATEGORY", "Faktura", "FAKTURA"));
+		final var targetLabels = List.of(
+			label("t-deprecated", "CATEGORY", "Faktura", "FAKTURA").withDeprecated(true),
+			label("t-other", "PURPOSE", "Faktura", "OTHER/FAKTURA"));
+
+		final var group = toLabelMappingGroup(errandWithLabels(sourceLabels), targetLabels);
+
+		assertThat(group.getCandidates()).extracting(LabelCandidate::getId).containsExactly("t-other");
 		assertThat(group.getMappings().getFirst().getSuggestedTargetId()).isNull();
 		assertThat(group.getMappings().getFirst().getMatchReason()).isNull();
 	}
 
 	@Test
-	void toLabelMappingGroupResolvesDisplayNameAndResourcePathFromMetadataLabel() {
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a");
-		// The metadataLabel association has no setter (populated by Hibernate on load); set it reflectively to exercise the
-		// display name / resource path resolution branch.
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId("uuid-a").withDisplayName("Passerkort").withResourcePath("/access/passcard"));
-		final var errand = ErrandEntity.create().withLabels(List.of(label));
+	void toLabelMappingGroupLeavesOutSourceLabelsWithoutMetadataLabel() {
+		// The lazy metadataLabel association is only populated by Hibernate on load, so its classification is unknown here
+		final var errand = ErrandEntity.create().withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a")));
 
-		final var group = toLabelMappingGroup(errand, candidates);
+		final var group = toLabelMappingGroup(errand, List.of(label("t-cat", "CATEGORY", "Faktura", "FAKTURA")));
 
-		assertThat(group.getCandidates()).isEqualTo(candidates);
-		assertThat(group.getMappings()).hasSize(1);
-		assertThat(group.getMappings().getFirst().getSourceId()).isEqualTo("uuid-a");
-		assertThat(group.getMappings().getFirst().getSourceDisplayName()).isEqualTo("Passerkort");
-		assertThat(group.getMappings().getFirst().getSourceResourcePath()).isEqualTo("/access/passcard");
+		assertThat(group.getCandidates()).hasSize(1);
+		assertThat(group.getMappings()).isEmpty();
 	}
 
 	@Test
 	void toLabelMappingGroupWithNullLabels() {
-		// The group is always present; with no source labels and no candidates both inner lists are empty
+		// The group is always present; with no source labels and no target labels both inner lists are empty
 		final var group = toLabelMappingGroup(ErrandEntity.create(), null);
 
 		assertThat(group.getCandidates()).isEmpty();
@@ -350,205 +426,69 @@ class HandoverPreviewMapperTest {
 	}
 
 	@Test
-	void toLabelMappingGroupSuggestsResourcePathMatchOverDisplayNameMatch() {
-		// RESOURCE_PATH_MATCH has priority: the source resource path matches the second candidate even though the first
-		// candidate shares the source display name
-		final var candidates = List.of(
-			LabelCandidate.create().withId("uuid-display").withDisplayName("Nyckelkort").withResourcePath("/access/other"),
-			LabelCandidate.create().withId("uuid-path").withDisplayName("Passerkort").withResourcePath("/access/keycard"));
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a");
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId("uuid-a").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
-		final var errand = ErrandEntity.create().withLabels(List.of(label));
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-path");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-	}
-
-	@Test
-	void toLabelMappingGroupSuggestsCaseInsensitiveDisplayNameMatchWhenResourcePathDiffers() {
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a");
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId("uuid-a").withDisplayName("nyckelkort").withResourcePath("/access/passcard"));
-		final var errand = ErrandEntity.create().withLabels(List.of(label));
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-b");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.DISPLAY_NAME_EXACT);
-	}
-
-	@Test
-	void toLabelMappingGroupLeavesSuggestionNullWhenNeitherPathNorDisplayNameMatches() {
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard"));
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a");
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId("uuid-a").withDisplayName("Passerkort").withResourcePath("/access/passcard"));
-		final var errand = ErrandEntity.create().withLabels(List.of(label));
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isNull();
-		assertThat(mapping.getMatchReason()).isNull();
-	}
-
-	@Test
-	void toLabelMappingGroupSuggestsAncestorResourcePathWhenExactPathMissing() {
-		// The exact source path is absent from the target, but its parent path exists and is suggested
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-parent").withDisplayName("Typ").withResourcePath("CATEGORY-1/TYPE-2"));
-		final var errand = errandWithSourceLabel("Undertyp", "CATEGORY-1/TYPE-2/SUBTYPE-3");
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-parent");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-	}
-
-	@Test
-	void toLabelMappingGroupSuggestsDeepestAncestorResourcePath() {
-		// Both an ancestor and a grandparent exist in the target; the deepest (closest) ancestor wins
-		final var candidates = List.of(
-			LabelCandidate.create().withId("uuid-root").withDisplayName("Kategori").withResourcePath("CATEGORY-1"),
-			LabelCandidate.create().withId("uuid-parent").withDisplayName("Typ").withResourcePath("CATEGORY-1/TYPE-2"));
-		final var errand = errandWithSourceLabel("Undertyp", "CATEGORY-1/TYPE-2/SUBTYPE-3");
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-parent");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-	}
-
-	@Test
-	void toLabelMappingGroupPrefersExactResourcePathOverAncestor() {
-		// An exact full-path match takes priority over the ancestor fallback
-		final var candidates = List.of(
-			LabelCandidate.create().withId("uuid-parent").withDisplayName("Typ").withResourcePath("CATEGORY-1/TYPE-2"),
-			LabelCandidate.create().withId("uuid-exact").withDisplayName("Undertyp").withResourcePath("CATEGORY-1/TYPE-2/SUBTYPE-3"));
-		final var errand = errandWithSourceLabel("Undertyp", "CATEGORY-1/TYPE-2/SUBTYPE-3");
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-exact");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-	}
-
-	@Test
-	void toLabelMappingGroupPrefersAncestorResourcePathMatchOverDisplayNameMatch() {
-		// An ancestor resource-path match outranks an exact display-name match on an unrelated candidate
-		final var candidates = List.of(
-			LabelCandidate.create().withId("uuid-displayname").withDisplayName("Undertyp").withResourcePath("OTHER/PATH"),
-			LabelCandidate.create().withId("uuid-parent").withDisplayName("Typ").withResourcePath("CATEGORY-1/TYPE-2"));
-		final var errand = errandWithSourceLabel("Undertyp", "CATEGORY-1/TYPE-2/SUBTYPE-3");
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-parent");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-	}
-
-	@Test
-	void toLabelMappingGroupDoesNotMatchSourceAncestorAgainstUnrelatedDeeperCandidate() {
-		// A candidate deeper than (a descendant of) the source path must NOT match; only ancestors-or-self of the source are
-		// considered
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-child").withDisplayName("Undertyp").withResourcePath("CATEGORY-1/TYPE-2/SUBTYPE-3"));
-		final var errand = errandWithSourceLabel("Typ", "CATEGORY-1/TYPE-2");
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSuggestedTargetId()).isNull();
-		assertThat(mapping.getMatchReason()).isNull();
-	}
-
-	@Test
-	void toLabelMappingGroupSuggestsDisplayNameMatchWhenSourceResourcePathIsNull() {
-		// With no source resource path the hierarchical match is skipped entirely and the display-name fallback is used
-		final var candidates = List.of(LabelCandidate.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("CATEGORY-1"));
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a");
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId("uuid-a").withDisplayName("Nyckelkort"));
-		final var errand = ErrandEntity.create().withLabels(List.of(label));
-
-		final var mapping = toLabelMappingGroup(errand, candidates).getMappings().getFirst();
-
-		assertThat(mapping.getSourceResourcePath()).isNull();
-		assertThat(mapping.getSuggestedTargetId()).isEqualTo("uuid-b");
-		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.DISPLAY_NAME_EXACT);
-	}
-
-	@Test
-	void toLabelMappingGroupMapsEachSourceLabelIndependentlyWithSharedCandidates() {
-		// An errand with several labels: one matches by resource path, one by display name, one not at all - each is mapped
-		// independently while sharing the same candidate list
-		final var candidates = List.of(
-			LabelCandidate.create().withId("uuid-path").withDisplayName("Typ").withResourcePath("CATEGORY-1/TYPE-2"),
-			LabelCandidate.create().withId("uuid-displayname").withDisplayName("Nyckelkort").withResourcePath("OTHER/PATH"));
-		final var errand = ErrandEntity.create().withLabels(List.of(
-			sourceLabel("src-path", "Typ", "CATEGORY-1/TYPE-2"),
-			sourceLabel("src-displayname", "nyckelkort", "NO/MATCH"),
-			sourceLabel("src-none", "Okänd", "NONE")));
-
-		final var group = toLabelMappingGroup(errand, candidates);
-		final var mappings = group.getMappings();
-
-		// The candidate pool lives once on the group, shared by every mapping
-		assertThat(group.getCandidates()).isEqualTo(candidates);
-		assertThat(mappings).hasSize(3);
-
-		assertThat(mappings.get(0).getSourceId()).isEqualTo("src-path");
-		assertThat(mappings.get(0).getSuggestedTargetId()).isEqualTo("uuid-path");
-		assertThat(mappings.get(0).getMatchReason()).isEqualTo(MatchReason.RESOURCE_PATH_MATCH);
-
-		assertThat(mappings.get(1).getSourceId()).isEqualTo("src-displayname");
-		assertThat(mappings.get(1).getSuggestedTargetId()).isEqualTo("uuid-displayname");
-		assertThat(mappings.get(1).getMatchReason()).isEqualTo(MatchReason.DISPLAY_NAME_EXACT);
-
-		assertThat(mappings.get(2).getSourceId()).isEqualTo("src-none");
-		assertThat(mappings.get(2).getSuggestedTargetId()).isNull();
-		assertThat(mappings.get(2).getMatchReason()).isNull();
-	}
-
-	@Test
 	void toLabelMappingGroupSortsCandidatesHierarchicallyAndCaseInsensitively() {
 		// "Fruit" (a parent, matched case-insensitively) sorts before its child "fruit/apple", which in turn precedes the
 		// unrelated sibling "fruit-basket" (a plain lexicographic sort would place "fruit-basket" before "fruit/apple" since
 		// '-' < '/'); the unset path sorts last
-		final var candidates = List.of(
-			LabelCandidate.create().withId("basket").withResourcePath("fruit-basket"),
-			LabelCandidate.create().withId("apple").withResourcePath("fruit/apple"),
-			LabelCandidate.create().withId("fruit").withResourcePath("Fruit"),
-			LabelCandidate.create().withId("none").withResourcePath(null));
+		final var targetLabels = List.of(
+			MetadataLabelEntity.create().withId("basket").withResourcePath("fruit-basket"),
+			MetadataLabelEntity.create().withId("apple").withResourcePath("fruit/apple"),
+			MetadataLabelEntity.create().withId("fruit").withResourcePath("Fruit"),
+			MetadataLabelEntity.create().withId("none"));
 
-		final var sorted = toLabelMappingGroup(ErrandEntity.create(), candidates).getCandidates();
+		final var sorted = toLabelMappingGroup(ErrandEntity.create(), targetLabels).getCandidates();
 
 		assertThat(sorted).extracting(LabelCandidate::getResourcePath)
 			.containsExactly("Fruit", "fruit/apple", "fruit-basket", null);
 	}
 
 	@Test
-	void toLabelMappingGroupSortsMappingsByResourcePathNullsLast() {
-		// Mappings are ordered by source resource path; the entry whose lazy metadataLabel is unset (null path) sorts last
-		final var errand = ErrandEntity.create().withLabels(List.of(
-			sourceLabel("b", "Beta", "CATEGORY-2"),
-			ErrandLabelEmbeddable.create().withMetadataLabelId("no-path"),
-			sourceLabel("a", "Alpha", "CATEGORY-1")));
+	void toLabelMappingGroupSortsMappingsByResourcePath() {
+		final var sourceLabels = List.of(
+			label("b", "CATEGORY", "Beta", "CATEGORY-2"),
+			label("a", "CATEGORY", "Alpha", "CATEGORY-1"));
 
-		final var mappings = toLabelMappingGroup(errand, List.of()).getMappings();
+		final var mappings = toLabelMappingGroup(errandWithLabels(sourceLabels), List.of()).getMappings();
 
-		assertThat(mappings).extracting(LabelMapping::getSourceId).containsExactly("a", "b", "no-path");
+		assertThat(mappings).extracting(LabelMapping::getSourceId).containsExactly("a", "b");
 	}
 
-	private static ErrandEntity errandWithSourceLabel(final String sourceDisplayName, final String sourceResourcePath) {
-		return ErrandEntity.create().withLabels(List.of(sourceLabel("uuid-a", sourceDisplayName, sourceResourcePath)));
+	private static MetadataLabelEntity label(final String id, final String classification, final String displayName, final String resourcePath) {
+		return MetadataLabelEntity.create()
+			.withId(id)
+			.withClassification(classification)
+			.withDisplayName(displayName)
+			.withResourceName(resourcePath.substring(resourcePath.lastIndexOf('/') + 1))
+			.withResourcePath(resourcePath);
 	}
 
-	private static ErrandLabelEmbeddable sourceLabel(final String id, final String displayName, final String resourcePath) {
-		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId(id);
+	@Test
+	void toLabelMappingGroupResolvesTheClassificationPathAmongTheLabelsOfTheErrand() {
+		// The errand carries only its type, not the category above it: the classification path of the type is then the type
+		// alone, which is no exact match on FAKTURA/ANNAT but a best effort one
+		final var targetLabels = List.of(
+			label("t-cat", "CATEGORY", "Faktura", "FAKTURA"),
+			label("t-type", "TYPE", "Annat", "FAKTURA/ANNAT"));
+		final var errand = errandWithLabels(List.of(label("s-type", "TYPE", "Annat", "FAKTURA/ANNAT")));
+
+		final var mapping = mappingOf(toLabelMappingGroup(errand, targetLabels), "s-type");
+
+		assertThat(mapping.getSuggestedTargetId()).isEqualTo("t-type");
+		assertThat(mapping.getMatchReason()).isEqualTo(MatchReason.BEST_EFFORT);
+	}
+
+	private static LabelMapping mappingOf(final LabelMappingGroup group, final String sourceId) {
+		return group.getMappings().stream().filter(mapping -> sourceId.equals(mapping.getSourceId())).findFirst().orElseThrow();
+	}
+
+	private static ErrandEntity errandWithLabels(final List<MetadataLabelEntity> labels) {
+		return ErrandEntity.create().withLabels(labels.stream().map(HandoverPreviewMapperTest::sourceLabel).toList());
+	}
+
+	private static ErrandLabelEmbeddable sourceLabel(final MetadataLabelEntity metadataLabel) {
+		final var label = ErrandLabelEmbeddable.create().withMetadataLabelId(metadataLabel.getId());
 		// The metadataLabel association has no setter (populated by Hibernate on load); set it reflectively
-		ReflectionTestUtils.setField(label, "metadataLabel",
-			MetadataLabelEntity.create().withId(id).withDisplayName(displayName).withResourcePath(resourcePath));
+		ReflectionTestUtils.setField(label, "metadataLabel", metadataLabel);
 		return label;
 	}
 

@@ -8,10 +8,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
 import se.sundsvall.supportmanagement.api.model.handover.HandoverPreviewRequest;
+import se.sundsvall.supportmanagement.api.model.handover.LabelCandidate;
+import se.sundsvall.supportmanagement.api.model.handover.LabelMapping;
 import se.sundsvall.supportmanagement.api.model.handover.MatchReason;
 import se.sundsvall.supportmanagement.api.model.handover.MetadataOption;
 import se.sundsvall.supportmanagement.api.model.handover.Warning;
@@ -39,6 +42,7 @@ import static generated.se.sundsvall.accessmapper.Access.AccessLevelEnum.R;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -60,6 +64,8 @@ class HandoverPreviewServiceTest {
 	private static final String ERRAND_ID = randomUUID().toString();
 	private static final String TARGET_NAMESPACE = "OTHER_NAMESPACE";
 	private static final String TARGET_MUNICIPALITY_ID = "2262";
+	private static final MetadataLabelEntity SOURCE_CATEGORY_LABEL = label("uuid-c", "CATEGORY", "Behörighet", "ACCESS");
+	private static final MetadataLabelEntity SOURCE_TYPE_LABEL = label("uuid-a", "TYPE", "Nyckelkort", "ACCESS/KEYCARD");
 
 	@Mock
 	private AccessControlService accessControlServiceMock;
@@ -110,8 +116,12 @@ class HandoverPreviewServiceTest {
 				StatusEntity.create().withName("OLD").withDisplayName("Gammal").withDeprecated(true)));
 		when(categoryRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any()))
 			.thenReturn(List.of(CategoryEntity.create().withName("SUPPORT_CASE").withTypes(List.of(TypeEntity.create().withName("OTHER_ISSUES")))));
+		// Target labels: the classification labels sit under a root of their own
 		when(metadataLabelRepositoryMock.findByNamespaceAndMunicipalityId(TARGET_NAMESPACE, TARGET_MUNICIPALITY_ID))
-			.thenReturn(List.of(MetadataLabelEntity.create().withId("uuid-b").withDisplayName("Nyckelkort").withResourcePath("/access/keycard")));
+			.thenReturn(List.of(
+				label("uuid-root", "CLASS", "Rot", "ROOT"),
+				label("uuid-access", "CATEGORY", "Behörighet", "ROOT/ACCESS"),
+				label("uuid-b", "TYPE", "Nyckelkort", "ROOT/ACCESS/KEYCARD")));
 		when(contactReasonRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any()))
 			.thenReturn(List.of(ContactReasonEntity.create().withReason("Bygglov")));
 		when(roleRepositoryMock.findAllByNamespaceAndMunicipalityId(eq(TARGET_NAMESPACE), eq(TARGET_MUNICIPALITY_ID), any()))
@@ -136,6 +146,22 @@ class HandoverPreviewServiceTest {
 		verify(statusRepositoryMock).findAllByNamespaceAndMunicipalityId(eq(NAMESPACE), eq(MUNICIPALITY_ID), any());
 	}
 
+	private static MetadataLabelEntity label(final String id, final String classification, final String displayName, final String resourcePath) {
+		return MetadataLabelEntity.create()
+			.withId(id)
+			.withClassification(classification)
+			.withDisplayName(displayName)
+			.withResourceName(resourcePath.substring(resourcePath.lastIndexOf('/') + 1))
+			.withResourcePath(resourcePath);
+	}
+
+	private static ErrandLabelEmbeddable errandLabel(final MetadataLabelEntity metadataLabel) {
+		final var errandLabel = ErrandLabelEmbeddable.create().withMetadataLabelId(metadataLabel.getId());
+		// The metadataLabel association has no setter (populated by Hibernate on load); set it reflectively
+		ReflectionTestUtils.setField(errandLabel, "metadataLabel", metadataLabel);
+		return errandLabel;
+	}
+
 	private void verifyNoMoreOnAllMocks() {
 		verifyNoMoreInteractions(accessControlServiceMock, errandsRepositoryMock, namespaceConfigRepositoryMock, statusRepositoryMock, categoryRepositoryMock,
 			metadataLabelRepositoryMock, contactReasonRepositoryMock, roleRepositoryMock, jsonSchemaClientMock);
@@ -150,7 +176,7 @@ class HandoverPreviewServiceTest {
 			.withType("OTHER_ISSUES")
 			.withStakeholders(List.of(StakeholderEntity.create().withRole("EXTERNAL_REPORTER")))
 			.withContactReason(ContactReasonEntity.create().withReason("Bygglov"))
-			.withLabels(List.of(ErrandLabelEmbeddable.create().withMetadataLabelId("uuid-a")))
+			.withLabels(List.of(errandLabel(SOURCE_TYPE_LABEL), errandLabel(SOURCE_CATEGORY_LABEL)))
 			.withJsonParameters(jsonParameters);
 	}
 
@@ -251,12 +277,15 @@ class HandoverPreviewServiceTest {
 		assertThat(result.getMappingRequired().getClassification().getSuggestedCategory()).isEqualTo("SUPPORT_CASE");
 		assertThat(result.getMappingRequired().getClassification().getSuggestedType()).isEqualTo("OTHER_ISSUES");
 
-		// mappingRequired - labels (no suggestion: the lazy metadataLabel association is unset on the hand-built errand)
-		assertThat(result.getMappingRequired().getLabels().getCandidates()).hasSize(1);
-		assertThat(result.getMappingRequired().getLabels().getMappings()).hasSize(1);
-		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getSourceId()).isEqualTo("uuid-a");
-		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getSuggestedTargetId()).isNull();
-		assertThat(result.getMappingRequired().getLabels().getMappings().getFirst().getMatchReason()).isNull();
+		// mappingRequired - labels (exact matches on the classification paths ACCESS and ACCESS/KEYCARD, resolved among the
+		// labels of the errand, although only the target has a root)
+		assertThat(result.getMappingRequired().getLabels().getCandidates()).extracting(LabelCandidate::getId).containsExactly("uuid-root", "uuid-access", "uuid-b");
+		assertThat(result.getMappingRequired().getLabels().getMappings())
+			.extracting(LabelMapping::getSourceId, LabelMapping::getSuggestedTargetId, LabelMapping::getMatchReason)
+			.containsExactly(
+				tuple("uuid-c", "uuid-access", MatchReason.RESOURCE_PATH_MATCH),
+				tuple("uuid-a", "uuid-b", MatchReason.RESOURCE_PATH_MATCH));
+		assertThat(result.getMappingRequired().getLabels().getMappings()).allSatisfy(mapping -> assertThat(mapping.getMatchCandidates()).isEmpty());
 
 		// mappingRequired - contactReason (suggested via exact match)
 		assertThat(result.getMappingRequired().getContactReason().getSource()).isEqualTo("Bygglov");

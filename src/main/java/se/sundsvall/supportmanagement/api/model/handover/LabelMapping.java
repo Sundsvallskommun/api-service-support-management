@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Objects;
 
 @Schema(description = "Mapping suggestion for a single namespace-bound label")
@@ -18,8 +19,11 @@ public class LabelMapping {
 	@Schema(description = "Auto-suggested target label id, or null if no match was found", examples = "uuid-b")
 	private String suggestedTargetId;
 
-	@Schema(description = "Reason the target was suggested, or null if there is no suggestion")
+	@Schema(description = "Reason the target was suggested, or null if no candidate matched. BEST_EFFORT without a suggestedTargetId means several candidates matched equally well")
 	private MatchReason matchReason;
+
+	@Schema(description = "The best effort candidates, ranked with the best match first. Only present when matchReason is BEST_EFFORT")
+	private List<LabelCandidate> matchCandidates;
 
 	public static LabelMapping create() {
 		return new LabelMapping();
@@ -90,9 +94,22 @@ public class LabelMapping {
 		return this;
 	}
 
+	public List<LabelCandidate> getMatchCandidates() {
+		return matchCandidates;
+	}
+
+	public void setMatchCandidates(final List<LabelCandidate> matchCandidates) {
+		this.matchCandidates = matchCandidates;
+	}
+
+	public LabelMapping withMatchCandidates(final List<LabelCandidate> matchCandidates) {
+		this.matchCandidates = matchCandidates;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(sourceId, sourceDisplayName, sourceResourcePath, suggestedTargetId, matchReason);
+		return Objects.hash(sourceId, sourceDisplayName, sourceResourcePath, suggestedTargetId, matchReason, matchCandidates);
 	}
 
 	@Override
@@ -105,12 +122,12 @@ public class LabelMapping {
 		}
 		return Objects.equals(sourceId, other.sourceId) && Objects.equals(sourceDisplayName, other.sourceDisplayName)
 			&& Objects.equals(sourceResourcePath, other.sourceResourcePath) && Objects.equals(suggestedTargetId, other.suggestedTargetId)
-			&& matchReason == other.matchReason;
+			&& matchReason == other.matchReason && Objects.equals(matchCandidates, other.matchCandidates);
 	}
 
 	@Override
 	public String toString() {
 		return "LabelMapping [sourceId=" + sourceId + ", sourceDisplayName=" + sourceDisplayName + ", sourceResourcePath=" + sourceResourcePath
-			+ ", suggestedTargetId=" + suggestedTargetId + ", matchReason=" + matchReason + "]";
+			+ ", suggestedTargetId=" + suggestedTargetId + ", matchReason=" + matchReason + ", matchCandidates=" + matchCandidates + "]";
 	}
 }

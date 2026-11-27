@@ -39,7 +39,6 @@ import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMappe
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toClassificationMapping;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toContactReasonMapping;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toDirectlyCopyable;
-import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelCandidates;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toLabelMappingGroup;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toNotCopyable;
 import static se.sundsvall.supportmanagement.service.mapper.HandoverPreviewMapper.toSourceHandling;
@@ -146,7 +145,7 @@ public class HandoverPreviewService {
 		// Candidate lists are the selectable options configured in the target namespace
 		final var statusCandidates = toStatusCandidates(statusRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
 		final var classificationCandidates = toClassificationCandidates(categoryRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER));
-		final var labelCandidates = toLabelCandidates(metadataLabelRepository.findByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId));
+		final var targetLabels = metadataLabelRepository.findByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId);
 		final var targetContactReasons = contactReasonRepository.findAllByNamespaceAndMunicipalityId(targetNamespace, targetMunicipalityId, SORT_BY_SORT_ORDER);
 
 		final var sourceStatusDisplayName = resolveSourceStatusDisplayName(sourceStatuses, errand.getStatus());
@@ -154,7 +153,7 @@ public class HandoverPreviewService {
 		return MappingRequired.create()
 			.withStatus(toStatusMapping(errand, sourceStatusDisplayName, statusCandidates))
 			.withClassification(toClassificationMapping(errand, classificationCandidates))
-			.withLabels(toLabelMappingGroup(errand, labelCandidates))
+			.withLabels(toLabelMappingGroup(errand, targetLabels))
 			.withContactReason(toContactReasonMapping(errand, targetContactReasons));
 	}
 

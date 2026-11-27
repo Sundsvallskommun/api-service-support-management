@@ -1,9 +1,9 @@
 package se.sundsvall.supportmanagement.service.mapper;
 
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import se.sundsvall.supportmanagement.api.model.errand.Priority;
@@ -22,21 +22,26 @@ import se.sundsvall.supportmanagement.api.model.handover.StatusMapping;
 import se.sundsvall.supportmanagement.integration.db.model.CategoryEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ContactReasonEntity;
 import se.sundsvall.supportmanagement.integration.db.model.ErrandEntity;
+import se.sundsvall.supportmanagement.integration.db.model.ErrandLabelEmbeddable;
 import se.sundsvall.supportmanagement.integration.db.model.MetadataLabelEntity;
 import se.sundsvall.supportmanagement.integration.db.model.StatusEntity;
 import se.sundsvall.supportmanagement.integration.db.model.TypeEntity;
+import se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.MatchableCandidate;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
-import static java.util.Comparator.nullsLast;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static se.sundsvall.supportmanagement.api.model.handover.MatchReason.DISPLAY_NAME_EXACT;
 import static se.sundsvall.supportmanagement.api.model.handover.MatchReason.NAME_EXACT;
-import static se.sundsvall.supportmanagement.api.model.handover.MatchReason.RESOURCE_PATH_MATCH;
+import static se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.RESOURCE_PATH_COMPARATOR;
+import static se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.isClassificationLabel;
+import static se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.toClassificationPath;
+import static se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.toDisplayNameChain;
+import static se.sundsvall.supportmanagement.service.mapper.LabelSuggestionMatcher.toLabelsByPath;
 
 /**
  * Pure (side-effect free) mappers building the parts of a
@@ -47,15 +52,6 @@ import static se.sundsvall.supportmanagement.api.model.handover.MatchReason.RESO
  * </p>
  */
 public class HandoverPreviewMapper {
-
-	// Mirrors MetadataLabelEntity#RESOURCE_PATH_SEPARATOR: resource paths are built as "root/child/grandchild" (no leading
-	// separator), so ancestor paths are obtained by dropping the deepest segment.
-	private static final String RESOURCE_PATH_SEPARATOR = "/";
-
-	// Orders resource paths hierarchically: segment by segment and case-insensitively, so a parent path always precedes its
-	// children and a child never sorts after an unrelated sibling (a plain lexicographic sort would allow that, since the
-	// separator '/' interleaves with other characters). Paths that are unset sort last.
-	private static final Comparator<String> RESOURCE_PATH_COMPARATOR = nullsLast(HandoverPreviewMapper::compareResourcePathsHierarchically);
 
 	private HandoverPreviewMapper() {}
 
@@ -117,14 +113,24 @@ public class HandoverPreviewMapper {
 				LinkedHashMap::new));
 	}
 
+	/**
+	 * Projects the non-deprecated labels of a namespace to label candidates, in the order given. The display name chain of
+	 * each candidate is looked up among the given labels.
+	 */
 	public static List<LabelCandidate> toLabelCandidates(final List<MetadataLabelEntity> labels) {
+		final var labelsByPath = toLabelsByPath(labels);
 		return ofNullable(labels).orElse(emptyList()).stream()
 			.filter(not(MetadataLabelEntity::isDeprecated))
-			.map(label -> LabelCandidate.create()
-				.withId(label.getId())
-				.withDisplayName(label.getDisplayName())
-				.withResourcePath(label.getResourcePath()))
+			.map(label -> toLabelCandidate(label, labelsByPath))
 			.toList();
+	}
+
+	private static LabelCandidate toLabelCandidate(final MetadataLabelEntity label, final Map<String, MetadataLabelEntity> labelsByPath) {
+		return LabelCandidate.create()
+			.withId(label.getId())
+			.withDisplayName(label.getDisplayName())
+			.withResourcePath(label.getResourcePath())
+			.withDisplayNameChain(toDisplayNameChain(label, labelsByPath));
 	}
 
 	// =================================================================
@@ -177,44 +183,83 @@ public class HandoverPreviewMapper {
 	}
 
 	/**
-	 * Builds the label mapping section: the shared candidate pool (the selectable target labels, always present) plus one
-	 * mapping per source label. The pool is present even when the source errand has no labels.
+	 * Builds the label mapping section: the shared candidate pool (every non-deprecated target label, always present) plus
+	 * one mapping per source label that classifies the errand, that is has classification {@code CATEGORY} or
+	 * {@code TYPE}. Source labels with any other classification serve other purposes and are left out. The pool is present
+	 * even when the source errand has no labels.
 	 *
 	 * <p>
-	 * Each mapping's auto-suggested target follows the priority order specific to labels: a match on the hierarchical
-	 * resource path (the full path first, then progressively shorter ancestor paths), then a case-insensitive exact match
-	 * on the display name. There is no name matching.
+	 * Each mapping's auto-suggested target is matched by {@link LabelSuggestionMatcher} against the target labels that
+	 * classify an errand: an exact match on the classification path is suggested with
+	 * {@link MatchReason#RESOURCE_PATH_MATCH}; otherwise the best effort candidates are returned ranked, with
+	 * {@link MatchReason#BEST_EFFORT}, and a single best one is suggested.
 	 * </p>
 	 *
 	 * <p>
-	 * Both the candidate pool and the mappings are ordered by resource path, segment by segment and case-insensitively (see
-	 * {@link #RESOURCE_PATH_COMPARATOR}), with unset paths last, whatever order the candidates are given in.
+	 * Both the candidate pool and the mappings are ordered by resource path, segment by segment and case-insensitively,
+	 * with unset paths last, whatever order the labels are given in.
 	 * </p>
+	 *
+	 * <p>
+	 * The classification path of a source label is resolved among the labels of the errand itself: an errand carries a
+	 * label on every level of its classification, the deepest one being the leaf.
+	 * </p>
+	 *
+	 * @param  errand       the source errand
+	 * @param  targetLabels the labels of the target namespace
+	 * @return              the candidate pool and the mappings
 	 */
-	public static LabelMappingGroup toLabelMappingGroup(final ErrandEntity errand, final List<LabelCandidate> candidates) {
-		final var sortedCandidates = ofNullable(candidates).orElse(emptyList()).stream()
+	public static LabelMappingGroup toLabelMappingGroup(final ErrandEntity errand, final List<MetadataLabelEntity> targetLabels) {
+		final var errandLabels = ofNullable(errand.getLabels()).orElse(emptyList());
+		final var sourceLabelsByPath = toLabelsByPath(errandLabels.stream()
+			.map(ErrandLabelEmbeddable::getMetadataLabel)
+			.filter(Objects::nonNull)
+			.toList());
+		final var targetLabelsByPath = toLabelsByPath(targetLabels);
+
+		final var activeTargets = ofNullable(targetLabels).orElse(emptyList()).stream()
+			.filter(not(MetadataLabelEntity::isDeprecated))
+			.map(label -> new TargetLabel(label, toLabelCandidate(label, targetLabelsByPath)))
+			.toList();
+
+		final var sortedCandidates = activeTargets.stream()
+			.map(TargetLabel::candidate)
 			.sorted(comparing(LabelCandidate::getResourcePath, RESOURCE_PATH_COMPARATOR))
 			.toList();
 
-		final var mappings = ofNullable(errand.getLabels()).orElse(emptyList()).stream()
-			.map(label -> {
-				final var sourceDisplayName = ofNullable(label.getMetadataLabel()).map(MetadataLabelEntity::getDisplayName).orElse(null);
-				final var sourceResourcePath = ofNullable(label.getMetadataLabel()).map(MetadataLabelEntity::getResourcePath).orElse(null);
-				final var match = matchLabel(sourceResourcePath, sourceDisplayName, sortedCandidates);
+		final var matchableCandidates = activeTargets.stream()
+			.filter(target -> isClassificationLabel(target.label()))
+			.map(target -> new MatchableCandidate(target.candidate(), toClassificationPath(target.label(), targetLabelsByPath)))
+			.toList();
 
-				return LabelMapping.create()
-					.withSourceId(label.getMetadataLabelId())
-					.withSourceDisplayName(sourceDisplayName)
-					.withSourceResourcePath(sourceResourcePath)
-					.withSuggestedTargetId(match.map(m -> m.value().getId()).orElse(null))
-					.withMatchReason(match.map(Match::reason).orElse(null));
-			})
+		final var mappings = errandLabels.stream()
+			.filter(label -> isClassificationLabel(label.getMetadataLabel()))
+			.map(label -> toLabelMapping(label, sourceLabelsByPath, matchableCandidates))
 			.sorted(comparing(LabelMapping::getSourceResourcePath, RESOURCE_PATH_COMPARATOR))
 			.toList();
 
 		return LabelMappingGroup.create()
 			.withCandidates(sortedCandidates)
 			.withMappings(mappings);
+	}
+
+	private static LabelMapping toLabelMapping(final ErrandLabelEmbeddable label, final Map<String, MetadataLabelEntity> sourceLabelsByPath, final List<MatchableCandidate> matchableCandidates) {
+		final var source = label.getMetadataLabel();
+		final var match = LabelSuggestionMatcher.match(toClassificationPath(source, sourceLabelsByPath), matchableCandidates);
+
+		return LabelMapping.create()
+			.withSourceId(label.getMetadataLabelId())
+			.withSourceDisplayName(source.getDisplayName())
+			.withSourceResourcePath(source.getResourcePath())
+			.withSuggestedTargetId(match.suggestedTargetId())
+			.withMatchReason(match.reason())
+			.withMatchCandidates(match.candidates());
+	}
+
+	/**
+	 * A non-deprecated target label together with the candidate it is offered as.
+	 */
+	private record TargetLabel(MetadataLabelEntity label, LabelCandidate candidate) {
 	}
 
 	/**
@@ -248,55 +293,6 @@ public class HandoverPreviewMapper {
 			candidate -> isNotBlank(s.getName()) && s.getName().equals(candidate.getName()), NAME_EXACT)
 			.or(() -> firstMatch(candidates,
 				candidate -> isNotBlank(s.getDisplayName()) && s.getDisplayName().equalsIgnoreCase(candidate.getDisplayName()), DISPLAY_NAME_EXACT)));
-	}
-
-	private static Optional<Match<LabelCandidate>> matchLabel(final String sourceResourcePath, final String sourceDisplayName, final List<LabelCandidate> candidates) {
-		return matchResourcePathHierarchically(sourceResourcePath, candidates)
-			.or(() -> firstMatch(candidates,
-				candidate -> isNotBlank(sourceDisplayName) && sourceDisplayName.equalsIgnoreCase(candidate.getDisplayName()), DISPLAY_NAME_EXACT));
-	}
-
-	/**
-	 * Matches the source label against the target candidates on the hierarchical resource path: the full path is tried
-	 * first, then progressively shorter ancestor paths (dropping the deepest segment each step), so the deepest target
-	 * label on the source's ancestor chain is suggested. Comparison is case-insensitive; a resource path is unique within a
-	 * namespace, so at most one candidate matches per level. Every path-based match (exact or ancestor) reports
-	 * {@link MatchReason#RESOURCE_PATH_MATCH}.
-	 */
-	private static Optional<Match<LabelCandidate>> matchResourcePathHierarchically(final String sourceResourcePath, final List<LabelCandidate> candidates) {
-		var path = sourceResourcePath;
-		while (isNotBlank(path)) {
-			final var ancestor = path;
-			final var match = firstMatch(candidates, candidate -> ancestor.equalsIgnoreCase(candidate.getResourcePath()), RESOURCE_PATH_MATCH);
-			if (match.isPresent()) {
-				return match;
-			}
-			final var separatorIndex = path.lastIndexOf(RESOURCE_PATH_SEPARATOR);
-			if (separatorIndex < 0) {
-				break;
-			}
-			path = path.substring(0, separatorIndex);
-		}
-		return Optional.empty();
-	}
-
-	/**
-	 * Compares two non-null resource paths hierarchically: each path is split into its slash-separated segments and the
-	 * segments are compared pairwise (case-insensitively). When one path is an ancestor prefix of the other, the shorter
-	 * (the ancestor) sorts first. This keeps children grouped directly under their parent.
-	 */
-	private static int compareResourcePathsHierarchically(final String left, final String right) {
-		final var leftSegments = left.split(RESOURCE_PATH_SEPARATOR, -1);
-		final var rightSegments = right.split(RESOURCE_PATH_SEPARATOR, -1);
-		final var sharedDepth = Math.min(leftSegments.length, rightSegments.length);
-
-		for (var i = 0; i < sharedDepth; i++) {
-			final var segmentComparison = leftSegments[i].compareToIgnoreCase(rightSegments[i]);
-			if (segmentComparison != 0) {
-				return segmentComparison;
-			}
-		}
-		return Integer.compare(leftSegments.length, rightSegments.length);
 	}
 
 	private static String matchContactReason(final ContactReasonEntity source, final List<ContactReasonEntity> targets) {

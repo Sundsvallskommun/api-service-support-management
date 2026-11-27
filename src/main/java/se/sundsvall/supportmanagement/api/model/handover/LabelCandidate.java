@@ -1,6 +1,7 @@
 package se.sundsvall.supportmanagement.api.model.handover;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Objects;
 
 @Schema(description = "A label that can be chosen as the target for a source label")
@@ -14,6 +15,9 @@ public class LabelCandidate {
 
 	@Schema(description = "Hierarchical resource path of the label", examples = "/access/keycard")
 	private String resourcePath;
+
+	@Schema(description = "Display names of the label and its ancestors, from the root to the label itself", examples = "[\"Behörighet\", \"Nyckelkort\"]")
+	private List<String> displayNameChain;
 
 	public static LabelCandidate create() {
 		return new LabelCandidate();
@@ -58,9 +62,22 @@ public class LabelCandidate {
 		return this;
 	}
 
+	public List<String> getDisplayNameChain() {
+		return displayNameChain;
+	}
+
+	public void setDisplayNameChain(final List<String> displayNameChain) {
+		this.displayNameChain = displayNameChain;
+	}
+
+	public LabelCandidate withDisplayNameChain(final List<String> displayNameChain) {
+		this.displayNameChain = displayNameChain;
+		return this;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, displayName, resourcePath);
+		return Objects.hash(id, displayName, resourcePath, displayNameChain);
 	}
 
 	@Override
@@ -71,11 +88,12 @@ public class LabelCandidate {
 		if (!(obj instanceof final LabelCandidate other)) {
 			return false;
 		}
-		return Objects.equals(id, other.id) && Objects.equals(displayName, other.displayName) && Objects.equals(resourcePath, other.resourcePath);
+		return Objects.equals(id, other.id) && Objects.equals(displayName, other.displayName) && Objects.equals(resourcePath, other.resourcePath)
+			&& Objects.equals(displayNameChain, other.displayNameChain);
 	}
 
 	@Override
 	public String toString() {
-		return "LabelCandidate [id=" + id + ", displayName=" + displayName + ", resourcePath=" + resourcePath + "]";
+		return "LabelCandidate [id=" + id + ", displayName=" + displayName + ", resourcePath=" + resourcePath + ", displayNameChain=" + displayNameChain + "]";
 	}
 }
