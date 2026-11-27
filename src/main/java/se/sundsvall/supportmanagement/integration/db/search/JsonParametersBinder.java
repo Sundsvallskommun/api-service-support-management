@@ -1,5 +1,6 @@
 package se.sundsvall.supportmanagement.integration.db.search;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -30,11 +31,25 @@ import static se.sundsvall.supportmanagement.integration.db.search.SearchAnalysi
  * them as it comes, as analyzed text with a lowercased keyword twin under {@code .raw}, so that both "a word in the
  * value" and "exactly this value" can be asked. All scalars are also gathered in {@code jsonParametersText} next to the
  * object, which is what a search without a field reaches.
+ * <p>
+ * Every scalar is written one step below its path, under {@link #VALUE}: {@code {"owner": "Anna"}} is indexed as
+ * {@code owner._v}. The index holds one mapping for every namespace, and a field there is either a value or an object;
+ * a key whose value is a plain value in one errand and an object in another - two namespaces with schemas of their own,
+ * a schema allowing either, an array holding both - would otherwise have the errand coming second refused whole.
+ * Written
+ * this way every path is an object, whatever the JSON holds at it, and no two shapes clash. A search names the path as
+ * the JSON has it, the service adding the step below (see {@code JsonParameterFields}).
  */
 public class JsonParametersBinder implements PropertyBinder {
 
 	public static final String FIELD = ErrandIndex.JSON_PARAMETERS;
 	public static final String TEXT_FIELD = ErrandIndex.JSON_PARAMETERS_TEXT;
+
+	/**
+	 * The name every scalar of a JSON parameter is written under, one step below its path. A property of the JSON of this
+	 * very name is the one shape that can still clash.
+	 */
+	public static final String VALUE = "_v";
 
 	// A dynamic object: the index maps whatever is written under it, guided by the dynamic templates of the mapping file
 	private static final String NATIVE_MAPPING = "{\"type\": \"object\", \"dynamic\": \"true\"}";
@@ -82,7 +97,7 @@ public class JsonParametersBinder implements PropertyBinder {
 			for (final Object element : bridgedElement) {
 				if (element instanceof final JsonParameterValue parameter) {
 					parse(parameter).ifPresent(value -> {
-						json.add(parameter.getKey(), value);
+						json.add(parameter.getKey(), belowItsPath(value));
 						writeText(target, value);
 					});
 				}
@@ -103,6 +118,29 @@ public class JsonParametersBinder implements PropertyBinder {
 				LOG.warn("JSON parameter '{}' is left out of the search index since its value could not be read as JSON: {}", parameter.getKey(), e.getMessage());
 				return Optional.empty();
 			}
+		}
+
+		/**
+		 * The value with every scalar in it moved one step down, under {@link #VALUE}, an array of scalars becoming an array
+		 * of such objects. A null is left as it is, since it holds nothing to index.
+		 */
+		static JsonElement belowItsPath(final JsonElement value) {
+			if (value.isJsonObject()) {
+				final var object = new JsonObject();
+				value.getAsJsonObject().asMap().forEach((name, child) -> object.add(name, belowItsPath(child)));
+				return object;
+			}
+			if (value.isJsonArray()) {
+				final var array = new JsonArray();
+				value.getAsJsonArray().forEach(child -> array.add(belowItsPath(child)));
+				return array;
+			}
+			if (value.isJsonPrimitive()) {
+				final var leaf = new JsonObject();
+				leaf.add(VALUE, value);
+				return leaf;
+			}
+			return value;
 		}
 
 		/** Every scalar of the value, whatever its depth, into the field a search without a field reaches. */

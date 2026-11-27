@@ -567,7 +567,7 @@
         message text,
         subject_id varchar(255),
         status enum ('COMPLETED','FAILED','PENDING','RUNNING','STOPPED') not null,
-        type enum ('ERRAND_PURGE','MERGE_LABELS','MOVE_LABEL','RESTRUCTURE_LABEL_TREE') not null,
+        type enum ('ERRAND_PURGE','MERGE_LABELS','MOVE_LABEL','RESTRUCTURE_LABEL_TREE','SEARCH_REINDEX') not null,
         primary key (id)
     ) engine=InnoDB;
 

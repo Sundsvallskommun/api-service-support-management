@@ -44,6 +44,17 @@ class JobSchedulerTest {
 	}
 
 	@Test
+	@DisplayName("Verification that every sweep also removes the jobs older than they are kept for, whatever it found abandoned")
+	void maintainJobsRemovesExpiredJobs() {
+		when(staleJobWorkerMock.endAbandonedJobs()).thenReturn(Optional.of("abandoned"));
+		when(staleJobWorkerMock.removeExpiredJobs()).thenReturn(4L);
+
+		scheduler.maintainJobs();
+
+		verify(staleJobWorkerMock).removeExpiredJobs();
+	}
+
+	@Test
 	@DisplayName("Verification that the account of what was abandoned is what the service is marked restricted with, so that whoever reads it sees which work stopped rather than only that something did")
 	void maintainJobsWithAbandonedRuns() {
 		final var account = "2 run(s) stopped being reported on and were ended here, leaving the work each was carrying out half done: "

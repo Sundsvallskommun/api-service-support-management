@@ -52,7 +52,7 @@ class ErrandSearchServiceTest {
 
 	private ErrandSearchService service(final boolean enabled) {
 		return new ErrandSearchService(entityManagerMock, accessControlServiceMock, searchAccessMock, predicatesMock, new SearchAvailability(enabled),
-			new SearchProperties(10000, Duration.ofSeconds(10), 100, new SearchProperties.Reindex(Duration.ofHours(6))), countGroupsMock, errandProcessServiceMock);
+			new SearchProperties(10000, Duration.ofSeconds(10), 100, new SearchProperties.Reindex(Duration.ofHours(6), Duration.ofMinutes(10), Duration.ofSeconds(2))), countGroupsMock, errandProcessServiceMock);
 	}
 
 	@Test

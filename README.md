@@ -375,21 +375,47 @@ sorting on a property the search cannot sort on.
 One index holds every municipality and namespace, and a search is filtered on the same two fields the database filters
 on. The namespace is indexed lowercased, because the database compares it under a case insensitive collation: matching it
 case sensitively answered nothing for a namespace whose errands the listing found by another casing, and left the
-documents of one casing behind when a rebuild purged another.
+documents of one casing behind when a rebuild removed another.
 
-The index is written over from the database every night at 01:00, a namespace at a time, so that what indexing missed
-does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild endpoint, so one instance
-does it and a manual rebuild and the nightly one never overlap. It is switched off with
-`scheduler.search-reindex.enabled: false`, and does nothing where search is off. Nothing is rebuilt when the service starts: a deploy
-leaves the index as it is and only brings the mapping up to date. A deploy that changes what is written into the index -
-a field added to it, a binder changed - therefore needs `POST /search/reindex` once, or the errands indexed before it
-answer by the old mapping until the nightly rebuild reaches them.
+The index is written over from the database every night at 01:00, a namespace at a time and each as a job of its own,
+so that what indexing missed does not stay missed - `scheduler.search-reindex`, guarded by the same lock as the rebuild
+endpoints, so one instance does it and a manual rebuild and the nightly one never overlap. A namespace whose rebuild
+fails is passed and the rest go on; what failed is reported by the scheduled job at the end. It is switched off with
+`scheduler.search-reindex.enabled: false`, and does nothing where search is off. Nothing is rebuilt when the service
+starts: a deploy leaves the index as it is and only brings the mapping up to date. A deploy that adds to what is written
+into the index - a field added, a binder changed - is put right by the nightly rebuild, and until then the errands
+indexed before it answer by what they were written with.
+
+A rebuild of a namespace writes its errands anew first and then removes the documents of the namespace it did not write,
+which are those of errands no longer in the database. Every document carries when it was written (`indexedAt`), and the
+removal takes what was written before the rebuild started. So the namespace is searched as it was while the rebuild is
+under way rather than emptied first, and an errand that cannot be written - the index refusing its document - fails the
+job with its id and leaves the namespace as it was. The removal runs as a task of the cluster, and one not done within
+`search.reindex.sweep-timeout` (ten minutes) is cancelled and fails the job.
+
+Some changes leave the documents already in the index wrong without a rebuild of a namespace being able to put them
+right: a field whose type or analysis changes, which the mapping refuses, and a change of where something is written or
+of a dynamic template in `search-mapping.json`, which the mapping takes without a word. Those need the whole index
+dropped and rebuilt by `POST /search/reindex`. The first is found when the service starts and the mapping is refused.
+The second is declared: the layout of the index is kept in the `_meta` of its mapping, and a change of that kind raises
+`ErrandIndex.LAYOUT_VERSION`. Either way `/actuator/health` reports `openSearch` as `RESTRICTED` with the reason under
+`fullReindexWanted` until the full rebuild has been done - which is how a deploy to test says that the deploy to
+production wants one. Until then the index is not what the service writes: documents of the new layout may be refused
+by the old mapping, so errands saved meanwhile are missing from search and the nightly rebuild fails, and searches by
+what moved find nothing. Nothing is lost, as the full rebuild writes everything from the database, so it is run right
+after the deploy. What the health says is found out by each pod for itself, so once the full rebuild is done the pods
+are restarted to stop reporting it. The same indicator reports the number of fields the mapping holds against
+`index.mapping.total_fields.limit`, and turns `RESTRICTED` at 80 percent: every JSON parameter path of every namespace
+is a field of its own, and a document bringing a field beyond the limit is refused.
 
 The database is the source of truth and the index is disposable. Indexing follows every commit without holding the
 request up, so an OpenSearch that cannot be reached is logged and never fails a request, and the index schema is created
 after startup rather than during it, so the service starts without OpenSearch. Whatever the index missed is put right by
 `POST /{municipalityId}/{namespace}/errands/search/reindex`, which rebuilds that namespace from the database in the
-background. The whole index is rebuilt by `POST /search/reindex`, which belongs to no namespace because it empties the
+background and answers with the job it reports against, followed through `GET /{municipalityId}/{namespace}/jobs/{jobId}`.
+`GET /{municipalityId}/{namespace}/jobs` lists the jobs of a namespace, of every kind, optionally narrowed by `status` and
+`type`; both are held to the namespace configuration grant. A job that has ended is kept for `job.retention` (ninety
+days) and then removed by the hourly maintenance of the job table. The whole index is rebuilt by `POST /search/reindex`, which belongs to no namespace because it empties the
 search of all of them, and which asks that the caller may administer every namespace that enforces access control. Errands created before
 search was introduced are indexed the same way. Where search is on, `/actuator/health` reports the cluster under
 `openSearch`.
@@ -445,12 +471,18 @@ How the pieces hold together, from the API to the index:
   resource the route reaches, so a name nobody thought of is refused instead of permitted. `service/search/index` is the index itself: rebuild, schema, health, and the one facade (`SearchIndexing`) the
   services writing the database may use.
 
-JSON parameters are indexed as they come, every scalar under `jsonParameters.<key>.<path>` as text with a keyword twin
-under `.raw`, which is what makes them searchable by path without a schema. Two things follow from that. A path has to
-keep its shape across the errands of the index, a scalar in one and an object in another cannot both be mapped, and the
-errand that breaks the shape is logged and left out of the index. And values longer than 8191 characters have no
-keyword twin, only their words. The index allows 5000 fields, well beyond what the paths of a service's schemas amount
-to; the log says so if that is ever reached.
+JSON parameters are indexed as they come, every scalar as text with a keyword twin under `.raw`, which is what makes
+them searchable by path without a schema. One index holds every namespace, and a field of it is either a value or an
+object, so a key whose value is a plain value in one errand and an object in another - two namespaces with schemas of
+their own, a schema allowing either, an array holding both - could not both be mapped. Every scalar is therefore written
+one step below its path, under `_v`: `{"owner": "Anna"}` is indexed as `jsonParameters.<key>.owner._v`, so every path is
+an object whatever the JSON holds at it. A search names the path as the JSON has it - `jsonParameters.vehicle.owner`,
+`jsonParameters.vehicle.owner.raw` - and the service looks in the value below it; a wildcard in a field name that may
+reach into the JSON parameters, `*.supplier`, asks for both. A JSON property named `_v` itself is the one shape that can
+still clash. In an array of objects the fields of one object are not kept apart from those of the next, as is the way
+of the index: `owner.name:anna AND owner.city:umeå` finds an errand where Anna lives in Sundsvall and someone else in
+Umeå. Values longer than 8191 characters have no keyword twin, only their words. The index allows 5000 fields, and every
+path of every namespace is one; the health of the service turns `RESTRICTED` at 80 percent of that.
 
 The integration tests start one of their own through Testcontainers.
 

@@ -2,6 +2,8 @@ search:
   max-result-window: 10000
   reindex:
     lock-at-most-for: PT6H
+    sweep-timeout: PT10M
+    poll-interval: PT2S
 scheduler:
   emailreader:
     name: fetch_emails
@@ -48,10 +50,11 @@ scheduler:
   search-reindex:
     name: search_reindex
     enabled: true
-    # Nightly, when the hole a namespace is rebuilt through is least in the way. Does nothing where search is off
+    # Nightly, one namespace after the other, each as a job of its own. Does nothing where search is off. The run waits
+    # for every namespace, and a namespace may take up to search.reindex.sweep-timeout past its writing
     cron: 0 0 1 * * *
-    shedlock-lock-at-most-for: PT2H
-    maximum-execution-time: PT1H
+    shedlock-lock-at-most-for: PT5H
+    maximum-execution-time: PT4H
   process-event:
     name: process_event_relay
     cron: 0 * * * * *
@@ -113,8 +116,9 @@ process-engine:
     queue-capacity: 500
 job:
   # Settings for the job table every long running piece of work reports against. Documented in JobProperties, which is
-  # where the defaults live. Jobs are kept: a purge leaves one row behind, and that row is the lasting record of it.
+  # where the defaults live. A job that has ended is the record of what its run did, and is kept for the retention.
   stale-after: PT30M
+  retention: P90D
 integration:
   accessmapper:
     connectTimeout: 5

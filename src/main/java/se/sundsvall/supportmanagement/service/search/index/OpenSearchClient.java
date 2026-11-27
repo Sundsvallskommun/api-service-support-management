@@ -1,6 +1,9 @@
 package se.sundsvall.supportmanagement.service.search.index;
 
 import jakarta.persistence.EntityManagerFactory;
+import java.io.IOException;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.hibernate.search.backend.elasticsearch.ElasticsearchBackend;
 import org.hibernate.search.backend.elasticsearch.index.ElasticsearchIndexManager;
@@ -37,4 +40,18 @@ public class OpenSearchClient {
 	public IndexDescriptor errandIndex() {
 		return Search.mapping(entityManagerFactory).indexedEntity(ErrandEntity.class).indexManager().descriptor();
 	}
+
+	/** Whether the errand index is there. */
+	public boolean errandIndexExists() throws IOException {
+		final var request = new Request("HEAD", "/" + errandWriteIndex());
+		try {
+			return restClient().performRequest(request).getStatusLine().getStatusCode() == 200;
+		} catch (final ResponseException e) {
+			if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+				return false;
+			}
+			throw e;
+		}
+	}
+
 }

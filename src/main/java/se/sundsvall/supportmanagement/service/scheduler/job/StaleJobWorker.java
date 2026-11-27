@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.joining;
  * out another run of its kind in the same namespace. Such a job is ended here, which lets the next run of its kind
  * start.
  * <p>
- * Jobs are not removed, however old.
+ * Jobs that have ended are removed once older than {@link JobProperties#retention()}.
  */
 @Component
 public class StaleJobWorker {
@@ -51,6 +51,15 @@ public class StaleJobWorker {
 		final var abandoned = jobService.failStaleJobs(properties.staleAfter());
 
 		return abandoned.isEmpty() ? Optional.empty() : Optional.of(accountOf(abandoned));
+	}
+
+	/**
+	 * Removes the jobs that ended longer ago than they are kept for.
+	 *
+	 * @return how many jobs were removed.
+	 */
+	public long removeExpiredJobs() {
+		return jobService.removeEndedJobs(properties.retention());
 	}
 
 	private static String accountOf(final List<JobEntity> abandoned) {

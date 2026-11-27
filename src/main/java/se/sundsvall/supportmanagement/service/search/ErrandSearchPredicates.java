@@ -51,9 +51,10 @@ public class ErrandSearchPredicates {
 		// alone, which is searched by name and not by word. A field no errand carries stands in for the list then, so that
 		// a word matches nothing by itself while the fielded terms, the disjunctions and the negations of the query still
 		// compose - answering "status:new OR vatten" with the new errands rather than with nothing, which is what refusing
-		// the whole clause would. See NoOpenFieldBinder for why the stand-in is a field no errand carries.
+		// the whole clause would. See NoOpenFieldBinder for why the stand-in is a field no errand carries. The JSON
+		// parameters are named as the JSON has them and looked for where the index holds them, see JsonParameterFields
 		return f.extension(ElasticsearchExtension.get())
-			.fromJson(queryString(query, fields.isEmpty() ? List.of(NO_OPEN_FIELD) : fields))
+			.fromJson(queryString(JsonParameterFields.rewrite(query), fields.isEmpty() ? List.of(NO_OPEN_FIELD) : fields))
 			.toPredicate();
 	}
 
