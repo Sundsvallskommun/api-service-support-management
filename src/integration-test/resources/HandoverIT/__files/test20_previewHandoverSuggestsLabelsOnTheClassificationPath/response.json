@@ -113,15 +113,6 @@
 					"matchReason": "BEST_EFFORT",
 					"matchCandidates": [
 						{
-							"id": "aa980000-0000-0000-0000-000000000002",
-							"displayName": "Kategori 1",
-							"resourcePath": "ROOT-HANDOVER/CATEGORY-1",
-							"displayNameChain": [
-								"Rot",
-								"Kategori 1"
-							]
-						},
-						{
 							"id": "aa980000-0000-0000-0000-000000000005",
 							"displayName": "Typ A2",
 							"resourcePath": "ROOT-HANDOVER/CATEGORY-A/TYPE-2",
@@ -139,6 +130,15 @@
 								"Rot",
 								"Kategori B",
 								"Typ B2"
+							]
+						},
+						{
+							"id": "aa980000-0000-0000-0000-000000000002",
+							"displayName": "Kategori 1",
+							"resourcePath": "ROOT-HANDOVER/CATEGORY-1",
+							"displayNameChain": [
+								"Rot",
+								"Kategori 1"
 							]
 						}
 					]

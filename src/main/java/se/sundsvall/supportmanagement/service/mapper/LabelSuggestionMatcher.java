@@ -37,9 +37,10 @@ import static se.sundsvall.supportmanagement.api.model.handover.MatchReason.RESO
  * <ol>
  * <li>An exact match on the classification path is suggested with {@link MatchReason#RESOURCE_PATH_MATCH}.</li>
  * <li>Otherwise every candidate is scored on how many segments in a row, upwards from its leaf, it shares with the
- * source path, and then the same on the display name chain. The candidates that score are returned ranked, the best
- * first, with {@link MatchReason#BEST_EFFORT}. A single best candidate is suggested; when several score the same at the
- * top, nothing is suggested.</li>
+ * source path; then on how near the leaf of the source that run ends, so a match on the leaf of the source ranks above
+ * one higher up its path; and then on the display name chain as on the segments. The candidates that score are
+ * returned ranked, the best first, with {@link MatchReason#BEST_EFFORT}. A single best candidate is suggested; when
+ * several score the same at the top, nothing is suggested.</li>
  * <li>When no candidate scores, there is no suggestion and no reason.</li>
  * </ol>
  *
@@ -129,13 +130,17 @@ public final class LabelSuggestionMatcher {
 		// Several candidates with an identical classification path (the same category and type under different roots) are
 		// as good as one another, so they are left to the ranking below, where they tie at the top
 		final var ranked = safeCandidates.stream()
-			.map(candidate -> new ScoredCandidate(candidate.candidate(),
-				score(source.segments(), candidate.path().segments()),
-				score(source.displayNameChain(), candidate.path().displayNameChain())))
+			.map(candidate -> {
+				final var segmentAlignment = align(source.segments(), candidate.path().segments());
+				return new ScoredCandidate(candidate.candidate(),
+					segmentAlignment.length(),
+					segmentAlignment.distanceFromLeaf(),
+					align(source.displayNameChain(), candidate.path().displayNameChain()).length());
+			})
 			.filter(ScoredCandidate::isHit)
-			.sorted(comparingInt(ScoredCandidate::segmentScore)
-				.thenComparingInt(ScoredCandidate::displayNameScore)
-				.reversed()
+			.sorted(comparingInt(ScoredCandidate::segmentScore).reversed()
+				.thenComparingInt(ScoredCandidate::distanceFromLeaf)
+				.thenComparing(comparingInt(ScoredCandidate::displayNameScore).reversed())
 				.thenComparing(scored -> scored.candidate().getResourcePath(), RESOURCE_PATH_COMPARATOR))
 			.toList();
 
@@ -152,19 +157,21 @@ public final class LabelSuggestionMatcher {
 	}
 
 	/**
-	 * The highest number of elements in a row the source and the candidate share, counting upwards from the leaf of the
-	 * candidate placed at each position of the source. The leaf of the candidate may thereby match the leaf of the source
-	 * or any of its ancestors.
+	 * Places the leaf of the candidate at each position of the source, from the leaf of the source upwards, and counts the
+	 * elements in a row they share upwards from there. The leaf of the candidate may thereby match the leaf of the source
+	 * or any of its ancestors. The longest run wins; of equally long runs, the one nearest the leaf of the source.
 	 */
-	private static int score(final List<String> source, final List<String> candidate) {
-		var best = 0;
-		for (var position = 0; position < source.size(); position++) {
+	private static Alignment align(final List<String> source, final List<String> candidate) {
+		var best = new Alignment(0, source.size());
+		for (var position = source.size() - 1; position >= 0; position--) {
 			var length = 0;
 			while (length < candidate.size() && position - length >= 0
 				&& isEqualIgnoreCase(source.get(position - length), candidate.get(candidate.size() - 1 - length))) {
 				length++;
 			}
-			best = Math.max(best, length);
+			if (length > best.length()) {
+				best = new Alignment(length, source.size() - 1 - position);
+			}
 		}
 		return best;
 	}
@@ -254,14 +261,21 @@ public final class LabelSuggestionMatcher {
 		}
 	}
 
-	private record ScoredCandidate(LabelCandidate candidate, int segmentScore, int displayNameScore) {
+	/**
+	 * The longest run of shared elements, and how many levels above the leaf of the source it ends (0 for the leaf
+	 * itself, the length of the source when nothing is shared).
+	 */
+	private record Alignment(int length, int distanceFromLeaf) {
+	}
+
+	private record ScoredCandidate(LabelCandidate candidate, int segmentScore, int distanceFromLeaf, int displayNameScore) {
 
 		boolean isHit() {
 			return segmentScore > 0 || displayNameScore > 0;
 		}
 
 		boolean scoresAsHighAs(final ScoredCandidate other) {
-			return segmentScore == other.segmentScore && displayNameScore == other.displayNameScore;
+			return segmentScore == other.segmentScore && distanceFromLeaf == other.distanceFromLeaf && displayNameScore == other.displayNameScore;
 		}
 	}
 }

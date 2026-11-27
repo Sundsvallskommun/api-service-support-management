@@ -175,9 +175,48 @@ class LabelSuggestionMatcherTest {
 
 		assertThat(result.suggestedTargetId()).isEqualTo("t-eko-faktura-annat");
 		assertThat(result.reason()).isEqualTo(BEST_EFFORT);
-		// EKONOMI/FAKTURA matches the middle of the source path with one segment, as does IT/ANNAT at the leaf
+		// IT/ANNAT and EKONOMI/FAKTURA share one segment each, but IT/ANNAT at the leaf of the source, so it ranks above
 		assertThat(result.candidates()).extracting(LabelCandidate::getId)
-			.containsExactly("t-eko-faktura-annat", "t-eko-faktura", "t-it-annat");
+			.containsExactly("t-eko-faktura-annat", "t-it-annat", "t-eko-faktura");
+	}
+
+	@Test
+	void matchBestEffortRanksAMatchOnTheLeafAboveOneHigherUpThePath() {
+		// FAKTURA matches the category of the source, EKONOMI/ANNAT its type: as many segments, but the type is the leaf.
+		// The display name of FAKTURA matching too does not outweigh where the match is
+		final var source = List.of(
+			label("s-cat", CATEGORY, "Faktura", "FAKTURA"),
+			label("s-type", TYPE, "Annat", "FAKTURA/ANNAT"));
+		final var target = List.of(
+			label("t-faktura", CATEGORY, "Faktura", "FAKTURA"),
+			label("t-eko", CATEGORY, "Ekonomi", "EKONOMI"),
+			label("t-eko-annat", TYPE, "Övrigt", "EKONOMI/ANNAT"));
+
+		final var result = match(sourcePath("s-type", source), candidates(target));
+
+		assertThat(result.suggestedTargetId()).isEqualTo("t-eko-annat");
+		assertThat(result.reason()).isEqualTo(BEST_EFFORT);
+		assertThat(result.candidates()).extracting(LabelCandidate::getId).containsExactly("t-eko-annat", "t-faktura");
+	}
+
+	@Test
+	void matchBestEffortPrefersTheRunNearestTheLeafOfTheSource() {
+		// ANNAT occurs both at the root and at the leaf of the source path ANNAT/FAKTURA/ANNAT. EKONOMI/ANNAT is aligned
+		// at the leaf, so it ranks above IT/FAKTURA, which matches one level above the leaf
+		final var source = List.of(
+			label("s-cat", CATEGORY, "Annat", "ANNAT"),
+			label("s-type", TYPE, "Faktura", "ANNAT/FAKTURA"),
+			label("s-subtype", TYPE, "Annat", "ANNAT/FAKTURA/ANNAT"));
+		final var target = List.of(
+			label("t-eko", CATEGORY, "Ekonomi", "EKONOMI"),
+			label("t-eko-annat", TYPE, "Övrigt", "EKONOMI/ANNAT"),
+			label("t-it", CATEGORY, "IT", "IT"),
+			label("t-it-faktura", TYPE, "Fakturor", "IT/FAKTURA"));
+
+		final var result = match(sourcePath("s-subtype", source), candidates(target));
+
+		assertThat(result.suggestedTargetId()).isEqualTo("t-eko-annat");
+		assertThat(result.candidates()).extracting(LabelCandidate::getId).containsExactly("t-eko-annat", "t-it-faktura");
 	}
 
 	@Test
